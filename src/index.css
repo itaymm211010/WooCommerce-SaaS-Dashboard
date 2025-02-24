@@ -55,10 +55,9 @@
 }
 
 .hover-scale {
-  @apply transition-transform duration-200 ease-in-out hover:scale-102;
+  @apply transition-transform duration-200 ease-in-out hover:scale-105;
 }
 
 .card-shadow {
   @apply shadow-[0_8px_30px_rgb(0,0,0,0.12)];
 }
-
