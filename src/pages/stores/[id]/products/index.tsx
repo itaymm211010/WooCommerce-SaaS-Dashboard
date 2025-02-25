@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -14,16 +13,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
   const [isSyncing, setIsSyncing] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<'name' | 'price' | 'stock_quantity' | 'status' | 'updated_at'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const itemsPerPage = 10;
 
   const { data: products, refetch } = useQuery({
     queryKey: ['products', id],
@@ -33,7 +45,8 @@ export default function StoreProductsPage() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', id);
+        .eq('store_id', id)
+        .order(sortField, { ascending: sortDirection === 'asc' });
       
       if (error) throw error;
       console.log('Products data:', data);
@@ -60,7 +73,6 @@ export default function StoreProductsPage() {
   });
 
   const getProductPrice = (product: any) => {
-    // אם זה מוצר משתנה (variable), נקבל את טווח המחירים מהוריאציות
     if (product.type === 'variable' && product.variations && product.variations.length > 0) {
       const prices = product.variations.map((variation: any) => {
         return parseFloat(variation.regular_price || variation.price || 0);
@@ -70,21 +82,18 @@ export default function StoreProductsPage() {
         const minPrice = Math.min(...prices);
         return minPrice;
       }
-      return 0; // שינינו מ-null ל-0
+      return 0;
     }
 
-    // עבור מוצר פשוט, נבדוק אם יש מחיר רגיל
     if (product.regular_price) {
       return parseFloat(product.regular_price);
     }
 
-    // אם אין מחיר רגיל, ננסה את המחיר הרגיל
     if (product.price) {
       return parseFloat(product.price);
     }
 
-    // אם אין מחיר בכלל
-    return 0; // שינינו מ-null ל-0
+    return 0;
   };
 
   const formatPrice = (price: number | null, productType: string) => {
@@ -92,6 +101,25 @@ export default function StoreProductsPage() {
       return productType === 'variable' ? 'Variable Product' : 'N/A';
     }
     return `$${price}`;
+  };
+
+  const sortProducts = (field: typeof sortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const totalPages = products ? Math.ceil(products.length / itemsPerPage) : 0;
+  const paginatedProducts = products?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const syncProducts = async () => {
@@ -103,13 +131,11 @@ export default function StoreProductsPage() {
         return;
       }
 
-      // מנקה את ה-URL ומוודא שהוא מתחיל ב-https או http
       let baseUrl = store.url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
         baseUrl = `https://${baseUrl}`;
       }
       
-      // מוסיף פרמטרים לקבלת כל המוצרים (עד 100 בכל בקשה)
       const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
           'Content-Type': 'application/json'
@@ -143,7 +169,6 @@ export default function StoreProductsPage() {
       
       console.log(`Fetched ${wooProducts.length} products from WooCommerce`);
       
-      // נקבל את הוריאציות עבור כל מוצר משתנה
       const productsWithVariations = await Promise.all(wooProducts.map(async (product) => {
         if (product.type === 'variable') {
           try {
@@ -177,7 +202,7 @@ export default function StoreProductsPage() {
           stock_quantity: product.stock_quantity,
           status: product.status,
           type: product.type
-      }));
+        }));
 
       console.log('Products to insert:', productsToInsert);
 
@@ -257,22 +282,67 @@ export default function StoreProductsPage() {
           <TableCaption>A list of your store products.</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last Updated</TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortProducts('name')}
+                  className="flex items-center gap-2"
+                >
+                  Name
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortProducts('price')}
+                  className="flex items-center gap-2"
+                >
+                  Price
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortProducts('stock_quantity')}
+                  className="flex items-center gap-2"
+                >
+                  Stock
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortProducts('status')}
+                  className="flex items-center gap-2"
+                >
+                  Status
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortProducts('updated_at')}
+                  className="flex items-center gap-2"
+                >
+                  Last Updated
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products?.length === 0 ? (
+            {paginatedProducts?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No products found. Click the Sync button to import products from WooCommerce.
                 </TableCell>
               </TableRow>
             ) : (
-              products?.map((product) => (
+              paginatedProducts?.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{formatPrice(product.price, product.type || 'simple')}</TableCell>
@@ -284,6 +354,38 @@ export default function StoreProductsPage() {
             )}
           </TableBody>
         </Table>
+
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={cn("cursor-pointer", currentPage === 1 && "pointer-events-none opacity-50")} 
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink 
+                    onClick={() => handlePageChange(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={cn("cursor-pointer", currentPage === totalPages && "pointer-events-none opacity-50")} 
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     </Shell>
   );
