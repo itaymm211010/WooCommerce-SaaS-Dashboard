@@ -8,6 +8,12 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // הוספת לוגים לדיבוג
+  console.log('Received webhook request:', {
+    method: req.method,
+    headers: Object.fromEntries(req.headers.entries()),
+  });
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -19,6 +25,8 @@ serve(async (req) => {
     )
 
     const body = await req.json()
+    console.log('Webhook payload:', body);
+
     const { id, status } = body
 
     // מציאת ה-store_id על פי מזהה ההזמנה
@@ -39,6 +47,8 @@ serve(async (req) => {
       )
     }
 
+    console.log('Found order:', order);
+
     // עדכון סטטוס ההזמנה
     const { error: updateError } = await supabase
       .from('orders')
@@ -50,6 +60,8 @@ serve(async (req) => {
       console.error('Error updating order:', updateError)
       throw updateError
     }
+
+    console.log('Updated order status to:', status);
 
     // הוספת רשומה לטבלת הלוג
     const { error: logError } = await supabase
@@ -67,6 +79,8 @@ serve(async (req) => {
       throw logError
     }
 
+    console.log('Created status log entry');
+
     return new Response(
       JSON.stringify({ success: true }),
       { 
@@ -77,7 +91,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing webhook:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

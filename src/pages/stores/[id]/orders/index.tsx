@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -74,7 +73,7 @@ export default function StoreOrdersPage() {
     enabled: !!id
   });
 
-  const { data: statusLogs } = useQuery({
+  const { data: statusLogs, refetch: refetchLogs } = useQuery({
     queryKey: ['orderStatusLogs', id, selectedOrderId],
     queryFn: async () => {
       if (!id || !selectedOrderId) return [];
@@ -104,6 +103,10 @@ export default function StoreOrdersPage() {
         baseUrl = `https://${baseUrl}`;
       }
 
+      const webhookUrl = new URL('/api/webhook/woocommerce/order-status', window.location.origin);
+
+      console.log('Setting up webhook with URL:', webhookUrl.toString());
+
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
         {
@@ -115,17 +118,20 @@ export default function StoreOrdersPage() {
           body: JSON.stringify({
             name: 'Order Status Update',
             topic: 'order.updated',
-            delivery_url: `${window.location.origin}/api/webhook/woocommerce/order-status`,
+            delivery_url: webhookUrl.toString(),
             secret: store.api_secret
           })
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to create webhook in WooCommerce');
+        const errorData = await response.json();
+        console.error('WooCommerce webhook error:', errorData);
+        throw new Error(`Failed to create webhook in WooCommerce: ${errorData.message || 'Unknown error'}`);
       }
 
       const webhook = await response.json();
+      console.log('Webhook created:', webhook);
 
       const { error } = await supabase
         .from('webhooks')
@@ -141,7 +147,7 @@ export default function StoreOrdersPage() {
       toast.success('Successfully configured webhook for order status updates');
     } catch (error) {
       console.error('Error setting up webhook:', error);
-      toast.error('Failed to set up webhook');
+      toast.error(`Failed to set up webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -195,6 +201,9 @@ export default function StoreOrdersPage() {
 
       toast.success(`Order #${orderId} status updated to ${newStatus}`);
       refetch();
+      if (selectedOrderId === orderId) {
+        refetchLogs();
+      }
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error('Failed to update order status');
