@@ -17,6 +17,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
