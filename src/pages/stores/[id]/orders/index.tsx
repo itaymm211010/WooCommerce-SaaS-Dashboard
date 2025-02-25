@@ -23,14 +23,18 @@ export default function StoreOrdersPage() {
   const { data: orders } = useQuery({
     queryKey: ['orders', id],
     queryFn: async () => {
+      if (!id) throw new Error('No store ID provided');
+      
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('store_id', id);
       
       if (error) throw error;
+      console.log('Orders data:', data); // Debug log
       return data as Order[];
-    }
+    },
+    enabled: !!id
   });
 
   return (
@@ -62,15 +66,23 @@ export default function StoreOrdersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders?.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.woo_id}</TableCell>
-                <TableCell>{order.customer_name}</TableCell>
-                <TableCell>${order.total}</TableCell>
-                <TableCell>{order.status}</TableCell>
-                <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+            {orders?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No orders found
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              orders?.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.woo_id}</TableCell>
+                  <TableCell>{order.customer_name}</TableCell>
+                  <TableCell>${order.total}</TableCell>
+                  <TableCell>{order.status}</TableCell>
+                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

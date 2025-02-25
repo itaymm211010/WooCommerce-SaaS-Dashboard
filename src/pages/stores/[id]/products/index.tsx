@@ -23,14 +23,18 @@ export default function StoreProductsPage() {
   const { data: products } = useQuery({
     queryKey: ['products', id],
     queryFn: async () => {
+      if (!id) throw new Error('No store ID provided');
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('store_id', id);
       
       if (error) throw error;
+      console.log('Products data:', data); // Debug log
       return data as Product[];
-    }
+    },
+    enabled: !!id
   });
 
   return (
@@ -62,15 +66,23 @@ export default function StoreProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products?.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>${product.price}</TableCell>
-                <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
-                <TableCell>{product.status}</TableCell>
-                <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>
+            {products?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No products found
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              products?.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>${product.price}</TableCell>
+                  <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
+                  <TableCell>{product.status}</TableCell>
+                  <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
