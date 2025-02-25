@@ -32,7 +32,6 @@ export default function StoreOrdersPage() {
         .eq('store_id', id);
       
       if (error) throw error;
-      console.log('Orders data:', data);
       return data as Order[];
     },
     enabled: !!id
@@ -57,20 +56,51 @@ export default function StoreOrdersPage() {
 
   const syncOrders = async () => {
     try {
-      // טוען את ההזמנות מה-API של WooCommerce
-      const response = await fetch(`${store?.url}/wp-json/wc/v3/orders`, {
+      if (!store?.url || !store?.api_key || !store?.api_secret) {
+        toast.error('Missing store configuration. Please check your store URL and API credentials.');
+        return;
+      }
+
+      // מנקה את ה-URL ומוודא שהוא מתחיל ב-https או http
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      // מוסיף פרמטרים לקבלת כל ההזמנות (עד 100 בכל בקשה)
+      const response = await fetch(`${baseUrl}/wp-json/wc/v3/orders?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
-          'Authorization': 'Basic ' + btoa(`${store?.api_key}:${store?.api_secret}`)
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch orders from WooCommerce');
+        const errorText = await response.text();
+        console.error('WooCommerce API Error:', errorText);
+        
+        if (response.status === 0) {
+          throw new Error('CORS error - Please make sure your WooCommerce site allows external connections');
+        }
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed - Please check your API credentials');
+        }
+        
+        if (response.status === 404) {
+          throw new Error('Store not found - Please check your store URL');
+        }
+        
+        throw new Error(`WooCommerce API error: ${response.status} ${response.statusText}`);
       }
 
       const wooOrders = await response.json();
       
-      // ממיר את ההזמנות לפורמט של הדאטאבייס שלנו
+      if (!Array.isArray(wooOrders)) {
+        throw new Error('Invalid response from WooCommerce API');
+      }
+      
+      console.log(`Fetched ${wooOrders.length} orders from WooCommerce`);
+      
       const ordersToInsert = wooOrders.map((order: any) => ({
         store_id: id,
         woo_id: order.id,
@@ -80,18 +110,21 @@ export default function StoreOrdersPage() {
         customer_email: order.billing.email
       }));
 
-      // מוסיף את ההזמנות לדאטאבייס
       const { error } = await supabase
         .from('orders')
         .upsert(ordersToInsert, { onConflict: 'store_id,woo_id' });
 
       if (error) throw error;
 
-      toast.success('Orders synced successfully');
-      refetch(); // מרענן את הטבלה
+      toast.success(`Successfully synced ${ordersToInsert.length} orders`);
+      refetch();
     } catch (error) {
       console.error('Error syncing orders:', error);
-      toast.error('Failed to sync orders');
+      if (error instanceof Error) {
+        toast.error(`Failed to sync orders: ${error.message}`);
+      } else {
+        toast.error('Failed to sync orders: Unknown error occurred');
+      }
     }
   };
 

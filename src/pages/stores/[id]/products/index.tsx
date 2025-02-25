@@ -1,3 +1,4 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -67,9 +68,14 @@ export default function StoreProductsPage() {
         return;
       }
 
-      const baseUrl = store.url.replace(/\/+$/, '');
+      // מנקה את ה-URL ומוודא שהוא מתחיל ב-https או http
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
       
-      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
+      // מוסיף פרמטרים לקבלת כל המוצרים (עד 100 בכל בקשה)
+      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -78,6 +84,22 @@ export default function StoreProductsPage() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('WooCommerce API Error:', errorText);
+        
+        // בדיקה אם יש בעיית CORS
+        if (response.status === 0) {
+          throw new Error('CORS error - Please make sure your WooCommerce site allows external connections');
+        }
+        
+        // בדיקה אם יש בעיית אותנטיקציה
+        if (response.status === 401) {
+          throw new Error('Authentication failed - Please check your API credentials');
+        }
+        
+        // בדיקה אם החנות לא נגישה
+        if (response.status === 404) {
+          throw new Error('Store not found - Please check your store URL');
+        }
+        
         throw new Error(`WooCommerce API error: ${response.status} ${response.statusText}`);
       }
 
@@ -86,6 +108,8 @@ export default function StoreProductsPage() {
       if (!Array.isArray(wooProducts)) {
         throw new Error('Invalid response from WooCommerce API');
       }
+      
+      console.log(`Fetched ${wooProducts.length} products from WooCommerce`);
       
       const productsToInsert = wooProducts.map((product: any) => ({
         store_id: id,
@@ -102,7 +126,7 @@ export default function StoreProductsPage() {
 
       if (error) throw error;
 
-      toast.success('Products synced successfully');
+      toast.success(`Successfully synced ${productsToInsert.length} products`);
       refetch();
     } catch (error) {
       console.error('Error syncing products:', error);
