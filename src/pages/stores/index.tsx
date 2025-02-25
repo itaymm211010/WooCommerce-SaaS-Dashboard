@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -282,6 +281,10 @@ export default function StoresPage() {
     }
   };
 
+  const getWebhookEndpoint = (storeId: string) => {
+    return `https://wzpbsridzmqrcztafzip.functions.supabase.co/woocommerce-order-status?store_id=${storeId}`;
+  };
+
   return (
     <Shell>
       <div className="space-y-8">
@@ -400,13 +403,24 @@ export default function StoresPage() {
                             <div className="space-y-4">
                               <div className="space-y-2">
                                 <Label>Add New Webhook</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    value={webhookEndpoint}
-                                    onChange={(e) => setWebhookEndpoint(e.target.value)}
-                                    placeholder="Enter webhook endpoint URL"
-                                  />
-                                  <Button onClick={createWebhook}>Add</Button>
+                                <div className="space-y-4">
+                                  <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
+                                    <p>The webhook endpoint URL is automatically set to our secure endpoint that handles WooCommerce order status updates.</p>
+                                    <p className="mt-2 break-all font-mono text-xs">
+                                      {selectedStore && getWebhookEndpoint(selectedStore.id)}
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    onClick={() => {
+                                      if (selectedStore) {
+                                        setWebhookEndpoint(getWebhookEndpoint(selectedStore.id));
+                                        createWebhook();
+                                      }
+                                    }}
+                                    className="w-full"
+                                  >
+                                    Add Webhook
+                                  </Button>
                                 </div>
                               </div>
                               <div className="space-y-2">
