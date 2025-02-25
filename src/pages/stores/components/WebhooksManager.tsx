@@ -18,6 +18,7 @@ interface WebhooksManagerProps {
 export function WebhooksManager({ store }: WebhooksManagerProps) {
   const [selectedWebhookType, setSelectedWebhookType] = useState<string>('order.updated');
   const [isCreatingWebhook, setIsCreatingWebhook] = useState(false);
+  const [isDeletingWebhook, setIsDeletingWebhook] = useState(false);
 
   const { data: webhooks, refetch: refetchWebhooks } = useQuery({
     queryKey: ['webhooks', store.id],
@@ -144,12 +145,16 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
   };
 
   const deleteWebhook = async (webhookId: number, storeId: string) => {
+    if (isDeletingWebhook) return;
+    
     try {
+      setIsDeletingWebhook(true);
       let baseUrl = store.url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
         baseUrl = `https://${baseUrl}`;
       }
 
+      console.log('Deleting webhook from WooCommerce:', webhookId);
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
         {
@@ -161,22 +166,29 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to delete webhook');
+        console.error('WooCommerce webhook delete response:', await response.text());
+        throw new Error('Failed to delete webhook from WooCommerce');
       }
 
+      console.log('Deleting webhook from Supabase');
       const { error } = await supabase
         .from('webhooks')
         .delete()
         .eq('webhook_id', webhookId)
         .eq('store_id', storeId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw error;
+      }
 
-      toast.success('Webhook deleted');
+      toast.success('Webhook deleted successfully');
       refetchWebhooks();
     } catch (error) {
       console.error('Error deleting webhook:', error);
       toast.error('Failed to delete webhook');
+    } finally {
+      setIsDeletingWebhook(false);
     }
   };
 
@@ -266,8 +278,13 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteWebhook(webhook.webhook_id, webhook.store_id)}
+                        disabled={isDeletingWebhook}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        {isDeletingWebhook ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
