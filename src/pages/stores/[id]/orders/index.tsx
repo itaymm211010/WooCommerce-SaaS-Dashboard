@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -27,12 +26,31 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type SortField = 'woo_id' | 'customer_name' | 'total' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 type OrderStatus = 'pending' | 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'refunded' | 'failed';
 
 const orderStatuses: OrderStatus[] = ['pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed'];
+
+interface OrderStatusLog {
+  id: string;
+  store_id: string;
+  order_id: number;
+  old_status: OrderStatus;
+  new_status: OrderStatus;
+  changed_by: string;
+  created_at: string;
+}
 
 export default function StoreOrdersPage() {
   const { id } = useParams();
@@ -41,6 +59,7 @@ export default function StoreOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [orderIdSearch, setOrderIdSearch] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
   const { data: orders, refetch } = useQuery({
     queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
@@ -85,6 +104,24 @@ export default function StoreOrdersPage() {
     enabled: !!id
   });
 
+  const { data: statusLogs } = useQuery({
+    queryKey: ['orderStatusLogs', id, selectedOrderId],
+    queryFn: async () => {
+      if (!id || !selectedOrderId) return [];
+      
+      const { data, error } = await supabase
+        .from('order_status_logs')
+        .select('*')
+        .eq('store_id', id)
+        .eq('order_id', selectedOrderId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as OrderStatusLog[];
+    },
+    enabled: !!id && !!selectedOrderId
+  });
+
   const sortOrders = (field: SortField) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -94,7 +131,7 @@ export default function StoreOrdersPage() {
     }
   };
 
-  const updateOrderStatus = async (orderId: number, newStatus: OrderStatus) => {
+  const updateOrderStatus = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
     try {
       if (!store?.url || !store?.api_key || !store?.api_secret) {
         toast.error('Missing store configuration');
@@ -123,13 +160,26 @@ export default function StoreOrdersPage() {
       }
 
       // עדכון בסיס הנתונים המקומי
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('store_id', id)
         .eq('woo_id', orderId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // הוספת רשומה לטבלת הלוג
+      const { error: logError } = await supabase
+        .from('order_status_logs')
+        .insert({
+          store_id: id,
+          order_id: orderId,
+          old_status: oldStatus,
+          new_status: newStatus,
+          changed_by: 'Dashboard UI'
+        });
+
+      if (logError) throw logError;
 
       toast.success(`Order #${orderId} status updated to ${newStatus}`);
       refetch();
@@ -339,7 +389,7 @@ export default function StoreOrdersPage() {
                   <TableCell>
                     <Select
                       defaultValue={order.status}
-                      onValueChange={(value: OrderStatus) => updateOrderStatus(order.woo_id, value)}
+                      onValueChange={(value: OrderStatus) => updateOrderStatus(order.woo_id, value, order.status)}
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue />
@@ -354,7 +404,51 @@ export default function StoreOrdersPage() {
                     </Select>
                   </TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedOrderId(order.woo_id)}
+                        >
+                          View History
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Order #{order.woo_id} Status History</DialogTitle>
+                          <DialogDescription>
+                            A complete history of status changes for this order.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <ScrollArea className="h-[300px] rounded-md border p-4">
+                          {statusLogs?.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">
+                              No status changes recorded yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-4">
+                              {statusLogs?.map((log) => (
+                                <div key={log.id} className="flex justify-between items-center border-b pb-2">
+                                  <div>
+                                    <p className="font-medium">
+                                      {log.old_status} → {log.new_status}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Changed by: {log.changed_by}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(log.created_at).toLocaleString()}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
                     <Button variant="ghost" size="sm" asChild>
                       <Link to={`/stores/${id}/orders/${order.woo_id}`}>
                         View Details
