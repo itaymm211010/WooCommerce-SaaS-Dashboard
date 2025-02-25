@@ -14,7 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 
-const globalNavigation = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  needsStore?: boolean;
+}
+
+const globalNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Orders", href: "/stores", icon: ShoppingCart, needsStore: true },
   { name: "Products", href: "/stores", icon: Package, needsStore: true },
@@ -22,7 +29,7 @@ const globalNavigation = [
   { name: "Stores", href: "/stores", icon: Store },
 ];
 
-const storeNavigation = [
+const storeNavigation: NavigationItem[] = [
   { name: "Products", href: "/stores/:id/products", icon: Package },
   { name: "Orders", href: "/stores/:id/orders", icon: ShoppingCart },
   { name: "Analytics", href: "/stores/:id/analytics", icon: BarChart },
@@ -91,7 +98,8 @@ export const Sidebar = () => {
   const { id } = useParams();
   const [open, setOpen] = useState(false);
   
-  const isInStore = location.pathname.includes('/stores/') && id;
+  // הפיכת הבדיקה לboolean מפורש
+  const isInStore = Boolean(location.pathname.includes('/stores/') && id);
 
   const sidebarContent = (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
