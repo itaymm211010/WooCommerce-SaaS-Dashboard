@@ -1,10 +1,14 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, Eye, Package, ShoppingCart } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { Store } from "@/types/database";
-import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -14,15 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Trash2, Eye, Package, ShoppingCart, Settings2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Store } from "@/types/database";
+import { Link } from "react-router-dom";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,8 +36,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export default function StoresPage() {
@@ -46,6 +62,7 @@ export default function StoresPage() {
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
+  const [webhookEndpoint, setWebhookEndpoint] = useState("");
 
   const { data: stores, refetch } = useQuery({
     queryKey: ['stores'],
@@ -56,6 +73,20 @@ export default function StoresPage() {
     }
   });
 
+  const { data: webhooks, refetch: refetchWebhooks } = useQuery({
+    queryKey: ['webhooks', selectedStore?.id],
+    queryFn: async () => {
+      if (!selectedStore?.id) return [];
+      const { data, error } = await supabase
+        .from('webhooks')
+        .select('*')
+        .eq('store_id', selectedStore.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedStore?.id
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -64,7 +95,7 @@ export default function StoresPage() {
         url,
         api_key: apiKey,
         api_secret: apiSecret,
-        user_id: '0244961a-6c5f-4f54-89a9-0c0555286e6e' // This should be replaced with the actual user ID from auth
+        user_id: '0244961a-6c5f-4f54-89a9-0c0555286e6e' // יש להחליף עם ה-ID האמיתי של המשתמש
       });
 
       if (error) throw error;
@@ -72,7 +103,7 @@ export default function StoresPage() {
       toast.success("Store added successfully");
       setIsOpen(false);
       refetch();
-      // Reset form
+      // איפוס הטופס
       setName("");
       setUrl("");
       setApiKey("");
@@ -110,6 +141,145 @@ export default function StoresPage() {
   const handleViewDetails = (store: Store) => {
     setSelectedStore(store);
     setIsDetailsOpen(true);
+  };
+
+  const createWebhook = async () => {
+    try {
+      if (!selectedStore || !webhookEndpoint) return;
+
+      let baseUrl = selectedStore.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${selectedStore.api_key}&consumer_secret=${selectedStore.api_secret}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'Order Status Update',
+            topic: 'order.updated',
+            delivery_url: webhookEndpoint,
+            status: 'active'
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to create webhook: ${errorData.message || 'Unknown error'}`);
+      }
+
+      const webhook = await response.json();
+
+      const { error } = await supabase
+        .from('webhooks')
+        .insert({
+          store_id: selectedStore.id,
+          webhook_id: webhook.id,
+          topic: webhook.topic,
+          status: webhook.status
+        });
+
+      if (error) throw error;
+
+      toast.success("Webhook created successfully");
+      refetchWebhooks();
+      setWebhookEndpoint("");
+    } catch (error) {
+      console.error('Error creating webhook:', error);
+      toast.error(`Failed to create webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const toggleWebhookStatus = async (webhookId: number, storeId: string, currentStatus: string) => {
+    try {
+      const store = stores?.find(s => s.id === storeId);
+      if (!store) throw new Error('Store not found');
+
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            status: newStatus
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update webhook status');
+      }
+
+      const { error } = await supabase
+        .from('webhooks')
+        .update({ status: newStatus })
+        .eq('webhook_id', webhookId)
+        .eq('store_id', storeId);
+
+      if (error) throw error;
+
+      toast.success(`Webhook ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
+      refetchWebhooks();
+    } catch (error) {
+      console.error('Error toggling webhook status:', error);
+      toast.error('Failed to update webhook status');
+    }
+  };
+
+  const deleteWebhook = async (webhookId: number, storeId: string) => {
+    try {
+      const store = stores?.find(s => s.id === storeId);
+      if (!store) throw new Error('Store not found');
+
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to delete webhook');
+      }
+
+      const { error } = await supabase
+        .from('webhooks')
+        .delete()
+        .eq('webhook_id', webhookId)
+        .eq('store_id', storeId);
+
+      if (error) throw error;
+
+      toast.success('Webhook deleted');
+      refetchWebhooks();
+    } catch (error) {
+      console.error('Error deleting webhook:', error);
+      toast.error('Failed to delete webhook');
+    }
   };
 
   return (
@@ -207,6 +377,93 @@ export default function StoresPage() {
                 <TableCell>{new Date(store.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSelectedStore(store)}
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="w-[400px] sm:w-[540px]">
+                        <SheetHeader>
+                          <SheetTitle>Store Settings - {store.name}</SheetTitle>
+                          <SheetDescription>
+                            Manage your store webhooks and settings
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="mt-6 space-y-6">
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Webhooks</h3>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Add New Webhook</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={webhookEndpoint}
+                                    onChange={(e) => setWebhookEndpoint(e.target.value)}
+                                    placeholder="Enter webhook endpoint URL"
+                                  />
+                                  <Button onClick={createWebhook}>Add</Button>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Active Webhooks</Label>
+                                <div className="rounded-md border">
+                                  {webhooks && webhooks.length > 0 ? (
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Topic</TableHead>
+                                          <TableHead>Status</TableHead>
+                                          <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {webhooks.map((webhook) => (
+                                          <TableRow key={webhook.webhook_id}>
+                                            <TableCell>{webhook.topic}</TableCell>
+                                            <TableCell>
+                                              <Select
+                                                value={webhook.status}
+                                                onValueChange={(value) => toggleWebhookStatus(webhook.webhook_id, webhook.store_id, value)}
+                                              >
+                                                <SelectTrigger className="w-[100px]">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="active">Active</SelectItem>
+                                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => deleteWebhook(webhook.webhook_id, webhook.store_id)}
+                                              >
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  ) : (
+                                    <div className="p-4 text-center text-sm text-muted-foreground">
+                                      No webhooks configured
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
                     <Button
                       variant="ghost"
                       size="icon"
