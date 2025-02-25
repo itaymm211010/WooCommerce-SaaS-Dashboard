@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +22,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -31,6 +40,7 @@ export default function StoresPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -72,16 +82,23 @@ export default function StoresPage() {
     }
   };
 
-  const handleDelete = async (storeId: string) => {
+  const handleDelete = async (store: Store) => {
+    setStoreToDelete(store);
+  };
+
+  const confirmDelete = async () => {
+    if (!storeToDelete) return;
+
     try {
       const { error } = await supabase
         .from('stores')
         .delete()
-        .eq('id', storeId);
+        .eq('id', storeToDelete.id);
 
       if (error) throw error;
 
       toast.success("Store removed successfully");
+      setStoreToDelete(null);
       refetch();
     } catch (error) {
       toast.error("Failed to remove store");
@@ -199,7 +216,7 @@ export default function StoresPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(store.id)}
+                      onClick={() => handleDelete(store)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -254,6 +271,23 @@ export default function StoresPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!storeToDelete} onOpenChange={(open) => !open && setStoreToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the store "{storeToDelete?.name}" and remove all its data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete Store
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Shell>
   );
