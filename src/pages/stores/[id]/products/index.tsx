@@ -111,13 +111,16 @@ export default function StoreProductsPage() {
       
       console.log(`Fetched ${wooProducts.length} products from WooCommerce`);
       
-      const productsToInsert = wooProducts.map((product: any) => ({
-        store_id: id,
-        woo_id: product.id,
-        name: product.name,
-        price: product.price,
-        stock_quantity: product.stock_quantity,
-        status: product.status
+      const productsToInsert = wooProducts
+        .filter(product => product)
+        .map((product: any) => ({
+          store_id: id,
+          woo_id: product.id,
+          name: product.name,
+          // אם המחיר ריק או לא מספרי, נשתמש ב-0
+          price: product.price ? parseFloat(product.price) || 0 : 0,
+          stock_quantity: product.stock_quantity,
+          status: product.status
       }));
 
       const { error } = await supabase
