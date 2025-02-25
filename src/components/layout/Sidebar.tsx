@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -9,7 +9,7 @@ import {
   BarChart
 } from "lucide-react";
 
-const navigation = [
+const globalNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Products", href: "/products", icon: Package },
@@ -17,8 +17,26 @@ const navigation = [
   { name: "Stores", href: "/stores", icon: Store },
 ];
 
+const storeNavigation = [
+  { name: "Products", href: "/stores/:id/products", icon: Package },
+  { name: "Orders", href: "/stores/:id/orders", icon: ShoppingCart },
+  { name: "Analytics", href: "/stores/:id/analytics", icon: BarChart },
+];
+
 export const Sidebar = () => {
   const location = useLocation();
+  const { id } = useParams();
+  
+  // בודק אם אנחנו בתוך חנות ספציפית
+  const isInStore = location.pathname.includes('/stores/') && id;
+  
+  // בוחר את התפריט המתאים בהתאם למיקום
+  const navigation = isInStore 
+    ? storeNavigation.map(item => ({
+        ...item,
+        href: item.href.replace(':id', id!)
+      }))
+    : globalNavigation;
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
@@ -28,6 +46,17 @@ export const Sidebar = () => {
         </div>
         <nav className="flex flex-1 flex-col">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
+            {isInStore && (
+              <li>
+                <Link
+                  to="/stores"
+                  className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Store className="mr-2 h-4 w-4" />
+                  Back to Stores
+                </Link>
+              </li>
+            )}
             <li>
               <ul role="list" className="-mx-2 space-y-1">
                 {navigation.map((item) => {

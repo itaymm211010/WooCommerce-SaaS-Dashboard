@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -17,9 +16,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [autoSync, setAutoSync] = useState(false);
 
   const { data: products, refetch } = useQuery({
     queryKey: ['products', id],
@@ -32,7 +34,7 @@ export default function StoreProductsPage() {
         .eq('store_id', id);
       
       if (error) throw error;
-      console.log('Products data:', data); // Debug log
+      console.log('Products data:', data);
       return data as Product[];
     },
     enabled: !!id
@@ -57,19 +59,17 @@ export default function StoreProductsPage() {
 
   const syncProducts = async () => {
     try {
-      // בדיקה שיש לנו את כל הפרטים הנדרשים
+      setIsSyncing(true);
+      
       if (!store?.url || !store?.api_key || !store?.api_secret) {
         toast.error('Missing store configuration. Please check your store URL and API credentials.');
         return;
       }
 
-      // מנקה את ה-URL במידת הצורך
       const baseUrl = store.url.replace(/\/+$/, '');
       
-      // טוען את המוצרים מה-API של WooCommerce
-      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products`, {
+      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
-          'Authorization': 'Basic ' + btoa(`${store.api_key}:${store.api_secret}`),
           'Content-Type': 'application/json'
         }
       });
@@ -86,7 +86,6 @@ export default function StoreProductsPage() {
         throw new Error('Invalid response from WooCommerce API');
       }
       
-      // ממיר את המוצרים לפורמט של הדאטאבייס שלנו
       const productsToInsert = wooProducts.map((product: any) => ({
         store_id: id,
         woo_id: product.id,
@@ -96,7 +95,6 @@ export default function StoreProductsPage() {
         status: product.status
       }));
 
-      // מוסיף את המוצרים לדאטאבייס
       const { error } = await supabase
         .from('products')
         .upsert(productsToInsert, { onConflict: 'store_id,woo_id' });
@@ -104,7 +102,7 @@ export default function StoreProductsPage() {
       if (error) throw error;
 
       toast.success('Products synced successfully');
-      refetch(); // מרענן את הטבלה
+      refetch();
     } catch (error) {
       console.error('Error syncing products:', error);
       if (error instanceof Error) {
@@ -112,8 +110,20 @@ export default function StoreProductsPage() {
       } else {
         toast.error('Failed to sync products: Unknown error occurred');
       }
+    } finally {
+      setIsSyncing(false);
     }
   };
+
+  useEffect(() => {
+    if (!autoSync) return;
+    
+    const interval = setInterval(() => {
+      syncProducts();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [autoSync, store]);
 
   return (
     <Shell>
@@ -132,10 +142,29 @@ export default function StoreProductsPage() {
               Manage your store products
             </p>
           </div>
-          <Button onClick={syncProducts} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Sync Products
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setAutoSync(!autoSync)}
+              className={cn(
+                "gap-2",
+                autoSync && "bg-accent"
+              )}
+            >
+              Auto Sync {autoSync ? 'ON' : 'OFF'}
+            </Button>
+            <Button 
+              onClick={syncProducts} 
+              className="gap-2" 
+              disabled={isSyncing}
+            >
+              <RefreshCw className={cn(
+                "h-4 w-4",
+                isSyncing && "animate-spin"
+              )} />
+              {isSyncing ? 'Syncing...' : 'Sync Products'}
+            </Button>
+          </div>
         </div>
 
         <Table>
