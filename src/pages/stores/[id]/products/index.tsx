@@ -60,8 +60,18 @@ export default function StoreProductsPage() {
   });
 
   const getProductPrice = (product: any) => {
-    // אם זה מוצר משתנה (variable), אין לו מחיר ישיר
-    if (product.type === 'variable') {
+    // אם זה מוצר משתנה (variable), נקבל את טווח המחירים מהוריאציות
+    if (product.type === 'variable' && product.variations && product.variations.length > 0) {
+      const prices = product.variations.map((variation: any) => {
+        return parseFloat(variation.regular_price || variation.price || 0);
+      }).filter((price: number) => price > 0);
+
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        // אם יש טווח מחירים, נחזיר את המינימום
+        return minPrice;
+      }
       return null;
     }
 
@@ -77,6 +87,13 @@ export default function StoreProductsPage() {
 
     // אם אין מחיר בכלל
     return null;
+  };
+
+  const formatPrice = (price: number | null, productType: string) => {
+    if (price === null) {
+      return productType === 'variable' ? 'Variable Product' : 'N/A';
+    }
+    return `$${price}`;
   };
 
   const syncProducts = async () => {
@@ -105,17 +122,14 @@ export default function StoreProductsPage() {
         const errorText = await response.text();
         console.error('WooCommerce API Error:', errorText);
         
-        // בדיקה אם יש בעיית CORS
         if (response.status === 0) {
           throw new Error('CORS error - Please make sure your WooCommerce site allows external connections');
         }
         
-        // בדיקה אם יש בעיית אותנטיקציה
         if (response.status === 401) {
           throw new Error('Authentication failed - Please check your API credentials');
         }
         
-        // בדיקה אם החנות לא נגישה
         if (response.status === 404) {
           throw new Error('Store not found - Please check your store URL');
         }
@@ -131,7 +145,31 @@ export default function StoreProductsPage() {
       
       console.log(`Fetched ${wooProducts.length} products from WooCommerce`);
       
-      const productsToInsert = wooProducts
+      // נקבל את הוריאציות עבור כל מוצר משתנה
+      const productsWithVariations = await Promise.all(wooProducts.map(async (product) => {
+        if (product.type === 'variable') {
+          try {
+            const variationsResponse = await fetch(
+              `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            if (variationsResponse.ok) {
+              const variations = await variationsResponse.json();
+              return { ...product, variations };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch variations for product ${product.id}:`, error);
+          }
+        }
+        return product;
+      }));
+      
+      const productsToInsert = productsWithVariations
         .filter(product => product)
         .map((product: any) => ({
           store_id: id,
@@ -236,7 +274,7 @@ export default function StoreProductsPage() {
               products?.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>${product.price}</TableCell>
+                  <TableCell>{formatPrice(product.price, product.type)}</TableCell>
                   <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
                   <TableCell>{product.status}</TableCell>
                   <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>
