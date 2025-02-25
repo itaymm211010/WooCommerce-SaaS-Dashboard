@@ -59,6 +59,26 @@ export default function StoreProductsPage() {
     enabled: !!id
   });
 
+  const getProductPrice = (product: any) => {
+    // אם זה מוצר משתנה (variable), אין לו מחיר ישיר
+    if (product.type === 'variable') {
+      return null;
+    }
+
+    // עבור מוצר פשוט, נבדוק אם יש מחיר רגיל
+    if (product.regular_price) {
+      return parseFloat(product.regular_price);
+    }
+
+    // אם אין מחיר רגיל, ננסה את המחיר הרגיל
+    if (product.price) {
+      return parseFloat(product.price);
+    }
+
+    // אם אין מחיר בכלל
+    return null;
+  };
+
   const syncProducts = async () => {
     try {
       setIsSyncing(true);
@@ -117,8 +137,7 @@ export default function StoreProductsPage() {
           store_id: id,
           woo_id: product.id,
           name: product.name,
-          // אם המחיר ריק או לא מספרי, נשתמש ב-0
-          price: product.price ? parseFloat(product.price) || 0 : 0,
+          price: getProductPrice(product),
           stock_quantity: product.stock_quantity,
           status: product.status
       }));
