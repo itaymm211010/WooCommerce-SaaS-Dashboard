@@ -19,8 +19,23 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { ArrowLeft, ArrowUpDown, RefreshCw, Search } from "lucide-react";
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  ArrowLeft,
+  ArrowUpDown,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -60,6 +75,11 @@ export default function StoreOrdersPage() {
   const [orderIdSearch, setOrderIdSearch] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{
+    orderId: number;
+    newStatus: OrderStatus;
+    oldStatus: OrderStatus;
+  } | null>(null);
 
   const { data: orders, refetch } = useQuery({
     queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
@@ -131,6 +151,59 @@ export default function StoreOrdersPage() {
     }
   };
 
+  const setupWebhook = async () => {
+    try {
+      if (!store?.url || !store?.api_key || !store?.api_secret) {
+        toast.error('Missing store configuration');
+        return;
+      }
+
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'Order Status Update',
+            topic: 'order.updated',
+            delivery_url: `${window.location.origin}/api/webhook/woocommerce/order-status`,
+            secret: store.api_secret
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create webhook in WooCommerce');
+      }
+
+      const webhook = await response.json();
+
+      const { error } = await supabase
+        .from('webhooks')
+        .insert({
+          store_id: id,
+          webhook_id: webhook.id,
+          topic: 'order.updated',
+          status: 'active'
+        });
+
+      if (error) throw error;
+
+      toast.success('Successfully configured webhook for order status updates');
+    } catch (error) {
+      console.error('Error setting up webhook:', error);
+      toast.error('Failed to set up webhook');
+    }
+  };
+
   const updateOrderStatus = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
     try {
       if (!store?.url || !store?.api_key || !store?.api_secret) {
@@ -159,7 +232,6 @@ export default function StoreOrdersPage() {
         throw new Error('Failed to update order status in WooCommerce');
       }
 
-      // עדכון בסיס הנתונים המקומי
       const { error: updateError } = await supabase
         .from('orders')
         .update({ status: newStatus })
@@ -168,7 +240,6 @@ export default function StoreOrdersPage() {
 
       if (updateError) throw updateError;
 
-      // הוספת רשומה לטבלת הלוג
       const { error: logError } = await supabase
         .from('order_status_logs')
         .insert({
@@ -186,6 +257,8 @@ export default function StoreOrdersPage() {
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error('Failed to update order status');
+    } finally {
+      setPendingStatusUpdate(null);
     }
   };
 
@@ -283,17 +356,25 @@ export default function StoreOrdersPage() {
               Manage your store orders
             </p>
           </div>
-          <Button 
-            onClick={syncOrders} 
-            className="gap-2"
-            disabled={isSyncing}
-          >
-            <RefreshCw className={cn(
-              "h-4 w-4",
-              isSyncing && "animate-spin"
-            )} />
-            {isSyncing ? 'Syncing...' : 'Sync Orders'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={setupWebhook}
+              variant="outline"
+            >
+              Setup Webhook
+            </Button>
+            <Button 
+              onClick={syncOrders} 
+              className="gap-2"
+              disabled={isSyncing}
+            >
+              <RefreshCw className={cn(
+                "h-4 w-4",
+                isSyncing && "animate-spin"
+              )} />
+              {isSyncing ? 'Syncing...' : 'Sync Orders'}
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-4">
@@ -389,12 +470,13 @@ export default function StoreOrdersPage() {
                   <TableCell>
                     <Select
                       defaultValue={order.status}
-                      onValueChange={(value: OrderStatus) => 
-                        updateOrderStatus(
-                          order.woo_id, 
-                          value, 
-                          order.status as OrderStatus
-                        )}
+                      onValueChange={(value: OrderStatus) => {
+                        setPendingStatusUpdate({
+                          orderId: order.woo_id,
+                          newStatus: value,
+                          oldStatus: order.status as OrderStatus
+                        });
+                      }}
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue />
@@ -465,6 +547,38 @@ export default function StoreOrdersPage() {
             )}
           </TableBody>
         </Table>
+
+        <AlertDialog 
+          open={pendingStatusUpdate !== null}
+          onOpenChange={() => setPendingStatusUpdate(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Status Update</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to change order #{pendingStatusUpdate?.orderId} status from{' '}
+                <span className="font-medium">{pendingStatusUpdate?.oldStatus}</span> to{' '}
+                <span className="font-medium">{pendingStatusUpdate?.newStatus}</span>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (pendingStatusUpdate) {
+                    updateOrderStatus(
+                      pendingStatusUpdate.orderId,
+                      pendingStatusUpdate.newStatus,
+                      pendingStatusUpdate.oldStatus
+                    );
+                  }
+                }}
+              >
+                Update Status
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Shell>
   );
