@@ -389,7 +389,12 @@ export default function StoreOrdersPage() {
                   <TableCell>
                     <Select
                       defaultValue={order.status}
-                      onValueChange={(value: OrderStatus) => updateOrderStatus(order.woo_id, value, order.status)}
+                      onValueChange={(value: OrderStatus) => 
+                        updateOrderStatus(
+                          order.woo_id, 
+                          value, 
+                          order.status as OrderStatus
+                        )}
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue />
