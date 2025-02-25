@@ -1,3 +1,4 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -78,8 +79,13 @@ export default function StoreProductsPage() {
       
       const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        },
+        mode: 'cors'
       });
 
       if (!response.ok) {
@@ -87,7 +93,7 @@ export default function StoreProductsPage() {
         console.error('WooCommerce API Error:', errorText);
         
         if (response.status === 0) {
-          throw new Error('CORS error - Please make sure your WooCommerce site allows external connections');
+          throw new Error(`CORS error - Please make sure your WooCommerce site allows external connections. Add the following to your wp-config.php:\n\nheader("Access-Control-Allow-Origin: *");\nheader("Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST,PUT");\nheader("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");`);
         }
         
         if (response.status === 401) {
@@ -116,8 +122,13 @@ export default function StoreProductsPage() {
               `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
               {
                 headers: {
-                  'Content-Type': 'application/json'
-                }
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                },
+                mode: 'cors'
               }
             );
             
