@@ -62,6 +62,7 @@ export type Database = {
           status: string
           stock_quantity: number | null
           store_id: string
+          type: string | null
           updated_at: string
           woo_id: number
         }
@@ -73,6 +74,7 @@ export type Database = {
           status: string
           stock_quantity?: number | null
           store_id: string
+          type?: string | null
           updated_at?: string
           woo_id: number
         }
@@ -84,6 +86,7 @@ export type Database = {
           status?: string
           stock_quantity?: number | null
           store_id?: string
+          type?: string | null
           updated_at?: string
           woo_id?: number
         }
