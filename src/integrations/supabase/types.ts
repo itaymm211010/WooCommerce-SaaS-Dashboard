@@ -133,6 +133,44 @@ export type Database = {
         }
         Relationships: []
       }
+      webhooks: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          store_id: string
+          topic: string
+          updated_at: string
+          webhook_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          store_id: string
+          topic: string
+          updated_at?: string
+          webhook_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          store_id?: string
+          topic?: string
+          updated_at?: string
+          webhook_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

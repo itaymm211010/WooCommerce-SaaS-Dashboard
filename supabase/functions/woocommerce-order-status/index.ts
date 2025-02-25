@@ -21,7 +21,7 @@ serve(async (req) => {
     const body = await req.json()
     const { id, status } = body
 
-    // Find the store_id based on the order's woo_id
+    // מציאת ה-store_id על פי מזהה ההזמנה
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('store_id, status')
