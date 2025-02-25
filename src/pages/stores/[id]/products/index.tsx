@@ -1,3 +1,4 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -38,7 +39,7 @@ export default function StoreProductsPage() {
   const itemsPerPage = 10;
 
   const { data: products, refetch } = useQuery({
-    queryKey: ['products', id],
+    queryKey: ['products', id, sortField, sortDirection],
     queryFn: async () => {
       if (!id) throw new Error('No store ID provided');
       
