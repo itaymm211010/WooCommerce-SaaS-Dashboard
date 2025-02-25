@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import SignIn from "./pages/auth/SignIn";
 import NotFound from "./pages/NotFound";
+import StoresPage from "./pages/stores";
 
 const queryClient = new QueryClient();
 
@@ -64,7 +65,7 @@ const AppRoutes = () => (
       path="/stores"
       element={
         <PrivateRoute>
-          <Index />
+          <StoresPage />
         </PrivateRoute>
       }
     />
