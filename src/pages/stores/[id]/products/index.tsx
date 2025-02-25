@@ -3,58 +3,27 @@ import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Product } from "@/types/database";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowUpDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { ProductsTable } from "./components/ProductsTable";
+import { ProductsPagination } from "./components/ProductsPagination";
+import { useProducts, SortField, SortDirection } from "./hooks/useProducts";
+import { getProductPrice } from "./utils/productUtils";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
   const [isSyncing, setIsSyncing] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState<'name' | 'price' | 'stock_quantity' | 'status' | 'updated_at'>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const itemsPerPage = 10;
 
-  const { data: products, refetch } = useQuery({
-    queryKey: ['products', id, sortField, sortDirection],
-    queryFn: async () => {
-      if (!id) throw new Error('No store ID provided');
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', id)
-        .order(sortField, { ascending: sortDirection === 'asc' });
-      
-      if (error) throw error;
-      console.log('Products data:', data);
-      return data as Product[];
-    },
-    enabled: !!id
-  });
+  const { data: products, refetch } = useProducts(id, sortField, sortDirection);
 
   const { data: store } = useQuery({
     queryKey: ['store', id],
@@ -73,38 +42,7 @@ export default function StoreProductsPage() {
     enabled: !!id
   });
 
-  const getProductPrice = (product: any) => {
-    if (product.type === 'variable' && product.variations && product.variations.length > 0) {
-      const prices = product.variations.map((variation: any) => {
-        return parseFloat(variation.regular_price || variation.price || 0);
-      }).filter((price: number) => price > 0);
-
-      if (prices.length > 0) {
-        const minPrice = Math.min(...prices);
-        return minPrice;
-      }
-      return 0;
-    }
-
-    if (product.regular_price) {
-      return parseFloat(product.regular_price);
-    }
-
-    if (product.price) {
-      return parseFloat(product.price);
-    }
-
-    return 0;
-  };
-
-  const formatPrice = (price: number | null, productType: string) => {
-    if (price === 0 || price === null) {
-      return productType === 'variable' ? 'Variable Product' : 'N/A';
-    }
-    return `$${price}`;
-  };
-
-  const sortProducts = (field: typeof sortField) => {
+  const sortProducts = (field: SortField) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -279,114 +217,17 @@ export default function StoreProductsPage() {
           </div>
         </div>
 
-        <Table>
-          <TableCaption>A list of your store products.</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => sortProducts('name')}
-                  className="flex items-center gap-2"
-                >
-                  Name
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => sortProducts('price')}
-                  className="flex items-center gap-2"
-                >
-                  Price
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => sortProducts('stock_quantity')}
-                  className="flex items-center gap-2"
-                >
-                  Stock
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => sortProducts('status')}
-                  className="flex items-center gap-2"
-                >
-                  Status
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => sortProducts('updated_at')}
-                  className="flex items-center gap-2"
-                >
-                  Last Updated
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedProducts?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No products found. Click the Sync button to import products from WooCommerce.
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedProducts?.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{formatPrice(product.price, product.type || 'simple')}</TableCell>
-                  <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
-                  <TableCell>{product.status}</TableCell>
-                  <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <ProductsTable 
+          products={paginatedProducts}
+          sortField={sortField}
+          sortProducts={sortProducts}
+        />
 
-        {totalPages > 1 && (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className={cn("cursor-pointer", currentPage === 1 && "pointer-events-none opacity-50")} 
-                />
-              </PaginationItem>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink 
-                    onClick={() => handlePageChange(page)}
-                    isActive={currentPage === page}
-                    className="cursor-pointer"
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className={cn("cursor-pointer", currentPage === totalPages && "pointer-events-none opacity-50")} 
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
+        <ProductsPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     </Shell>
   );
