@@ -19,6 +19,18 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
   const [isCreatingWebhook, setIsCreatingWebhook] = useState(false);
   const [isDeletingWebhook, setIsDeletingWebhook] = useState(false);
 
+  const { data: webhooks, refetch: refetchWebhooks } = useQuery({
+    queryKey: ['webhooks', store.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('webhooks')
+        .select('*')
+        .eq('store_id', store.id);
+      if (error) throw error;
+      return data as Webhook[];
+    }
+  });
+
   useEffect(() => {
     const syncWebhooks = async () => {
       try {
@@ -84,7 +96,7 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
     syncWebhooks();
 
     return () => clearInterval(interval);
-  }, [store.id, store.url, store.api_key, store.api_secret]);
+  }, [store.id, store.url, store.api_key, store.api_secret, refetchWebhooks]);
 
   const getWebhookEndpoint = (storeId: string) => {
     return `https://wzpbsridzmqrcztafzip.functions.supabase.co/woocommerce-order-status?store_id=${storeId}`;
