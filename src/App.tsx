@@ -3,28 +3,86 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
+import SignIn from "./pages/auth/SignIn";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" />;
+  }
+
+  return children;
+}
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/signin" element={<SignIn />} />
+    <Route
+      path="/"
+      element={
+        <PrivateRoute>
+          <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/orders"
+      element={
+        <PrivateRoute>
+          <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/products"
+      element={
+        <PrivateRoute>
+          <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/analytics"
+      element={
+        <PrivateRoute>
+          <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/stores"
+      element={
+        <PrivateRoute>
+          <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/orders" element={<Index />} />
-          <Route path="/products" element={<Index />} />
-          <Route path="/analytics" element={<Index />} />
-          <Route path="/stores" element={<Index />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
