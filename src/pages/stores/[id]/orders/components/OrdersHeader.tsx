@@ -37,7 +37,7 @@ export function OrdersHeader({
           onClick={onSetupWebhook}
           variant="outline"
         >
-          Setup Webhook
+          Sync Webhooks
         </Button>
         <Button 
           onClick={onSyncOrders} 

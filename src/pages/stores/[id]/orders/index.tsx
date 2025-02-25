@@ -103,51 +103,59 @@ export default function StoreOrdersPage() {
         baseUrl = `https://${baseUrl}`;
       }
 
-      const webhookUrl = new URL('/api/webhook/woocommerce/order-status', window.location.origin);
-
-      console.log('Setting up webhook with URL:', webhookUrl.toString());
-
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
         {
-          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            name: 'Order Status Update',
-            topic: 'order.updated',
-            delivery_url: webhookUrl.toString(),
-            secret: store.api_secret
-          })
+          }
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error('WooCommerce webhook error:', errorData);
-        throw new Error(`Failed to create webhook in WooCommerce: ${errorData.message || 'Unknown error'}`);
+        throw new Error(`Failed to fetch webhooks from WooCommerce: ${errorData.message || 'Unknown error'}`);
       }
 
-      const webhook = await response.json();
-      console.log('Webhook created:', webhook);
+      const webhooks = await response.json();
+      console.log('Existing webhooks:', webhooks);
 
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('webhooks')
-        .insert({
+        .delete()
+        .eq('store_id', id);
+
+      if (deleteError) {
+        console.error('Error deleting existing webhooks:', deleteError);
+        throw deleteError;
+      }
+
+      const webhooksToInsert = webhooks
+        .filter((webhook: any) => webhook.status === 'active')
+        .map((webhook: any) => ({
           store_id: id,
           webhook_id: webhook.id,
-          topic: 'order.updated',
-          status: 'active'
-        });
+          topic: webhook.topic,
+          status: webhook.status
+        }));
 
-      if (error) throw error;
+      if (webhooksToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('webhooks')
+          .insert(webhooksToInsert);
 
-      toast.success('Successfully configured webhook for order status updates');
+        if (insertError) {
+          console.error('Error inserting webhooks:', insertError);
+          throw insertError;
+        }
+      }
+
+      toast.success(`Successfully synced ${webhooksToInsert.length} webhooks from WooCommerce`);
     } catch (error) {
-      console.error('Error setting up webhook:', error);
-      toast.error(`Failed to set up webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error syncing webhooks:', error);
+      toast.error(`Failed to sync webhooks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
