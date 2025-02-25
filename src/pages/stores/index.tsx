@@ -1,3 +1,4 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -628,3 +629,4 @@ export default function StoresPage() {
     </Shell>
   );
 }
+
