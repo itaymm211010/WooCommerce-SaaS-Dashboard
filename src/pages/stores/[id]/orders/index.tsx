@@ -14,22 +14,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, RefreshCw, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+
+type SortField = 'woo_id' | 'customer_name' | 'total' | 'status' | 'created_at';
+type SortDirection = 'asc' | 'desc';
 
 export default function StoreOrdersPage() {
   const { id } = useParams();
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [orderIdSearch, setOrderIdSearch] = useState('');
 
   const { data: orders, refetch } = useQuery({
-    queryKey: ['orders', id],
+    queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
     queryFn: async () => {
       if (!id) throw new Error('No store ID provided');
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select('*')
         .eq('store_id', id);
+
+      if (searchQuery) {
+        query = query.ilike('customer_name', `%${searchQuery}%`);
+      }
+
+      if (orderIdSearch) {
+        query = query.eq('woo_id', orderIdSearch);
+      }
+      
+      const { data, error } = await query.order(sortField, { ascending: sortDirection === 'asc' });
       
       if (error) throw error;
       return data as Order[];
@@ -53,6 +73,15 @@ export default function StoreOrdersPage() {
     },
     enabled: !!id
   });
+
+  const sortOrders = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
 
   const syncOrders = async () => {
     try {
@@ -138,7 +167,9 @@ export default function StoreOrdersPage() {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {store?.name ? `${store.name} - Orders` : 'Orders'}
+            </h1>
             <p className="text-muted-foreground">
               Manage your store orders
             </p>
@@ -149,15 +180,80 @@ export default function StoreOrdersPage() {
           </Button>
         </div>
 
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by customer name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <div className="relative w-[200px]">
+            <Input
+              placeholder="Order ID"
+              value={orderIdSearch}
+              onChange={(e) => setOrderIdSearch(e.target.value)}
+              type="number"
+            />
+          </div>
+        </div>
+
         <Table>
           <TableCaption>A list of your store orders.</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortOrders('woo_id')}
+                  className="flex items-center gap-2"
+                >
+                  Order ID
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortOrders('customer_name')}
+                  className="flex items-center gap-2"
+                >
+                  Customer
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortOrders('total')}
+                  className="flex items-center gap-2"
+                >
+                  Total
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortOrders('status')}
+                  className="flex items-center gap-2"
+                >
+                  Status
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => sortOrders('created_at')}
+                  className="flex items-center gap-2"
+                >
+                  Date
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

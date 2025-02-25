@@ -1,10 +1,9 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -13,6 +12,7 @@ import { ProductsTable } from "./components/ProductsTable";
 import { ProductsPagination } from "./components/ProductsPagination";
 import { useProducts, SortField, SortDirection } from "./hooks/useProducts";
 import { getProductPrice } from "./utils/productUtils";
+import { Input } from "@/components/ui/input";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
@@ -21,9 +21,10 @@ export default function StoreProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
 
-  const { data: products, refetch } = useProducts(id, sortField, sortDirection);
+  const { data: products, refetch } = useProducts(id, sortField, sortDirection, searchQuery);
 
   const { data: store } = useQuery({
     queryKey: ['store', id],
@@ -215,6 +216,16 @@ export default function StoreProductsPage() {
               {isSyncing ? 'Syncing...' : 'Sync Products'}
             </Button>
           </div>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
         </div>
 
         <ProductsTable 

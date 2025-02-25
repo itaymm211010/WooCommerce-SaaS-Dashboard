@@ -9,18 +9,24 @@ export type SortDirection = 'asc' | 'desc';
 export const useProducts = (
   storeId: string | undefined,
   sortField: SortField,
-  sortDirection: SortDirection
+  sortDirection: SortDirection,
+  searchQuery: string = ''
 ) => {
   return useQuery({
-    queryKey: ['products', storeId, sortField, sortDirection],
+    queryKey: ['products', storeId, sortField, sortDirection, searchQuery],
     queryFn: async () => {
       if (!storeId) throw new Error('No store ID provided');
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
         .select('*')
-        .eq('store_id', storeId)
-        .order(sortField, { ascending: sortDirection === 'asc' });
+        .eq('store_id', storeId);
+
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+      
+      const { data, error } = await query.order(sortField, { ascending: sortDirection === 'asc' });
       
       if (error) throw error;
       console.log('Products data:', data);
