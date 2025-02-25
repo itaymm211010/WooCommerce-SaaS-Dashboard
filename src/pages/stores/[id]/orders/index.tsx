@@ -1,3 +1,4 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -90,74 +91,6 @@ export default function StoreOrdersPage() {
     },
     enabled: !!id && !!selectedOrderId
   });
-
-  const setupWebhook = async () => {
-    try {
-      if (!store?.url || !store?.api_key || !store?.api_secret) {
-        toast.error('Missing store configuration');
-        return;
-      }
-
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
-
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          }
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('WooCommerce webhook error:', errorData);
-        throw new Error(`Failed to fetch webhooks from WooCommerce: ${errorData.message || 'Unknown error'}`);
-      }
-
-      const webhooks = await response.json();
-      console.log('Existing webhooks:', webhooks);
-
-      const { error: deleteError } = await supabase
-        .from('webhooks')
-        .delete()
-        .eq('store_id', id);
-
-      if (deleteError) {
-        console.error('Error deleting existing webhooks:', deleteError);
-        throw deleteError;
-      }
-
-      const webhooksToInsert = webhooks
-        .filter((webhook: any) => webhook.status === 'active')
-        .map((webhook: any) => ({
-          store_id: id,
-          webhook_id: webhook.id,
-          topic: webhook.topic,
-          status: webhook.status
-        }));
-
-      if (webhooksToInsert.length > 0) {
-        const { error: insertError } = await supabase
-          .from('webhooks')
-          .insert(webhooksToInsert);
-
-        if (insertError) {
-          console.error('Error inserting webhooks:', insertError);
-          throw insertError;
-        }
-      }
-
-      toast.success(`Successfully synced ${webhooksToInsert.length} webhooks from WooCommerce`);
-    } catch (error) {
-      console.error('Error syncing webhooks:', error);
-      toast.error(`Failed to sync webhooks: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
   const updateOrderStatus = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
     try {
@@ -291,7 +224,6 @@ export default function StoreOrdersPage() {
           storeName={store?.name}
           isSyncing={isSyncing}
           onSyncOrders={syncOrders}
-          onSetupWebhook={setupWebhook}
         />
 
         <OrdersFilters
