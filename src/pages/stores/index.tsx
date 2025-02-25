@@ -62,6 +62,14 @@ export default function StoresPage() {
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
   const [webhookEndpoint, setWebhookEndpoint] = useState("");
+  const [selectedWebhookType, setSelectedWebhookType] = useState<string>('order.updated');
+
+  const webhookTypes = [
+    { value: 'order.updated', label: 'Order Status Update', description: 'Get notified when an order status changes' },
+    { value: 'order.created', label: 'New Order', description: 'Get notified when a new order is created' },
+    { value: 'product.updated', label: 'Product Update', description: 'Get notified when a product is updated' },
+    { value: 'product.created', label: 'New Product', description: 'Get notified when a new product is created' },
+  ];
 
   const { data: stores, refetch } = useQuery({
     queryKey: ['stores'],
@@ -102,7 +110,6 @@ export default function StoresPage() {
       toast.success("Store added successfully");
       setIsOpen(false);
       refetch();
-      // איפוס הטופס
       setName("");
       setUrl("");
       setApiKey("");
@@ -144,12 +151,17 @@ export default function StoresPage() {
 
   const createWebhook = async () => {
     try {
-      if (!selectedStore || !webhookEndpoint) return;
+      if (!selectedStore || !selectedWebhookType) return;
+
+      const endpoint = getWebhookEndpoint(selectedStore.id);
 
       let baseUrl = selectedStore.url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
         baseUrl = `https://${baseUrl}`;
       }
+
+      const selectedType = webhookTypes.find(type => type.value === selectedWebhookType);
+      if (!selectedType) return;
 
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${selectedStore.api_key}&consumer_secret=${selectedStore.api_secret}`,
@@ -160,9 +172,9 @@ export default function StoresPage() {
             'Accept': 'application/json',
           },
           body: JSON.stringify({
-            name: 'Order Status Update',
-            topic: 'order.updated',
-            delivery_url: webhookEndpoint,
+            name: `Lovable - ${selectedType.label}`,
+            topic: selectedWebhookType,
+            delivery_url: endpoint,
             status: 'active'
           })
         }
@@ -188,7 +200,7 @@ export default function StoresPage() {
 
       toast.success("Webhook created successfully");
       refetchWebhooks();
-      setWebhookEndpoint("");
+      setSelectedWebhookType('order.updated'); // Reset to default
     } catch (error) {
       console.error('Error creating webhook:', error);
       toast.error(`Failed to create webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -405,22 +417,37 @@ export default function StoresPage() {
                                 <Label>Add New Webhook</Label>
                                 <div className="space-y-4">
                                   <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-                                    <p>The webhook endpoint URL is automatically set to our secure endpoint that handles WooCommerce order status updates.</p>
+                                    <p>Select the type of webhook you want to create. The webhook endpoint URL will be automatically set to our secure endpoint.</p>
                                     <p className="mt-2 break-all font-mono text-xs">
                                       {selectedStore && getWebhookEndpoint(selectedStore.id)}
                                     </p>
                                   </div>
-                                  <Button 
-                                    onClick={() => {
-                                      if (selectedStore) {
-                                        setWebhookEndpoint(getWebhookEndpoint(selectedStore.id));
-                                        createWebhook();
-                                      }
-                                    }}
-                                    className="w-full"
-                                  >
-                                    Add Webhook
-                                  </Button>
+                                  <div className="space-y-4">
+                                    <Select
+                                      value={selectedWebhookType}
+                                      onValueChange={setSelectedWebhookType}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select webhook type" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {webhookTypes.map((type) => (
+                                          <SelectItem key={type.value} value={type.value}>
+                                            <div className="space-y-1">
+                                              <div>{type.label}</div>
+                                              <div className="text-xs text-muted-foreground">{type.description}</div>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Button 
+                                      onClick={createWebhook}
+                                      className="w-full"
+                                    >
+                                      Add Webhook
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                               <div className="space-y-2">
@@ -438,7 +465,9 @@ export default function StoresPage() {
                                       <TableBody>
                                         {webhooks.map((webhook) => (
                                           <TableRow key={webhook.webhook_id}>
-                                            <TableCell>{webhook.topic}</TableCell>
+                                            <TableCell>
+                                              {webhookTypes.find(type => type.value === webhook.topic)?.label || webhook.topic}
+                                            </TableCell>
                                             <TableCell>
                                               <Select
                                                 value={webhook.status}
