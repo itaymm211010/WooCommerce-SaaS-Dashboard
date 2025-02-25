@@ -7,36 +7,76 @@ import {
   CardHeader,
   CardTitle 
 } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, Users, Package, ShoppingCart } from "lucide-react";
-
-const stats = [
-  {
-    name: "Total Revenue",
-    value: "$45,231.89",
-    description: "+20.1% from last month",
-    icon: TrendingUp
-  },
-  {
-    name: "Orders",
-    value: "2,345",
-    description: "150 pending orders",
-    icon: ShoppingCart
-  },
-  {
-    name: "Products",
-    value: "12,234",
-    description: "321 out of stock",
-    icon: Package
-  },
-  {
-    name: "Active Customers",
-    value: "573",
-    description: "+201 this week",
-    icon: Users
-  }
-];
+import { supabase } from "@/lib/supabase";
 
 const Index = () => {
+  const { data: stores } = useQuery({
+    queryKey: ['stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('stores').select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: products } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('products').select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: orders } = useQuery({
+    queryKey: ['orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('orders').select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Calculate total revenue from orders
+  const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
+  
+  // Calculate number of pending orders
+  const pendingOrders = orders?.filter(order => order.status === 'pending').length || 0;
+  
+  // Calculate out of stock products
+  const outOfStock = products?.filter(product => 
+    product.stock_quantity !== null && product.stock_quantity <= 0
+  ).length || 0;
+
+  const stats = [
+    {
+      name: "Total Revenue",
+      value: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      description: `${pendingOrders} pending orders`,
+      icon: TrendingUp
+    },
+    {
+      name: "Orders",
+      value: orders?.length.toString() || "0",
+      description: `${pendingOrders} pending orders`,
+      icon: ShoppingCart
+    },
+    {
+      name: "Products",
+      value: products?.length.toString() || "0",
+      description: `${outOfStock} out of stock`,
+      icon: Package
+    },
+    {
+      name: "Stores",
+      value: stores?.length.toString() || "0",
+      description: "Connected WooCommerce stores",
+      icon: Users
+    }
+  ];
+
   return (
     <Shell>
       <div className="space-y-8">
