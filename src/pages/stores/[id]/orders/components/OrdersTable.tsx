@@ -1,0 +1,166 @@
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowUpDown } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Order } from "@/types/database";
+import { OrderStatus, SortDirection, SortField, orderStatuses } from "../types";
+import { StatusHistory } from "./StatusHistory";
+import { OrderStatusLog } from "../types";
+
+interface OrdersTableProps {
+  orders: Order[];
+  storeId: string;
+  sortField: SortField;
+  sortDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  onStatusChange: (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => void;
+  selectedOrderId: number | null;
+  onSelectOrder: (orderId: number) => void;
+  statusLogs: OrderStatusLog[];
+}
+
+export function OrdersTable({
+  orders,
+  storeId,
+  sortField,
+  sortDirection,
+  onSort,
+  onStatusChange,
+  selectedOrderId,
+  onSelectOrder,
+  statusLogs,
+}: OrdersTableProps) {
+  if (orders.length === 0) {
+    return (
+      <TableRow>
+        <TableCell colSpan={6} className="text-center text-muted-foreground">
+          No orders found. Click the Sync button to import orders from WooCommerce.
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <Button 
+      variant="ghost" 
+      onClick={() => onSort(field)}
+      className="flex items-center gap-2"
+    >
+      {children}
+      <ArrowUpDown className="h-4 w-4" />
+    </Button>
+  );
+
+  return (
+    <Table>
+      <TableCaption>A list of your store orders.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead>
+            <SortButton field="woo_id">Order ID</SortButton>
+          </TableHead>
+          <TableHead>
+            <SortButton field="customer_name">Customer</SortButton>
+          </TableHead>
+          <TableHead>
+            <SortButton field="total">Total</SortButton>
+          </TableHead>
+          <TableHead>
+            <SortButton field="status">Status</SortButton>
+          </TableHead>
+          <TableHead>
+            <SortButton field="created_at">Date</SortButton>
+          </TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {orders.map((order) => (
+          <TableRow key={order.id}>
+            <TableCell className="font-medium">{order.woo_id}</TableCell>
+            <TableCell>{order.customer_name}</TableCell>
+            <TableCell>${order.total}</TableCell>
+            <TableCell>
+              <Select
+                defaultValue={order.status}
+                onValueChange={(value: OrderStatus) => {
+                  onStatusChange(
+                    order.woo_id,
+                    value,
+                    order.status as OrderStatus
+                  );
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {orderStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+            <TableCell className="text-right space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => onSelectOrder(order.woo_id)}
+                  >
+                    View History
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Order #{order.woo_id} Status History</DialogTitle>
+                    <DialogDescription>
+                      A complete history of status changes for this order.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="h-[300px] rounded-md border p-4">
+                    <StatusHistory logs={statusLogs} />
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={`/stores/${storeId}/orders/${order.woo_id}`}>
+                  View Details
+                </Link>
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
