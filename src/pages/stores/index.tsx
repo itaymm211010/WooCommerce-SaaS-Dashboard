@@ -2,7 +2,7 @@
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Store } from "@/types/database";
 import {
@@ -29,6 +29,8 @@ import { toast } from "sonner";
 
 export default function StoresPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -68,6 +70,28 @@ export default function StoresPage() {
       toast.error("Failed to add store");
       console.error('Error adding store:', error);
     }
+  };
+
+  const handleDelete = async (storeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .delete()
+        .eq('id', storeId);
+
+      if (error) throw error;
+
+      toast.success("Store removed successfully");
+      refetch();
+    } catch (error) {
+      toast.error("Failed to remove store");
+      console.error('Error removing store:', error);
+    }
+  };
+
+  const handleViewDetails = (store: Store) => {
+    setSelectedStore(store);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -153,6 +177,7 @@ export default function StoresPage() {
               <TableHead>URL</TableHead>
               <TableHead>API Key</TableHead>
               <TableHead>Added</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -162,10 +187,73 @@ export default function StoresPage() {
                 <TableCell>{store.url}</TableCell>
                 <TableCell>{store.api_key.slice(0, 8)}...</TableCell>
                 <TableCell>{new Date(store.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDetails(store)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(store.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Store Details</DialogTitle>
+              <DialogDescription>
+                Complete information about your WooCommerce store.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedStore && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Store Name</Label>
+                  <div className="rounded-md border p-2">{selectedStore.name}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Store URL</Label>
+                  <div className="rounded-md border p-2">
+                    <a href={selectedStore.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      {selectedStore.url}
+                    </a>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <div className="rounded-md border p-2 font-mono text-sm">
+                    {selectedStore.api_key}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>API Secret</Label>
+                  <div className="rounded-md border p-2 font-mono text-sm">
+                    {selectedStore.api_secret}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Created At</Label>
+                  <div className="rounded-md border p-2">
+                    {new Date(selectedStore.created_at).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Shell>
   );
