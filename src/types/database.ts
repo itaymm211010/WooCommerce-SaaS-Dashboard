@@ -15,9 +15,10 @@ export interface Product {
   store_id: string;
   woo_id: number;
   name: string;
-  price: number;
+  price: number | null;
   stock_quantity: number | null;
   status: string;
+  type: string;
   created_at: string;
   updated_at: string;
 }

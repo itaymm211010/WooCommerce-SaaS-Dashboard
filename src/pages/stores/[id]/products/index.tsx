@@ -177,7 +177,8 @@ export default function StoreProductsPage() {
           name: product.name,
           price: getProductPrice(product),
           stock_quantity: product.stock_quantity,
-          status: product.status
+          status: product.status,
+          type: product.type // הוספנו את שדה ה-type
       }));
 
       const { error } = await supabase
