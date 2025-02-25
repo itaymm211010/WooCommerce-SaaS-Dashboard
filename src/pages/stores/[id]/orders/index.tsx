@@ -14,6 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { ArrowLeft, ArrowUpDown, RefreshCw, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -23,6 +30,9 @@ import { Input } from "@/components/ui/input";
 
 type SortField = 'woo_id' | 'customer_name' | 'total' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
+type OrderStatus = 'pending' | 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'refunded' | 'failed';
+
+const orderStatuses: OrderStatus[] = ['pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed'];
 
 export default function StoreOrdersPage() {
   const { id } = useParams();
@@ -30,6 +40,7 @@ export default function StoreOrdersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderIdSearch, setOrderIdSearch] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { data: orders, refetch } = useQuery({
     queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
@@ -83,23 +94,69 @@ export default function StoreOrdersPage() {
     }
   };
 
-  const syncOrders = async () => {
+  const updateOrderStatus = async (orderId: number, newStatus: OrderStatus) => {
     try {
       if (!store?.url || !store?.api_key || !store?.api_secret) {
-        toast.error('Missing store configuration. Please check your store URL and API credentials.');
+        toast.error('Missing store configuration');
         return;
       }
 
-      // מנקה את ה-URL ומוודא שהוא מתחיל ב-https או http
       let baseUrl = store.url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
         baseUrl = `https://${baseUrl}`;
       }
 
-      // מוסיף פרמטרים לקבלת כל ההזמנות (עד 100 בכל בקשה)
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/orders/${orderId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status in WooCommerce');
+      }
+
+      // עדכון בסיס הנתונים המקומי
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('store_id', id)
+        .eq('woo_id', orderId);
+
+      if (error) throw error;
+
+      toast.success(`Order #${orderId} status updated to ${newStatus}`);
+      refetch();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    }
+  };
+
+  const syncOrders = async () => {
+    try {
+      setIsSyncing(true);
+      
+      if (!store?.url || !store?.api_key || !store?.api_secret) {
+        toast.error('Missing store configuration. Please check your store URL and API credentials.');
+        return;
+      }
+
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+      
       const response = await fetch(`${baseUrl}/wp-json/wc/v3/orders?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         }
       });
 
@@ -154,6 +211,8 @@ export default function StoreOrdersPage() {
       } else {
         toast.error('Failed to sync orders: Unknown error occurred');
       }
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -174,9 +233,16 @@ export default function StoreOrdersPage() {
               Manage your store orders
             </p>
           </div>
-          <Button onClick={syncOrders} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Sync Orders
+          <Button 
+            onClick={syncOrders} 
+            className="gap-2"
+            disabled={isSyncing}
+          >
+            <RefreshCw className={cn(
+              "h-4 w-4",
+              isSyncing && "animate-spin"
+            )} />
+            {isSyncing ? 'Syncing...' : 'Sync Orders'}
           </Button>
         </div>
 
@@ -254,12 +320,13 @@ export default function StoreOrdersPage() {
                   <ArrowUpDown className="h-4 w-4" />
                 </Button>
               </TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   No orders found. Click the Sync button to import orders from WooCommerce.
                 </TableCell>
               </TableRow>
@@ -269,8 +336,31 @@ export default function StoreOrdersPage() {
                   <TableCell className="font-medium">{order.woo_id}</TableCell>
                   <TableCell>{order.customer_name}</TableCell>
                   <TableCell>${order.total}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  <TableCell>
+                    <Select
+                      defaultValue={order.status}
+                      onValueChange={(value: OrderStatus) => updateOrderStatus(order.woo_id, value)}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {orderStatuses.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/stores/${id}/orders/${order.woo_id}`}>
+                        View Details
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
