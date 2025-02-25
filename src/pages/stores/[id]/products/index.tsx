@@ -57,18 +57,34 @@ export default function StoreProductsPage() {
 
   const syncProducts = async () => {
     try {
+      // בדיקה שיש לנו את כל הפרטים הנדרשים
+      if (!store?.url || !store?.api_key || !store?.api_secret) {
+        toast.error('Missing store configuration. Please check your store URL and API credentials.');
+        return;
+      }
+
+      // מנקה את ה-URL במידת הצורך
+      const baseUrl = store.url.replace(/\/+$/, '');
+      
       // טוען את המוצרים מה-API של WooCommerce
-      const response = await fetch(`${store?.url}/wp-json/wc/v3/products`, {
+      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products`, {
         headers: {
-          'Authorization': 'Basic ' + btoa(`${store?.api_key}:${store?.api_secret}`)
+          'Authorization': 'Basic ' + btoa(`${store.api_key}:${store.api_secret}`),
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch products from WooCommerce');
+        const errorText = await response.text();
+        console.error('WooCommerce API Error:', errorText);
+        throw new Error(`WooCommerce API error: ${response.status} ${response.statusText}`);
       }
 
       const wooProducts = await response.json();
+      
+      if (!Array.isArray(wooProducts)) {
+        throw new Error('Invalid response from WooCommerce API');
+      }
       
       // ממיר את המוצרים לפורמט של הדאטאבייס שלנו
       const productsToInsert = wooProducts.map((product: any) => ({
@@ -91,7 +107,11 @@ export default function StoreProductsPage() {
       refetch(); // מרענן את הטבלה
     } catch (error) {
       console.error('Error syncing products:', error);
-      toast.error('Failed to sync products');
+      if (error instanceof Error) {
+        toast.error(`Failed to sync products: ${error.message}`);
+      } else {
+        toast.error('Failed to sync products: Unknown error occurred');
+      }
     }
   };
 
@@ -105,7 +125,9 @@ export default function StoreProductsPage() {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {store?.name ? `${store.name} - Products` : 'Products'}
+            </h1>
             <p className="text-muted-foreground">
               Manage your store products
             </p>
