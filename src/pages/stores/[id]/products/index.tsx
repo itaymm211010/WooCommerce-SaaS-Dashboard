@@ -68,11 +68,9 @@ export default function StoreProductsPage() {
 
       if (prices.length > 0) {
         const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        // אם יש טווח מחירים, נחזיר את המינימום
         return minPrice;
       }
-      return null;
+      return 0; // שינינו מ-null ל-0
     }
 
     // עבור מוצר פשוט, נבדוק אם יש מחיר רגיל
@@ -86,11 +84,11 @@ export default function StoreProductsPage() {
     }
 
     // אם אין מחיר בכלל
-    return null;
+    return 0; // שינינו מ-null ל-0
   };
 
   const formatPrice = (price: number | null, productType: string) => {
-    if (price === null) {
+    if (price === 0 || price === null) {
       return productType === 'variable' ? 'Variable Product' : 'N/A';
     }
     return `$${price}`;
@@ -178,8 +176,10 @@ export default function StoreProductsPage() {
           price: getProductPrice(product),
           stock_quantity: product.stock_quantity,
           status: product.status,
-          type: product.type // הוספנו את שדה ה-type
+          type: product.type
       }));
+
+      console.log('Products to insert:', productsToInsert);
 
       const { error } = await supabase
         .from('products')
@@ -275,7 +275,7 @@ export default function StoreProductsPage() {
               products?.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{formatPrice(product.price, product.type)}</TableCell>
+                  <TableCell>{formatPrice(product.price, product.type || 'simple')}</TableCell>
                   <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
                   <TableCell>{product.status}</TableCell>
                   <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>
