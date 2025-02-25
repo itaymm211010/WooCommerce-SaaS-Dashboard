@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function StoresPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,6 +64,7 @@ export default function StoresPage() {
   const [apiSecret, setApiSecret] = useState("");
   const [webhookEndpoint, setWebhookEndpoint] = useState("");
   const [selectedWebhookType, setSelectedWebhookType] = useState<string>('order.updated');
+  const [isCreatingWebhook, setIsCreatingWebhook] = useState(false);
 
   const webhookTypes = [
     { value: 'order.updated', label: 'Order Status Update', description: 'Get notified when an order status changes' },
@@ -153,6 +155,13 @@ export default function StoresPage() {
     try {
       if (!selectedStore || !selectedWebhookType) return;
 
+      const existingWebhook = webhooks?.find(webhook => webhook.topic === selectedWebhookType);
+      if (existingWebhook) {
+        toast.error("A webhook of this type already exists");
+        return;
+      }
+
+      setIsCreatingWebhook(true);
       const endpoint = getWebhookEndpoint(selectedStore.id);
 
       let baseUrl = selectedStore.url.replace(/\/+$/, '');
@@ -200,10 +209,12 @@ export default function StoresPage() {
 
       toast.success("Webhook created successfully");
       refetchWebhooks();
-      setSelectedWebhookType('order.updated'); // Reset to default
+      setSelectedWebhookType('order.updated');
     } catch (error) {
       console.error('Error creating webhook:', error);
       toast.error(`Failed to create webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsCreatingWebhook(false);
     }
   };
 
@@ -217,7 +228,7 @@ export default function StoresPage() {
         baseUrl = `https://${baseUrl}`;
       }
 
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const newStatus = currentStatus === 'active' ? 'paused' : 'active';
 
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
@@ -431,21 +442,31 @@ export default function StoresPage() {
                                         <SelectValue placeholder="Select webhook type" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {webhookTypes.map((type) => (
-                                          <SelectItem key={type.value} value={type.value}>
-                                            <div className="space-y-1">
-                                              <div>{type.label}</div>
-                                              <div className="text-xs text-muted-foreground">{type.description}</div>
-                                            </div>
-                                          </SelectItem>
-                                        ))}
+                                        {webhookTypes
+                                          .filter(type => !webhooks?.some(webhook => webhook.topic === type.value))
+                                          .map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                              <div className="space-y-1">
+                                                <div>{type.label}</div>
+                                                <div className="text-xs text-muted-foreground">{type.description}</div>
+                                              </div>
+                                            </SelectItem>
+                                          ))}
                                       </SelectContent>
                                     </Select>
                                     <Button 
                                       onClick={createWebhook}
                                       className="w-full"
+                                      disabled={isCreatingWebhook || !selectedWebhookType}
                                     >
-                                      Add Webhook
+                                      {isCreatingWebhook ? (
+                                        <>
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          Creating Webhook...
+                                        </>
+                                      ) : (
+                                        'Add Webhook'
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -471,14 +492,14 @@ export default function StoresPage() {
                                             <TableCell>
                                               <Select
                                                 value={webhook.status}
-                                                onValueChange={(value) => toggleWebhookStatus(webhook.webhook_id, webhook.store_id, value)}
+                                                onValueChange={(value) => toggleWebhookStatus(webhook.webhook_id, webhook.store_id, webhook.status)}
                                               >
                                                 <SelectTrigger className="w-[100px]">
                                                   <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                   <SelectItem value="active">Active</SelectItem>
-                                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                                  <SelectItem value="paused">Paused</SelectItem>
                                                 </SelectContent>
                                               </Select>
                                             </TableCell>
