@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +6,7 @@ import { Store } from "@/types/database";
 import { Webhook, WebhookType, webhookTypes } from "@/types/webhook";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
@@ -20,17 +19,72 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
   const [isCreatingWebhook, setIsCreatingWebhook] = useState(false);
   const [isDeletingWebhook, setIsDeletingWebhook] = useState(false);
 
-  const { data: webhooks, refetch: refetchWebhooks } = useQuery({
-    queryKey: ['webhooks', store.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webhooks')
-        .select('*')
-        .eq('store_id', store.id);
-      if (error) throw error;
-      return data as Webhook[];
-    }
-  });
+  useEffect(() => {
+    const syncWebhooks = async () => {
+      try {
+        let baseUrl = store.url.replace(/\/+$/, '');
+        if (!baseUrl.startsWith('http')) {
+          baseUrl = `https://${baseUrl}`;
+        }
+
+        const response = await fetch(
+          `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+            }
+          }
+        );
+
+        if (!response.ok) {
+          console.error('Failed to fetch webhooks from WooCommerce');
+          return;
+        }
+
+        const wooWebhooks = await response.json();
+
+        const { data: localWebhooks, error: fetchError } = await supabase
+          .from('webhooks')
+          .select('*')
+          .eq('store_id', store.id);
+
+        if (fetchError) {
+          console.error('Failed to fetch webhooks from Supabase:', fetchError);
+          return;
+        }
+
+        for (const localWebhook of localWebhooks || []) {
+          const wooWebhook = wooWebhooks.find((w: any) => w.id === localWebhook.webhook_id);
+          
+          if (!wooWebhook) {
+            await supabase
+              .from('webhooks')
+              .delete()
+              .eq('webhook_id', localWebhook.webhook_id)
+              .eq('store_id', store.id);
+            continue;
+          }
+
+          if (wooWebhook.status !== localWebhook.status) {
+            await supabase
+              .from('webhooks')
+              .update({ status: wooWebhook.status })
+              .eq('webhook_id', localWebhook.webhook_id)
+              .eq('store_id', store.id);
+          }
+        }
+
+        refetchWebhooks();
+      } catch (error) {
+        console.error('Error syncing webhooks:', error);
+      }
+    };
+
+    const interval = setInterval(syncWebhooks, 60000);
+    syncWebhooks();
+
+    return () => clearInterval(interval);
+  }, [store.id, store.url, store.api_key, store.api_secret]);
 
   const getWebhookEndpoint = (storeId: string) => {
     return `https://wzpbsridzmqrcztafzip.functions.supabase.co/woocommerce-order-status?store_id=${storeId}`;
@@ -155,13 +209,18 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
       }
 
       console.log('Deleting webhook from WooCommerce:', webhookId);
+      
       const response = await fetch(
         `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
         {
-          method: 'DELETE',
+          method: 'PUT',
           headers: {
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
-          }
+          },
+          body: JSON.stringify({
+            status: 'deleted'
+          })
         }
       );
 
