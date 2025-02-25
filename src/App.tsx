@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import SignIn from "./pages/auth/SignIn";
 import NotFound from "./pages/NotFound";
 import StoresPage from "./pages/stores";
+import StoreProductsPage from "./pages/stores/[id]/products";
+import StoreOrdersPage from "./pages/stores/[id]/orders";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,22 @@ const AppRoutes = () => (
       element={
         <PrivateRoute>
           <StoresPage />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/stores/:id/products"
+      element={
+        <PrivateRoute>
+          <StoreProductsPage />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/stores/:id/orders"
+      element={
+        <PrivateRoute>
+          <StoreOrdersPage />
         </PrivateRoute>
       }
     />

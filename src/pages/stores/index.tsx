@@ -1,9 +1,10 @@
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { Plus, Trash2, Eye, Package, ShoppingCart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Store } from "@/types/database";
+import { Link } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -266,6 +267,20 @@ export default function StoresPage() {
                   <div className="rounded-md border p-2">
                     {new Date(selectedStore.created_at).toLocaleString()}
                   </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <Link to={`/stores/${selectedStore.id}/products`} className="flex-1">
+                    <Button className="w-full" variant="outline">
+                      <Package className="mr-2 h-4 w-4" />
+                      Products
+                    </Button>
+                  </Link>
+                  <Link to={`/stores/${selectedStore.id}/orders`} className="flex-1">
+                    <Button className="w-full" variant="outline">
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Orders
+                    </Button>
+                  </Link>
                 </div>
               </div>
             )}
