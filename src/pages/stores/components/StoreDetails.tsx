@@ -9,6 +9,12 @@ interface StoreDetailsProps {
   store: Store;
 }
 
+const currencyLabels: Record<string, string> = {
+  GBP: "British Pound (£)",
+  USD: "US Dollar ($)",
+  EUR: "Euro (€)",
+};
+
 export function StoreDetails({ store }: StoreDetailsProps) {
   return (
     <div className="space-y-4">
@@ -34,6 +40,12 @@ export function StoreDetails({ store }: StoreDetailsProps) {
         <Label>API Secret</Label>
         <div className="rounded-md border p-2 font-mono text-sm">
           {store.api_secret}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Currency</Label>
+        <div className="rounded-md border p-2">
+          {currencyLabels[store.currency] || store.currency}
         </div>
       </div>
       <div className="space-y-2">

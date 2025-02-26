@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
+  const [currency, setCurrency] = useState("GBP");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +27,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
         url,
         api_key: apiKey,
         api_secret: apiSecret,
+        currency,
         user_id: '0244961a-6c5f-4f54-89a9-0c0555286e6e'
       });
 
@@ -81,6 +84,19 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
           placeholder="cs_xxxxxxxxxxxxxxxxxxxx"
           required
         />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="currency">Currency</Label>
+        <Select value={currency} onValueChange={setCurrency}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="GBP">British Pound (£)</SelectItem>
+            <SelectItem value="USD">US Dollar ($)</SelectItem>
+            <SelectItem value="EUR">Euro (€)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <Button type="submit" className="w-full">
         Add Store

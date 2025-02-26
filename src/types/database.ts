@@ -6,6 +6,7 @@ export interface Store {
   api_key: string;
   api_secret: string;
   user_id: string;
+  currency: string;
   created_at: string;
   updated_at: string;
 }

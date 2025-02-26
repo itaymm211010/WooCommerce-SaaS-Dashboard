@@ -105,6 +105,7 @@ export type Database = {
           api_key: string
           api_secret: string
           created_at: string
+          currency: string
           id: string
           name: string
           updated_at: string
@@ -115,6 +116,7 @@ export type Database = {
           api_key: string
           api_secret: string
           created_at?: string
+          currency?: string
           id?: string
           name: string
           updated_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           api_key?: string
           api_secret?: string
           created_at?: string
+          currency?: string
           id?: string
           name?: string
           updated_at?: string
