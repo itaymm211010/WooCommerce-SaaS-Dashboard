@@ -36,6 +36,16 @@ export interface Order {
   updated_at: string;
 }
 
+export interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  role: 'admin' | 'user';
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -53,6 +63,11 @@ export interface Database {
         Row: Order;
         Insert: Omit<Order, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Order, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      profiles: {
+        Row: Profile;
+        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
   };
