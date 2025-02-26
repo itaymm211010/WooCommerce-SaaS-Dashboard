@@ -8,7 +8,8 @@ import {
   Store,
   BarChart,
   Menu,
-  X
+  X,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -27,6 +28,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "Products", href: "/stores", icon: Package, needsStore: true },
   { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Stores", href: "/stores", icon: Store },
+  { name: "Profile", href: "/profile", icon: User },
 ];
 
 const storeNavigation: NavigationItem[] = [
