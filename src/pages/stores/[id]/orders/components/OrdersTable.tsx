@@ -109,23 +109,23 @@ export function OrdersTable({
   const MobileView = () => (
     <div className="space-y-4 md:hidden">
       {orders.map((order) => (
-        <Card key={order.id} className="relative">
+        <Card key={order.id}>
           <CardContent className="pt-6">
-            <div className="absolute top-4 right-4">
-              <StatusBadge status={order.status} />
-            </div>
             <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">Order #{order.woo_id}</p>
+                <StatusBadge status={order.status} />
+              </div>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-medium">Order #{order.woo_id}</p>
                   <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </p>
                 </div>
                 <p className="text-lg font-semibold">${order.total}</p>
               </div>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  {new Date(order.created_at).toLocaleDateString()}
-                </p>
                 <Select
                   defaultValue={order.status}
                   onValueChange={(value: OrderStatus) => {
@@ -171,7 +171,7 @@ export function OrdersTable({
                     </DialogContent>
                   </Dialog>
                   <Button variant="secondary" className="flex-1" asChild>
-                    <Link to={`/stores/${storeId}/orders/${order.woo_id}`}>
+                    <Link to={`/stores/${storeId}/orders/${order.woo_id}/details`}>
                       View Details
                     </Link>
                   </Button>
@@ -266,7 +266,7 @@ export function OrdersTable({
                   </DialogContent>
                 </Dialog>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to={`/stores/${storeId}/orders/${order.woo_id}`}>
+                  <Link to={`/stores/${storeId}/orders/${order.woo_id}/details`}>
                     View Details
                   </Link>
                 </Button>
