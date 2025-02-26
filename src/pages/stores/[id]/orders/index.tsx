@@ -1,8 +1,8 @@
+
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Order } from "@/types/database";
 import { toast } from "sonner";
 import { useState } from "react";
 import { OrdersHeader } from "./components/OrdersHeader";
@@ -10,6 +10,10 @@ import { OrdersFilters } from "./components/OrdersFilters";
 import { OrdersTable } from "./components/OrdersTable";
 import { OrderStatus, SortDirection, SortField, StatusUpdateRequest } from "./types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreAccess } from "./hooks/useStoreAccess";
+import { useOrders } from "./hooks/useOrders";
+import { useStatusLogs } from "./hooks/useStatusLogs";
+import { updateOrderStatus } from "./services/orderService";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,53 +36,9 @@ export default function StoreOrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [pendingStatusUpdate, setPendingStatusUpdate] = useState<StatusUpdateRequest | null>(null);
 
-  const { data: userHasAccess } = useQuery({
-    queryKey: ['storeAccess', id, user?.id],
-    queryFn: async () => {
-      if (!id || !user?.id) return false;
-      
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error checking store access:', error);
-        return false;
-      }
-      
-      return !!data;
-    },
-    enabled: !!id && !!user?.id
-  });
-
-  const { data: orders, refetch } = useQuery({
-    queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
-    queryFn: async () => {
-      if (!id || !userHasAccess) throw new Error('Unauthorized');
-      
-      let query = supabase
-        .from('orders')
-        .select('*')
-        .eq('store_id', id);
-
-      if (searchQuery) {
-        query = query.ilike('customer_name', `%${searchQuery}%`);
-      }
-
-      if (orderIdSearch) {
-        query = query.eq('woo_id', orderIdSearch);
-      }
-      
-      const { data, error } = await query.order(sortField, { ascending: sortDirection === 'asc' });
-      
-      if (error) throw error;
-      return data as Order[];
-    },
-    enabled: !!id && !!userHasAccess
-  });
+  const { data: userHasAccess } = useStoreAccess(id, user?.id);
+  const { data: orders, refetch } = useOrders(id, !!userHasAccess, sortField, sortDirection, searchQuery, orderIdSearch);
+  const { data: statusLogs, refetch: refetchLogs } = useStatusLogs(id, selectedOrderId, !!userHasAccess);
 
   const { data: store } = useQuery({
     queryKey: ['store', id],
@@ -97,25 +57,7 @@ export default function StoreOrdersPage() {
     enabled: !!id
   });
 
-  const { data: statusLogs, refetch: refetchLogs } = useQuery({
-    queryKey: ['orderStatusLogs', id, selectedOrderId],
-    queryFn: async () => {
-      if (!id || !selectedOrderId || !userHasAccess) return [];
-      
-      const { data, error } = await supabase
-        .from('order_status_logs')
-        .select('*')
-        .eq('store_id', id)
-        .eq('order_id', selectedOrderId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id && !!selectedOrderId && !!userHasAccess
-  });
-
-  const updateOrderStatus = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
+  const handleStatusUpdate = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
     try {
       if (!userHasAccess) {
         toast.error('Unauthorized: You do not have access to this store');
@@ -127,46 +69,14 @@ export default function StoreOrdersPage() {
         return;
       }
 
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
-
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/orders/${orderId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ status: newStatus })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to update order status in WooCommerce');
-      }
-
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('store_id', id)
-        .eq('woo_id', orderId);
-
-      if (updateError) throw updateError;
-
-      const { error: logError } = await supabase
-        .from('order_status_logs')
-        .insert({
-          store_id: id,
-          order_id: orderId,
-          old_status: oldStatus,
-          new_status: newStatus,
-          changed_by: user?.email || 'Unknown'
-        });
-
-      if (logError) throw logError;
+      await updateOrderStatus({
+        store,
+        storeId: id!,
+        orderId,
+        newStatus,
+        oldStatus,
+        userEmail: user?.email || ''
+      });
 
       toast.success(`Order #${orderId} status updated to ${newStatus}`);
       refetch();
@@ -308,7 +218,7 @@ export default function StoreOrdersPage() {
               <AlertDialogAction
                 onClick={() => {
                   if (pendingStatusUpdate) {
-                    updateOrderStatus(
+                    handleStatusUpdate(
                       pendingStatusUpdate.orderId,
                       pendingStatusUpdate.newStatus,
                       pendingStatusUpdate.oldStatus
