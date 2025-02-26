@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import StoresPage from "./pages/stores";
 import StoreProductsPage from "./pages/stores/[id]/products";
 import StoreOrdersPage from "./pages/stores/[id]/orders";
+import ProfilePage from "./pages/profile/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,14 @@ const AppRoutes = () => (
       element={
         <PrivateRoute>
           <Index />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/profile"
+      element={
+        <PrivateRoute>
+          <ProfilePage />
         </PrivateRoute>
       }
     />
