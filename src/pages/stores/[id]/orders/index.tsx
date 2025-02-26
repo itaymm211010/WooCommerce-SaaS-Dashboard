@@ -1,4 +1,3 @@
-
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +9,7 @@ import { OrdersHeader } from "./components/OrdersHeader";
 import { OrdersFilters } from "./components/OrdersFilters";
 import { OrdersTable } from "./components/OrdersTable";
 import { OrderStatus, SortDirection, SortField, StatusUpdateRequest } from "./types";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,7 @@ import {
 
 export default function StoreOrdersPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,10 +32,32 @@ export default function StoreOrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [pendingStatusUpdate, setPendingStatusUpdate] = useState<StatusUpdateRequest | null>(null);
 
+  const { data: userHasAccess } = useQuery({
+    queryKey: ['storeAccess', id, user?.id],
+    queryFn: async () => {
+      if (!id || !user?.id) return false;
+      
+      const { data, error } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error checking store access:', error);
+        return false;
+      }
+      
+      return !!data;
+    },
+    enabled: !!id && !!user?.id
+  });
+
   const { data: orders, refetch } = useQuery({
     queryKey: ['orders', id, sortField, sortDirection, searchQuery, orderIdSearch],
     queryFn: async () => {
-      if (!id) throw new Error('No store ID provided');
+      if (!id || !userHasAccess) throw new Error('Unauthorized');
       
       let query = supabase
         .from('orders')
@@ -54,7 +77,7 @@ export default function StoreOrdersPage() {
       if (error) throw error;
       return data as Order[];
     },
-    enabled: !!id
+    enabled: !!id && !!userHasAccess
   });
 
   const { data: store } = useQuery({
@@ -77,7 +100,7 @@ export default function StoreOrdersPage() {
   const { data: statusLogs, refetch: refetchLogs } = useQuery({
     queryKey: ['orderStatusLogs', id, selectedOrderId],
     queryFn: async () => {
-      if (!id || !selectedOrderId) return [];
+      if (!id || !selectedOrderId || !userHasAccess) return [];
       
       const { data, error } = await supabase
         .from('order_status_logs')
@@ -89,11 +112,16 @@ export default function StoreOrdersPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!selectedOrderId
+    enabled: !!id && !!selectedOrderId && !!userHasAccess
   });
 
   const updateOrderStatus = async (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
     try {
+      if (!userHasAccess) {
+        toast.error('Unauthorized: You do not have access to this store');
+        return;
+      }
+
       if (!store?.url || !store?.api_key || !store?.api_secret) {
         toast.error('Missing store configuration');
         return;
@@ -135,7 +163,7 @@ export default function StoreOrdersPage() {
           order_id: orderId,
           old_status: oldStatus,
           new_status: newStatus,
-          changed_by: 'Dashboard UI'
+          changed_by: user?.email || 'Unknown'
         });
 
       if (logError) throw logError;
@@ -216,6 +244,19 @@ export default function StoreOrdersPage() {
       setSortDirection('desc');
     }
   };
+
+  if (!userHasAccess) {
+    return (
+      <Shell>
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground">You do not have access to this store.</p>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
 
   return (
     <Shell>

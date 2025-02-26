@@ -4,6 +4,8 @@ import { OrderStatus, SortDirection, SortField } from "../types";
 import { OrderStatusLog } from "../types";
 import { MobileOrderCard } from "./MobileOrderCard";
 import { DesktopOrdersTable } from "./DesktopOrdersTable";
+import { toast } from "sonner";
+import { useCallback } from "react";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -17,6 +19,18 @@ interface OrdersTableProps {
   statusLogs: OrderStatusLog[];
 }
 
+const allowedStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
+  'pending': ['processing', 'on-hold', 'cancelled'],
+  'processing': ['completed', 'on-hold', 'cancelled'],
+  'on-hold': ['processing', 'cancelled'],
+  'completed': ['processing', 'refunded'],
+  'cancelled': ['processing'],
+  'refunded': ['processing'],
+  'failed': ['pending', 'processing']
+};
+
+const RATE_LIMIT_DELAY = 1000; // 1 second delay between status updates
+
 export function OrdersTable({
   orders,
   storeId,
@@ -28,6 +42,35 @@ export function OrdersTable({
   onSelectOrder,
   statusLogs,
 }: OrdersTableProps) {
+  const validateStatusChange = (currentStatus: OrderStatus, newStatus: OrderStatus): boolean => {
+    const allowedTransitions = allowedStatusTransitions[currentStatus];
+    if (!allowedTransitions?.includes(newStatus)) {
+      toast.error(`Cannot change status from ${currentStatus} to ${newStatus}`);
+      return false;
+    }
+    return true;
+  };
+
+  const lastUpdateTime = useCallback(() => {
+    const time = localStorage.getItem('lastStatusUpdate');
+    return time ? parseInt(time, 10) : 0;
+  }, []);
+
+  const handleStatusChange = useCallback((orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => {
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastUpdateTime();
+    
+    if (timeSinceLastUpdate < RATE_LIMIT_DELAY) {
+      toast.error(`Please wait ${Math.ceil((RATE_LIMIT_DELAY - timeSinceLastUpdate) / 1000)} seconds before updating again`);
+      return;
+    }
+
+    if (validateStatusChange(oldStatus, newStatus)) {
+      localStorage.setItem('lastStatusUpdate', now.toString());
+      onStatusChange(orderId, newStatus, oldStatus);
+    }
+  }, [onStatusChange]);
+
   if (orders.length === 0) {
     return (
       <div className="text-center text-muted-foreground p-4">
@@ -44,7 +87,7 @@ export function OrdersTable({
             key={order.id}
             order={order}
             storeId={storeId}
-            onStatusChange={onStatusChange}
+            onStatusChange={handleStatusChange}
             onSelectOrder={onSelectOrder}
             statusLogs={statusLogs}
           />
@@ -55,7 +98,7 @@ export function OrdersTable({
         storeId={storeId}
         sortField={sortField}
         onSort={onSort}
-        onStatusChange={onStatusChange}
+        onStatusChange={handleStatusChange}
         onSelectOrder={onSelectOrder}
         statusLogs={statusLogs}
       />
