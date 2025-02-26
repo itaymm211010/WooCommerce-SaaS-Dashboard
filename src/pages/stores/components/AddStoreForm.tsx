@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface AddStoreFormProps {
   onSuccess: () => void;
@@ -17,17 +17,49 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
-  const [currency, setCurrency] = useState("GBP");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
+      // נקה את הURL מ-slashes בסוף
+      let baseUrl = url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      // קבל את הגדרות החנות מווקומרס
+      const storeResponse = await fetch(
+        `${baseUrl}/wp-json/wc/v3/settings/general?consumer_key=${apiKey}&consumer_secret=${apiSecret}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
+      );
+
+      if (!storeResponse.ok) {
+        throw new Error('Failed to fetch store settings. Please check your API credentials.');
+      }
+
+      const settings = await storeResponse.json();
+      console.log('Store settings:', settings);
+      
+      // מצא את הגדרת המטבע
+      const currencySetting = settings.find((setting: any) => setting.id === 'woocommerce_currency');
+      if (!currencySetting) {
+        throw new Error('Could not find currency setting in WooCommerce');
+      }
+
+      // הוסף את החנות לדאטהבייס עם המטבע שהתקבל מווקומרס
       const { error } = await supabase.from('stores').insert({
         name,
-        url,
+        url: baseUrl,
         api_key: apiKey,
         api_secret: apiSecret,
-        currency,
+        currency: currencySetting.value,
         user_id: '0244961a-6c5f-4f54-89a9-0c0555286e6e'
       });
 
@@ -36,8 +68,10 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
       toast.success("Store added successfully");
       onSuccess();
     } catch (error) {
-      toast.error("Failed to add store");
       console.error('Error adding store:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to add store");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,6 +85,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
           onChange={(e) => setName(e.target.value)}
           placeholder="My Store"
           required
+          disabled={isLoading}
         />
       </div>
       <div className="space-y-2">
@@ -62,6 +97,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
           placeholder="https://mystore.com"
           type="url"
           required
+          disabled={isLoading}
         />
       </div>
       <div className="space-y-2">
@@ -72,6 +108,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="ck_xxxxxxxxxxxxxxxxxxxx"
           required
+          disabled={isLoading}
         />
       </div>
       <div className="space-y-2">
@@ -83,23 +120,18 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
           type="password"
           placeholder="cs_xxxxxxxxxxxxxxxxxxxx"
           required
+          disabled={isLoading}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="currency">Currency</Label>
-        <Select value={currency} onValueChange={setCurrency}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select currency" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="GBP">British Pound (£)</SelectItem>
-            <SelectItem value="USD">US Dollar ($)</SelectItem>
-            <SelectItem value="EUR">Euro (€)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button type="submit" className="w-full">
-        Add Store
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Adding Store...
+          </>
+        ) : (
+          'Add Store'
+        )}
       </Button>
     </form>
   );
