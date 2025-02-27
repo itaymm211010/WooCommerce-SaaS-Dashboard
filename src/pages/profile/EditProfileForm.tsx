@@ -35,6 +35,11 @@ export function EditProfileForm({ profile, onSuccess, onCancel }: EditProfileFor
     setIsLoading(true);
 
     try {
+      // בדיקה שיש לנו ID תקין של פרופיל
+      if (!profile.id) {
+        throw new Error("פרופיל חסר מזהה");
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -45,13 +50,16 @@ export function EditProfileForm({ profile, onSuccess, onCancel }: EditProfileFor
         })
         .eq('id', profile.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
       toast.success("הפרופיל עודכן בהצלחה");
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast.error("שגיאה בעדכון הפרופיל");
+      toast.error(`שגיאה בעדכון הפרופיל: ${error.message || 'אנא נסה שוב מאוחר יותר'}`);
     } finally {
       setIsLoading(false);
     }
