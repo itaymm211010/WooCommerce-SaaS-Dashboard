@@ -5,10 +5,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EditProfileForm } from "./EditProfileForm";
 import type { Profile } from "@/types/database";
+import { useState } from "react";
 
 interface EditProfileDialogProps {
   profile: Profile;
@@ -16,8 +18,10 @@ interface EditProfileDialogProps {
 }
 
 export function EditProfileDialog({ profile, onSuccess }: EditProfileDialogProps) {
+  const [open, setOpen] = useState(false);
+  
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           ערוך פרופיל
@@ -27,9 +31,15 @@ export function EditProfileDialog({ profile, onSuccess }: EditProfileDialogProps
         <DialogHeader>
           <DialogTitle>עריכת פרופיל</DialogTitle>
         </DialogHeader>
-        <EditProfileForm profile={profile} onSuccess={onSuccess} />
+        <EditProfileForm 
+          profile={profile} 
+          onSuccess={() => {
+            onSuccess?.();
+            setOpen(false);
+          }}
+          onCancel={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );
 }
-

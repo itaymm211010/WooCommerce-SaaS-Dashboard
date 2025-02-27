@@ -11,11 +11,14 @@ import type { Profile } from "@/types/database";
 interface EditProfileFormProps {
   profile: Profile;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
+export function EditProfileForm({ profile, onSuccess, onCancel }: EditProfileFormProps) {
   const [firstName, setFirstName] = useState(profile.first_name);
   const [lastName, setLastName] = useState(profile.last_name);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,17 +68,43 @@ export function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
           disabled={isLoading}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            מעדכן...
-          </>
-        ) : (
-          'שמור שינויים'
-        )}
-      </Button>
+      <div className="space-y-2">
+        <Label htmlFor="email">אימייל</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="israel@example.com"
+          disabled={isLoading}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="phone">טלפון</Label>
+        <Input
+          id="phone"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="050-0000000"
+          disabled={isLoading}
+        />
+      </div>
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          ביטול
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              מעדכן...
+            </>
+          ) : (
+            'שמור שינויים'
+          )}
+        </Button>
+      </div>
     </form>
   );
 }
-
