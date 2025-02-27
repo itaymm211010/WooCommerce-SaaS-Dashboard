@@ -47,7 +47,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
         .limit(5);
 
       if (error) throw error;
@@ -80,8 +80,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
   const handleUserSelect = (user: Profile) => {
     setSelectedUserId(user.id);
     const displayName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
-    const displayEmail = user.email ? ` (${user.email})` : '';
-    setSearchQuery(`${displayName}${displayEmail}`);
+    setSearchQuery(displayName || user.id);
   };
 
   // הוספת משתמש קיים לחנות
@@ -108,16 +107,16 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
       
       toast.success("המשתמש נוסף בהצלחה");
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding user to store:', error);
-      toast.error("אירעה שגיאה בהוספת המשתמש");
+      toast.error(`אירעה שגיאה בהוספת המשתמש: ${error.message || 'שגיאה לא ידועה'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // יצירת משתמש חדש והוספתו לחנות
-  const handleCreateNewUser = async (e: React.FormEvent) => {
+  // יצירת משתמש חדש - נשנה את הגישה ונשתמש בהזמנה במקום יצירה ישירה
+  const handleInviteNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email) {
@@ -128,46 +127,42 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
     setIsSubmitting(true);
     
     try {
-      // ראשית, יצירת משתמש חדש
-      const tempPassword = Math.random().toString(36).slice(2, 10);
+      // בדיקה אם המשתמש כבר קיים במערכת
+      const { data: existingProfiles, error: searchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
       
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      if (searchError) throw searchError;
+
+      if (existingProfiles && existingProfiles.length > 0) {
+        toast.error("משתמש עם אימייל זה כבר קיים במערכת");
+        return;
+      }
+      
+      // יצירת הזמנה באמצעות הממשק הפתוח לכל המשתמשים
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            invite_to_store: storeId,
+            invite_role: role
+          }
         }
       });
       
-      if (authError) throw authError;
+      if (error) throw error;
       
-      if (!authData.user) {
-        throw new Error("לא ניתן ליצור משתמש חדש");
-      }
-      
-      // שנית, הוספת המשתמש החדש לחנות
-      const { error: storeUserError } = await supabase
-        .from('store_users')
-        .insert({
-          store_id: storeId,
-          user_id: authData.user.id,
-          role: role as 'owner' | 'manager' | 'viewer',
-        });
-        
-      if (storeUserError) throw storeUserError;
-      
-      toast.success("המשתמש נוצר ונוסף בהצלחה");
-      toast.info("נשלחה הודעת אימייל למשתמש עם הוראות לקביעת סיסמה");
+      toast.success("נשלחה הזמנה בהצלחה");
+      toast.info("המשתמש יקבל אימייל עם קישור להפעלת החשבון והצטרפות לחנות");
       onSuccess?.();
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      if (error.message.includes("already")) {
-        toast.error("כתובת האימייל כבר קיימת במערכת");
-      } else {
-        toast.error(`אירעה שגיאה: ${error.message}`);
-      }
+      console.error('Error inviting user:', error);
+      toast.error(`אירעה שגיאה בשליחת ההזמנה: ${error.message || 'שגיאה לא ידועה'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -182,7 +177,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
         </TabsTrigger>
         <TabsTrigger value="create">
           <Plus className="h-4 w-4 mr-2" />
-          יצירת משתמש חדש
+          הזמנת משתמש חדש
         </TabsTrigger>
       </TabsList>
       
@@ -194,7 +189,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
             <div className="relative">
               <Input
                 id="searchUser"
-                placeholder="חפש לפי שם או אימייל"
+                placeholder="חפש לפי שם"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -221,9 +216,6 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
                           <div className="font-medium">
                             {user.first_name} {user.last_name}
                           </div>
-                          {user.email && (
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                          )}
                         </li>
                       ))}
                     </ul>
@@ -265,9 +257,9 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
         </form>
       </TabsContent>
       
-      {/* טאב ליצירת משתמש חדש */}
+      {/* טאב להזמנת משתמש חדש */}
       <TabsContent value="create">
-        <form onSubmit={handleCreateNewUser} className="space-y-4">
+        <form onSubmit={handleInviteNewUser} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center">
               <Mail className="h-4 w-4 mr-2" />
@@ -324,10 +316,10 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
               {isSubmitting ? (
                 <>
                   <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  יוצר משתמש...
+                  שולח הזמנה...
                 </>
               ) : (
-                'צור והוסף משתמש'
+                'שלח הזמנה'
               )}
             </Button>
           </div>

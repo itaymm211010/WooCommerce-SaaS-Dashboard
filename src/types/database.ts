@@ -1,4 +1,5 @@
 
+
 export interface Store {
   id: string;
   name: string;
@@ -41,9 +42,9 @@ export interface Profile {
   first_name: string | null;
   last_name: string | null;
   role: 'admin' | 'user';
-  email?: string | null; // הוספת שדה email כאופציונלי
-  phone?: string | null; // הוספת שדה phone כאופציונלי
-  avatar_url?: string | null; // הוספת שדה avatar_url כאופציונלי
+  email: string | null;
+  phone: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,3 +90,4 @@ export interface Database {
     };
   };
 }
+
