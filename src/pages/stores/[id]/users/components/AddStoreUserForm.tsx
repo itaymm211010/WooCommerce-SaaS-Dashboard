@@ -127,10 +127,16 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
     setIsSubmitting(true);
     
     try {
+      // קביעת כתובת ה-redirect הנכונה - לא לוקלהוסט!
+      const currentUrl = window.location.origin;
+      console.log("Current URL for redirect:", currentUrl);
+      
       // בדיקה אם המשתמש כבר קיים במערכת
       const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
         email,
         options: {
+          // חשוב מאוד - להגדיר את כתובת ההפניה לאחר לחיצה על הקישור באימייל
+          emailRedirectTo: currentUrl,
           data: {
             first_name: firstName,
             last_name: lastName,

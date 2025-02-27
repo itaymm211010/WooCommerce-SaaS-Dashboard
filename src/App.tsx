@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 // Pages
 import Index from "./pages/Index";
@@ -35,11 +38,75 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   return children;
 }
 
+// קומפוננטה חדשה לטיפול בהזמנות וכניסות דרך מגיק לינק
+function HandleInvites() {
+  useEffect(() => {
+    // בדיקה אם יש פרמטרים בכתובת URL שמעידים על התחברות דרך מגיק לינק
+    const handleMagicLink = async () => {
+      const url = new URL(window.location.href);
+      const searchParams = new URLSearchParams(url.hash.substring(1));
+      
+      // אם יש פרמטר access_token בכתובת, זה סימן שהמשתמש נכנס דרך מגיק לינק
+      if (searchParams.get('access_token')) {
+        try {
+          const accessToken = searchParams.get('access_token');
+          const refreshToken = searchParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            // מעדכן את הטוקנים בסופאבייס
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (error) throw error;
+            
+            // בדיקה אם הייתה הזמנה לחנות בנתוני המשתמש
+            const userData = data.user?.user_metadata;
+            if (userData && userData.invite_to_store && userData.invite_role) {
+              // הוספת המשתמש לחנות שאליה הוא הוזמן
+              const { error: storeUserError } = await supabase
+                .from('store_users')
+                .insert({
+                  store_id: userData.invite_to_store,
+                  user_id: data.user?.id,
+                  role: userData.invite_role,
+                });
+                
+              if (storeUserError) throw storeUserError;
+                
+              toast.success("ברוך הבא! הצטרפת בהצלחה לחנות");
+              
+              // מעבר לדף החנות שאליה המשתמש הוזמן
+              window.location.href = `/stores/${userData.invite_to_store}/orders`;
+            } else {
+              toast.success("ברוך הבא! התחברת בהצלחה");
+              
+              // מנקה את כתובת ה-URL מהפרמטרים של אימות
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          }
+        } catch (error: any) {
+          console.error("Error handling invitation:", error);
+          toast.error(`אירעה שגיאה בעת הכניסה: ${error.message}`);
+        }
+      }
+    };
+    
+    handleMagicLink();
+  }, []);
+  
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          {/* מוסיפים את הקומפוננטה לטיפול בהזמנות */}
+          <HandleInvites />
+          
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth/signin" element={<SignIn />} />
