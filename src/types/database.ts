@@ -41,6 +41,9 @@ export interface Profile {
   first_name: string | null;
   last_name: string | null;
   role: 'admin' | 'user';
+  email?: string | null; // הוספת שדה email כאופציונלי
+  phone?: string | null; // הוספת שדה phone כאופציונלי
+  avatar_url?: string | null; // הוספת שדה avatar_url כאופציונלי
   created_at: string;
   updated_at: string;
 }

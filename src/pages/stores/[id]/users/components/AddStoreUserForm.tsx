@@ -96,7 +96,10 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
 
   const handleUserSelect = (user: Profile) => {
     setSelectedUserId(user.id);
-    setSearchQuery(`${user.first_name} ${user.last_name}${user.email ? ` (${user.email})` : ''}`);
+    // טיפול במצב שבו שדות לא קיימים
+    const displayName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+    const displayEmail = user.email ? ` (${user.email})` : '';
+    setSearchQuery(`${displayName}${displayEmail}`);
   };
 
   return (

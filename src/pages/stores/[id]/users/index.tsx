@@ -141,7 +141,7 @@ export default function StoreUsersPage() {
                     <TableCell className="font-medium">
                       {user.profiles.first_name} {user.profiles.last_name}
                     </TableCell>
-                    <TableCell>{user.profiles.email}</TableCell>
+                    <TableCell>{user.profiles.email || '-'}</TableCell>
                     <TableCell>{user.profiles.phone || '-'}</TableCell>
                     <TableCell>{roleLabels[user.role] || user.role}</TableCell>
                     <TableCell>
