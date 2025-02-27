@@ -38,12 +38,9 @@ export interface Order {
 
 export interface Profile {
   id: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
   role: 'admin' | 'user';
-  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }

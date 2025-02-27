@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { EditProfileDialog } from "./EditProfileDialog";
 import type { Profile } from "@/types/database";
-import { Loader2, Mail, Phone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 
 export default function ProfilePage() {
@@ -82,34 +82,6 @@ export default function ProfilePage() {
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">שם משפחה</h3>
               <p className="mt-1 text-lg">{profile.last_name || 'לא הוגדר'}</p>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">אימייל</h3>
-              <p className="mt-1 flex items-center text-lg">
-                {profile.email ? (
-                  <>
-                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {profile.email}
-                  </>
-                ) : (
-                  'לא הוגדר'
-                )}
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">טלפון</h3>
-              <p className="mt-1 flex items-center text-lg">
-                {profile.phone ? (
-                  <>
-                    <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {profile.phone}
-                  </>
-                ) : (
-                  'לא הוגדר'
-                )}
-              </p>
             </div>
             
             <div>
