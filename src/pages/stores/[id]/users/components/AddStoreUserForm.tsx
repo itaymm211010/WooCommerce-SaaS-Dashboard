@@ -17,6 +17,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Profile } from "@/types/database";
 
+// נגדיר משתנה לכתובת הבסיס של האתר
+// בסביבת פיתוח יש להשתמש בכתובת האתר האמיתית אם היא קיימת
+const APP_URL = 
+  import.meta.env.VITE_APP_URL || // אם יש משתנה סביבה מוגדר, משתמשים בו
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'https://your-production-domain.com' // כאן צריך להגדיר את כתובת האתר האמיתית
+    : window.location.origin);
+
 interface AddStoreUserFormProps {
   storeId: string;
   storeName: string;
@@ -128,16 +136,16 @@ export function AddStoreUserForm({ storeId, storeName, onSuccess, onCancel }: Ad
     setIsSubmitting(true);
     
     try {
-      // קביעת כתובת ה-redirect הנכונה - לא לוקלהוסט!
-      const currentUrl = window.location.origin;
-      console.log("Current URL for redirect:", currentUrl);
+      // שימוש בכתובת שהגדרנו למעלה
+      const redirectUrl = APP_URL;
+      console.log("Redirect URL for invitation:", redirectUrl);
       
       // בדיקה אם המשתמש כבר קיים במערכת
       const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          // חשוב מאוד - להגדיר את כתובת ההפניה לאחר לחיצה על הקישור באימייל
-          emailRedirectTo: currentUrl,
+          // כתובת ההפניה המעודכנת
+          emailRedirectTo: redirectUrl,
           data: {
             first_name: firstName,
             last_name: lastName,
