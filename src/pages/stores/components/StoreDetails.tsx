@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Store } from "@/types/database";
-import { Package, ShoppingCart } from "lucide-react";
+import { Package, ShoppingCart, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface StoreDetailsProps {
@@ -65,6 +65,12 @@ export function StoreDetails({ store }: StoreDetailsProps) {
           <Button className="w-full" variant="outline">
             <ShoppingCart className="mr-2 h-4 w-4" />
             Orders
+          </Button>
+        </Link>
+        <Link to={`/stores/${store.id}/users`} className="flex-1">
+          <Button className="w-full" variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            Users
           </Button>
         </Link>
       </div>
