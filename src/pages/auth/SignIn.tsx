@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,14 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -33,18 +32,11 @@ export default function SignIn() {
 
       if (error) throw error;
 
-      toast({
-        title: "ברוך הבא!",
-        description: "התחברת בהצלחה.",
-      });
-      
+      toast.success("ברוך הבא!");
       navigate("/");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה בהתחברות",
-        description: error.message,
-      });
+      console.error('Error signing in:', error);
+      toast.error(`שגיאה בהתחברות: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -86,6 +78,14 @@ export default function SignIn() {
               {loading ? "מתחבר..." : "התחבר"}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <p>
+              אין לך חשבון?{" "}
+              <Link to="/auth/signup" className="text-primary underline underline-offset-4">
+                הרשם עכשיו
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

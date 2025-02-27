@@ -34,6 +34,17 @@ export default function StoreUsersPage() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
+  // בדיקה שיש לנו מזהה חנות תקין
+  if (!storeId) {
+    return (
+      <Shell>
+        <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
+          <div className="text-xl font-semibold">לא נמצא מזהה חנות</div>
+        </div>
+      </Shell>
+    );
+  }
+
   const { data: storeUsers, isLoading, refetch } = useQuery({
     queryKey: ['store-users', storeId],
     queryFn: async () => {
@@ -129,14 +140,14 @@ export default function StoreUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {storeUsers?.length === 0 ? (
+              {!storeUsers || storeUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                     לא נמצאו משתמשים לחנות זו
                   </TableCell>
                 </TableRow>
               ) : (
-                storeUsers?.map((user) => (
+                storeUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.profiles.first_name} {user.profiles.last_name}
@@ -172,7 +183,7 @@ export default function StoreUsersPage() {
             <DialogTitle>הוספת משתמש לחנות</DialogTitle>
           </DialogHeader>
           <AddStoreUserForm 
-            storeId={storeId!} 
+            storeId={storeId} 
             onSuccess={() => {
               setIsAddUserOpen(false);
               refetch();

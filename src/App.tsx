@@ -1,117 +1,104 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import SignIn from "./pages/auth/SignIn";
-import NotFound from "./pages/NotFound";
-import StoresPage from "./pages/stores";
-import StoreProductsPage from "./pages/stores/[id]/products";
-import StoreOrdersPage from "./pages/stores/[id]/orders";
-import ProfilePage from "./pages/profile/ProfilePage";
 
+// Pages
+import Index from "./pages/Index";
+import ProfilePage from "./pages/profile/ProfilePage";
+import SignIn from "./pages/auth/SignIn";
+import SignUp from "./pages/auth/SignUp";
+
+// Store Pages
+import StoresPage from "./pages/stores";
+import OrdersPage from "./pages/stores/[id]/orders";
+import OrderDetailsPage from "./pages/stores/[id]/orders/[orderId]/details";
+import ProductsPage from "./pages/stores/[id]/products";
+import StoreUsersPage from "./pages/stores/[id]/users";
+import NotFound from "./pages/NotFound";
+
+// Create a client
 const queryClient = new QueryClient();
 
-function PrivateRoute({ children }: { children: React.ReactNode }) {
+function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
+    return <div>Loading...</div>;
   }
 
   if (!user) {
-    return <Navigate to="/signin" />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
   return children;
 }
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/signin" element={<SignIn />} />
-    <Route
-      path="/"
-      element={
-        <PrivateRoute>
-          <Index />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/profile"
-      element={
-        <PrivateRoute>
-          <ProfilePage />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/orders"
-      element={
-        <PrivateRoute>
-          <Index />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/products"
-      element={
-        <PrivateRoute>
-          <Index />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/analytics"
-      element={
-        <PrivateRoute>
-          <Index />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/stores"
-      element={
-        <PrivateRoute>
-          <StoresPage />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/stores/:id/products"
-      element={
-        <PrivateRoute>
-          <StoreProductsPage />
-        </PrivateRoute>
-      }
-    />
-    <Route
-      path="/stores/:id/orders"
-      element={
-        <PrivateRoute>
-          <StoreOrdersPage />
-        </PrivateRoute>
-      }
-    />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth/signin" element={<SignIn />} />
+            <Route path="/auth/signup" element={<SignUp />} />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <ProfilePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores"
+              element={
+                <RequireAuth>
+                  <StoresPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/orders"
+              element={
+                <RequireAuth>
+                  <OrdersPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/orders/:orderId"
+              element={
+                <RequireAuth>
+                  <OrderDetailsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/products"
+              element={
+                <RequireAuth>
+                  <ProductsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/users"
+              element={
+                <RequireAuth>
+                  <StoreUsersPage />
+                </RequireAuth>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
         <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
