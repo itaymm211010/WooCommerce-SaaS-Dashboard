@@ -40,8 +40,20 @@ export interface Profile {
   id: string;
   first_name: string;
   last_name: string;
+  email: string | null;
+  phone: string | null;
   role: 'admin' | 'user';
   avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// נוסיף ממשק חדש למשתמשי החנות
+export interface StoreUser {
+  id: string;
+  store_id: string;
+  user_id: string;
+  role: 'owner' | 'manager' | 'viewer';
   created_at: string;
   updated_at: string;
 }
@@ -68,6 +80,11 @@ export interface Database {
         Row: Profile;
         Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      store_users: {
+        Row: StoreUser;
+        Insert: Omit<StoreUser, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<StoreUser, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
   };
