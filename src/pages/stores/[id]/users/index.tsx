@@ -1,6 +1,6 @@
 
 import { useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shell } from "@/components/layout/Shell";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -18,9 +18,10 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
-import { Loader2, UserPlus, Trash2 } from "lucide-react";
+import { Loader2, UserPlus, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AddStoreUserForm } from "./components/AddStoreUserForm";
 import type { Profile, StoreUser } from '@/types/database';
@@ -45,9 +46,16 @@ export default function StoreUsersPage() {
     );
   }
 
-  const { data: storeUsers, isLoading, refetch } = useQuery({
+  const { 
+    data: storeUsers, 
+    isLoading, 
+    refetch,
+    isError,
+    error 
+  } = useQuery({
     queryKey: ['store-users', storeId],
     queryFn: async () => {
+      console.log("Fetching store users for store ID:", storeId);
       const { data, error } = await supabase
         .from('store_users')
         .select(`
@@ -56,10 +64,18 @@ export default function StoreUsersPage() {
         `)
         .eq('store_id', storeId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching store users:", error);
+        throw error;
+      }
+      
+      console.log("Store users data:", data);
       return data as StoreUserWithProfile[];
     },
     enabled: !!storeId,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: store } = useQuery({
@@ -76,6 +92,13 @@ export default function StoreUsersPage() {
     },
     enabled: !!storeId,
   });
+
+  // אפקט לרענון הנתונים כאשר הדף נטען
+  useEffect(() => {
+    if (storeId) {
+      refetch();
+    }
+  }, [storeId, refetch]);
 
   const handleDeleteUser = async (userId: string) => {
     if (!storeId) return;
@@ -101,6 +124,11 @@ export default function StoreUsersPage() {
     }
   };
 
+  const handleManualRefresh = () => {
+    toast.info("מרענן נתונים...");
+    refetch();
+  };
+
   const roleLabels: Record<string, string> = {
     'owner': 'בעלים',
     'manager': 'מנהל',
@@ -117,15 +145,29 @@ export default function StoreUsersPage() {
               {store?.name && `ניהול המשתמשים המורשים לחנות "${store.name}"`}
             </p>
           </div>
-          <Button onClick={() => setIsAddUserOpen(true)}>
-            <UserPlus className="ml-2 h-4 w-4" />
-            הוסף משתמש
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleManualRefresh} title="רענן נתונים">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setIsAddUserOpen(true)}>
+              <UserPlus className="ml-2 h-4 w-4" />
+              הוסף משתמש
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center p-8 text-red-500">
+            <div>אירעה שגיאה בטעינת המשתמשים</div>
+            <div className="text-sm text-muted-foreground">{error instanceof Error ? error.message : 'שגיאה לא ידועה'}</div>
+            <Button variant="outline" onClick={handleManualRefresh} className="mt-4">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              נסה שנית
+            </Button>
           </div>
         ) : (
           <Table>
@@ -150,10 +192,10 @@ export default function StoreUsersPage() {
                 storeUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
-                      {user.profiles.first_name} {user.profiles.last_name}
+                      {user.profiles?.first_name} {user.profiles?.last_name}
                     </TableCell>
-                    <TableCell>{user.profiles.email || '-'}</TableCell>
-                    <TableCell>{user.profiles.phone || '-'}</TableCell>
+                    <TableCell>{user.profiles?.email || '-'}</TableCell>
+                    <TableCell>{user.profiles?.phone || '-'}</TableCell>
                     <TableCell>{roleLabels[user.role] || user.role}</TableCell>
                     <TableCell>
                       <Button
@@ -185,13 +227,17 @@ export default function StoreUsersPage() {
                 ? `הוספת משתמש לחנות "${store.name}"`
                 : "הוספת משתמש לחנות"}
             </DialogTitle>
+            <DialogDescription>
+              הוסף משתמשים קיימים או הזמן משתמשים חדשים להצטרף לחנות
+            </DialogDescription>
           </DialogHeader>
           <AddStoreUserForm 
             storeId={storeId} 
             storeName={store?.name || ""}
             onSuccess={() => {
               setIsAddUserOpen(false);
-              refetch();
+              // מרענן את הנתונים לאחר הוספת משתמש
+              setTimeout(() => refetch(), 500);
             }}
             onCancel={() => setIsAddUserOpen(false)}
           />
