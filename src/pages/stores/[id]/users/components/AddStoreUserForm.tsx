@@ -115,7 +115,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
     }
   };
 
-  // יצירת משתמש חדש - נשנה את הגישה ונשתמש בהזמנה במקום יצירה ישירה
+  // יצירת הזמנה למשתמש חדש
   const handleInviteNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -128,24 +128,9 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
     
     try {
       // בדיקה אם המשתמש כבר קיים במערכת
-      const { data: existingProfiles, error: searchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .limit(1);
-      
-      if (searchError) throw searchError;
-
-      if (existingProfiles && existingProfiles.length > 0) {
-        toast.error("משתמש עם אימייל זה כבר קיים במערכת");
-        return;
-      }
-      
-      // יצירת הזמנה באמצעות הממשק הפתוח לכל המשתמשים
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -155,10 +140,10 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
         }
       });
       
-      if (error) throw error;
+      if (authError) throw authError;
       
-      toast.success("נשלחה הזמנה בהצלחה");
-      toast.info("המשתמש יקבל אימייל עם קישור להפעלת החשבון והצטרפות לחנות");
+      toast.success("נשלחה הזמנה למשתמש בהצלחה");
+      toast.info("המשתמש יקבל אימייל עם קישור להתחברות וכניסה למערכת");
       onSuccess?.();
     } catch (error: any) {
       console.error('Error inviting user:', error);
