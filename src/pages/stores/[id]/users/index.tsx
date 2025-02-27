@@ -180,10 +180,15 @@ export default function StoreUsersPage() {
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>הוספת משתמש לחנות</DialogTitle>
+            <DialogTitle>
+              {store?.name 
+                ? `הוספת משתמש לחנות "${store.name}"`
+                : "הוספת משתמש לחנות"}
+            </DialogTitle>
           </DialogHeader>
           <AddStoreUserForm 
             storeId={storeId} 
+            storeName={store?.name || ""}
             onSuccess={() => {
               setIsAddUserOpen(false);
               refetch();

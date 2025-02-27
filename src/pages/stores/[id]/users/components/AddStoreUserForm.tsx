@@ -19,11 +19,12 @@ import type { Profile } from "@/types/database";
 
 interface AddStoreUserFormProps {
   storeId: string;
+  storeName: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserFormProps) {
+export function AddStoreUserForm({ storeId, storeName, onSuccess, onCancel }: AddStoreUserFormProps) {
   // משתני מצב לחיפוש משתמש קיים
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
         
       if (error) throw error;
       
-      toast.success("המשתמש נוסף בהצלחה");
+      toast.success(`המשתמש נוסף בהצלחה ${storeName ? `לחנות "${storeName}"` : ""}`);
       onSuccess?.();
     } catch (error: any) {
       console.error('Error adding user to store:', error);
@@ -148,8 +149,8 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
       
       if (authError) throw authError;
       
-      toast.success("נשלחה הזמנה למשתמש בהצלחה");
-      toast.info("המשתמש יקבל אימייל עם קישור להתחברות וכניסה למערכת");
+      toast.success(`נשלחה הזמנה בהצלחה ${storeName ? `לחנות "${storeName}"` : ""}`);
+      toast.info(`המשתמש יקבל אימייל עם קישור להתחברות והצטרפות לחנות${storeName ? ` "${storeName}"` : ""}`);
       onSuccess?.();
     } catch (error: any) {
       console.error('Error inviting user:', error);
@@ -175,6 +176,12 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
       {/* טאב לחיפוש משתמש קיים */}
       <TabsContent value="search">
         <form onSubmit={handleAddExistingUser} className="space-y-4">
+          {storeName && (
+            <div className="text-sm text-muted-foreground mb-4">
+              הוספת משתמש קיים לחנות "{storeName}"
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="searchUser">חפש משתמש קיים</Label>
             <div className="relative">
@@ -251,6 +258,12 @@ export function AddStoreUserForm({ storeId, onSuccess, onCancel }: AddStoreUserF
       {/* טאב להזמנת משתמש חדש */}
       <TabsContent value="create">
         <form onSubmit={handleInviteNewUser} className="space-y-4">
+          {storeName && (
+            <div className="text-sm text-muted-foreground mb-4">
+              הזמנת משתמש חדש לחנות "{storeName}"
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center">
               <Mail className="h-4 w-4 mr-2" />
