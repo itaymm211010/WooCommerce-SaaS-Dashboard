@@ -25,6 +25,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log(`Processing sync request for store_id: ${store_id}`)
+
     // Get store details
     const { data: store, error: storeError } = await supabase
       .from('stores')
@@ -81,6 +83,7 @@ serve(async (req) => {
       }
 
       const products = await wooResponse.json()
+      console.log(`Fetched ${products.length} products from WooCommerce`)
 
       // Fetch variations for variable products
       const productsWithVariations = await Promise.all(products.map(async (product) => {
@@ -107,7 +110,56 @@ serve(async (req) => {
         return product
       }))
 
-      return new Response(JSON.stringify({ products: productsWithVariations }), {
+      // Save products to the database
+      console.log('Saving products to database...')
+      
+      // First, delete existing products for this store to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('store_id', store_id)
+      
+      if (deleteError) {
+        console.error('Error deleting existing products:', deleteError)
+        return new Response(JSON.stringify({
+          error: `Failed to prepare database: ${deleteError.message}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        });
+      }
+      
+      // Insert new products
+      const productsToInsert = productsWithVariations.map(product => ({
+        store_id: store_id,
+        woo_id: product.id,
+        name: product.name,
+        price: parseFloat(product.price || '0'),
+        stock_quantity: product.stock_quantity,
+        status: product.status,
+        type: product.type || 'simple'
+      }))
+      
+      const { error: insertError } = await supabase
+        .from('products')
+        .insert(productsToInsert)
+      
+      if (insertError) {
+        console.error('Error inserting products:', insertError)
+        return new Response(JSON.stringify({
+          error: `Failed to save products: ${insertError.message}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        });
+      }
+      
+      console.log(`Successfully saved ${productsToInsert.length} products to database`)
+
+      return new Response(JSON.stringify({ 
+        products: productsWithVariations,
+        saved: productsToInsert.length
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })

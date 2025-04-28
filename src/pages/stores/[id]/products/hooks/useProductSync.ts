@@ -41,6 +41,8 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
       const { data: authData } = await supabase.auth.getSession();
       const authToken = authData.session?.access_token;
       
+      console.log('Authentication token available:', !!authToken);
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/sync-woo-products`, {
         method: 'POST',
         headers: {
@@ -76,6 +78,7 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
       if (text.trim() !== '') {
         try {
           data = JSON.parse(text);
+          console.log('Response data:', data);
         } catch (jsonError) {
           console.error('Error parsing response as JSON:', jsonError, 'Response text:', text);
           throw new Error('Invalid response format from server');
@@ -87,8 +90,24 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
       }
 
       const productCount = data?.products?.length || 0;
+      console.log(`Synced ${productCount} products. Checking if they were saved to the database...`);
+      
+      // Verify products were saved by checking the database
+      const { data: savedProducts, error: fetchError } = await supabase
+        .from('products')
+        .select('count')
+        .eq('store_id', storeId);
+      
+      if (fetchError) {
+        console.error('Error verifying saved products:', fetchError);
+      } else {
+        console.log('Products in database:', savedProducts);
+      }
+      
       toast.success(`Successfully synced ${productCount} products`);
-      refetch();
+      
+      // Force refetch products to update the UI
+      await refetch();
     } catch (error) {
       console.error('Error syncing products:', error);
       if (error instanceof Error) {
