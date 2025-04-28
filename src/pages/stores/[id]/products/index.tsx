@@ -27,7 +27,7 @@ export default function StoreProductsPage() {
 
   const { data: products, refetch } = useProducts(id, sortField, sortDirection, searchQuery);
 
-  const { data: store } = useQuery({
+  const { data: store, isLoading: isStoreLoading } = useQuery({
     queryKey: ['store', id],
     queryFn: async () => {
       if (!id) throw new Error('No store ID provided');
@@ -63,21 +63,38 @@ export default function StoreProductsPage() {
     setCurrentPage(page);
   };
 
+  // Check if store has valid configuration
+  const hasValidStoreConfig = () => {
+    if (!store) return false;
+    
+    // Check if store URL, API key, and API secret are present and not empty strings
+    return (
+      !!store.url && 
+      store.url.trim() !== '' && 
+      !!store.api_key && 
+      store.api_key.trim() !== '' && 
+      !!store.api_secret && 
+      store.api_secret.trim() !== ''
+    );
+  };
+
   const syncProducts = async () => {
     try {
       setIsSyncing(true);
       
-      if (!store?.url || !store?.api_key || !store?.api_secret) {
+      if (!hasValidStoreConfig()) {
         toast.error('Missing store configuration. Please check your store URL and API credentials.');
         return;
       }
 
-      let baseUrl = store.url.replace(/\/+$/, '');
+      let baseUrl = store!.url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
         baseUrl = `https://${baseUrl}`;
       }
       
-      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`, {
+      console.log('Attempting to fetch products from WooCommerce API with URL:', baseUrl);
+      
+      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store!.api_key}&consumer_secret=${store!.api_secret}`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -119,7 +136,7 @@ export default function StoreProductsPage() {
         if (product.type === 'variable') {
           try {
             const variationsResponse = await fetch(
-              `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+              `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store!.api_key}&consumer_secret=${store!.api_secret}`,
               {
                 headers: {
                   'Content-Type': 'application/json',
@@ -218,7 +235,8 @@ export default function StoreProductsPage() {
             <Button 
               onClick={syncProducts} 
               className="gap-2" 
-              disabled={isSyncing}
+              disabled={isSyncing || isStoreLoading || !hasValidStoreConfig()}
+              title={!hasValidStoreConfig() ? "Missing store configuration" : ""}
             >
               <RefreshCw className={cn(
                 "h-4 w-4",
@@ -228,6 +246,27 @@ export default function StoreProductsPage() {
             </Button>
           </div>
         </div>
+
+        {!hasValidStoreConfig() && (
+          <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">Missing store configuration</h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>
+                    Please check your store URL, API key, and API secret in the store settings. 
+                    Without this information, products cannot be synchronized.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
