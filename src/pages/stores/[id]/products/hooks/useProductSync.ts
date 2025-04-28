@@ -32,19 +32,16 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
         return;
       }
 
-      // Get the Supabase URL from the environment variables
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) {
-        throw new Error('Missing Supabase URL configuration');
-      }
-
+      // Use the Supabase URL from the client configuration instead of environment variables
+      const supabaseUrl = 'https://wzpbsridzmqrcztafzip.supabase.co';
+      
       console.log(`Calling endpoint: ${supabaseUrl}/functions/v1/sync-woo-products`);
       
       const response = await fetch(`${supabaseUrl}/functions/v1/sync-woo-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${supabase.auth.anon_key}`
         },
         body: JSON.stringify({ store_id: storeId })
       });
