@@ -19,7 +19,13 @@ export class ImageService {
   ) {
     try {
       const fileVersions = await this.storageProvider.generateVersions(file);
-      const uploadedVersions: Record<ImageVersion, string> = {};
+      // Initialize with all required properties to fix Type '{}' error
+      const uploadedVersions: Record<ImageVersion, string> = {
+        thumbnail: '',
+        medium: '',
+        large: '',
+        original: ''
+      };
       
       // Upload each version
       for (const [version, versionFile] of Object.entries(fileVersions)) {
@@ -66,7 +72,8 @@ export class ImageService {
 
       if (image.storage_source === 'supabase' && image.versions) {
         // Delete all versions of the image
-        for (const url of Object.values(image.versions)) {
+        // Fix the type casting issue by ensuring the value is a string
+        for (const url of Object.values(image.versions as Record<ImageVersion, string>)) {
           await this.storageProvider.deleteImage(url);
         }
       }
