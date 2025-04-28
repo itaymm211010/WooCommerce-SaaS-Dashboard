@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import ProfilePage from "./pages/profile/ProfilePage";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
+import ImageManagementDemo from "./pages/demo/ImageManagementDemo";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -37,22 +38,18 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   return children;
 }
 
-// קומפוננטה חדשה לטיפול בהזמנות וכניסות דרך מגיק לינק
 function HandleInvites() {
   useEffect(() => {
-    // בדיקה אם יש פרמטרים בכתובת URL שמעידים על התחברות דרך מגיק לינק
     const handleMagicLink = async () => {
       const url = new URL(window.location.href);
       const searchParams = new URLSearchParams(url.hash.substring(1));
       
-      // אם יש פרמטר access_token בכתובת, זה סימן שהמשתמש נכנס דרך מגיק לינק
       if (searchParams.get('access_token')) {
         try {
           const accessToken = searchParams.get('access_token');
           const refreshToken = searchParams.get('refresh_token');
           
           if (accessToken && refreshToken) {
-            // מעדכן את הטוקנים בסופאבייס
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
@@ -60,10 +57,8 @@ function HandleInvites() {
             
             if (error) throw error;
             
-            // בדיקה אם הייתה הזמנה לחנות בנתוני המשתמש
             const userData = data.user?.user_metadata;
             if (userData && userData.invite_to_store && userData.invite_role) {
-              // הוספת המשתמש לחנות שאליה הוא הוזמן
               const { error: storeUserError } = await supabase
                 .from('store_users')
                 .insert({
@@ -76,12 +71,10 @@ function HandleInvites() {
                 
               toast.success("ברוך הבא! הצטרפת בהצלחה לחנות");
               
-              // מעבר לדף החנות שאליה המשתמש הוזמן
               window.location.href = `/stores/${userData.invite_to_store}/orders`;
             } else {
               toast.success("ברוך הבא! התחברת בהצלחה");
               
-              // מנקה את כתובת ה-URL מהפרמטרים של אימות
               window.history.replaceState({}, document.title, window.location.pathname);
             }
           }
