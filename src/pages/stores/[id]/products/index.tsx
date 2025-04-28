@@ -14,6 +14,7 @@ import { ProductsPagination } from "./components/ProductsPagination";
 import { useProducts, SortField, SortDirection } from "./hooks/useProducts";
 import { getProductPrice } from "./utils/productUtils";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
@@ -87,44 +88,22 @@ export default function StoreProductsPage() {
         return;
       }
 
-      let baseUrl = store!.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
-      
-      console.log('Attempting to fetch products from WooCommerce API with URL:', baseUrl);
-      
-      const response = await fetch(`${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store!.api_key}&consumer_secret=${store!.api_secret}`, {
+      // Call our Edge Function instead of directly accessing the WooCommerce API
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-woo-products`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        mode: 'cors'
+        body: JSON.stringify({ store_id: id })
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('WooCommerce API Error:', errorText);
-        
-        if (response.status === 0) {
-          throw new Error(`CORS error - Please make sure your WooCommerce site allows external connections. Add the following to your wp-config.php:\n\nheader("Access-Control-Allow-Origin: *");\nheader("Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST,PUT");\nheader("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");`);
-        }
-        
-        if (response.status === 401) {
-          throw new Error('Authentication failed - Please check your API credentials');
-        }
-        
-        if (response.status === 404) {
-          throw new Error('Store not found - Please check your store URL');
-        }
-        
-        throw new Error(`WooCommerce API error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(`Failed to sync products: ${errorData.error || response.statusText}`);
       }
 
-      const wooProducts = await response.json();
+      const { products: wooProducts } = await response.json();
       
       if (!Array.isArray(wooProducts)) {
         throw new Error('Invalid response from WooCommerce API');
@@ -132,35 +111,7 @@ export default function StoreProductsPage() {
       
       console.log(`Fetched ${wooProducts.length} products from WooCommerce`);
       
-      const productsWithVariations = await Promise.all(wooProducts.map(async (product) => {
-        if (product.type === 'variable') {
-          try {
-            const variationsResponse = await fetch(
-              `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store!.api_key}&consumer_secret=${store!.api_secret}`,
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'Access-Control-Allow-Origin': '*',
-                  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-                },
-                mode: 'cors'
-              }
-            );
-            
-            if (variationsResponse.ok) {
-              const variations = await variationsResponse.json();
-              return { ...product, variations };
-            }
-          } catch (error) {
-            console.error(`Failed to fetch variations for product ${product.id}:`, error);
-          }
-        }
-        return product;
-      }));
-      
-      const productsToInsert = productsWithVariations
+      const productsToInsert = wooProducts
         .filter(product => product)
         .map((product: any) => ({
           store_id: id,
@@ -173,6 +124,11 @@ export default function StoreProductsPage() {
         }));
 
       console.log('Products to insert:', productsToInsert);
+
+      if (productsToInsert.length === 0) {
+        toast.info('No products found to sync');
+        return;
+      }
 
       const { error } = await supabase
         .from('products')
@@ -248,24 +204,13 @@ export default function StoreProductsPage() {
         </div>
 
         {!hasValidStoreConfig() && (
-          <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">Missing store configuration</h3>
-                <div className="mt-2 text-sm text-yellow-700">
-                  <p>
-                    Please check your store URL, API key, and API secret in the store settings. 
-                    Without this information, products cannot be synchronized.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Missing store configuration</AlertTitle>
+            <AlertDescription>
+              Please check your store URL, API key, and API secret in the store settings. 
+              Without this information, products cannot be synchronized.
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="relative">
