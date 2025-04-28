@@ -11,16 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { formatPrice } from "../utils/productUtils";
-import { Product } from "@/types/database";
+import { Product, Store } from "@/types/database";
 import { SortField, SortDirection } from "../hooks/useProducts";
 
 interface ProductsTableProps {
   products: Product[] | undefined;
   sortField: SortField;
   sortProducts: (field: SortField) => void;
+  store?: Store;
 }
 
-export const ProductsTable = ({ products, sortField, sortProducts }: ProductsTableProps) => {
+export const ProductsTable = ({ products, sortField, sortProducts, store }: ProductsTableProps) => {
   return (
     <Table>
       <TableCaption>A list of your store products.</TableCaption>
@@ -89,7 +90,7 @@ export const ProductsTable = ({ products, sortField, sortProducts }: ProductsTab
           products.map((product) => (
             <TableRow key={product.id}>
               <TableCell className="font-medium">{product.name}</TableCell>
-              <TableCell>{formatPrice(product.price, product.type || 'simple')}</TableCell>
+              <TableCell>{formatPrice(product.price, product.type || 'simple', store?.currency)}</TableCell>
               <TableCell>{product.stock_quantity ?? "N/A"}</TableCell>
               <TableCell>{product.status}</TableCell>
               <TableCell>{new Date(product.updated_at).toLocaleDateString()}</TableCell>

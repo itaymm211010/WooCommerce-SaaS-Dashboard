@@ -3,6 +3,31 @@ import { Store } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+// Map of currency codes to their symbols and formatting options
+export const currencySymbols: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  ILS: '₪',  // Added Israeli Shekel
+  AUD: 'A$',
+  CAD: 'C$',
+  JPY: '¥',
+};
+
+// Format a price with the appropriate currency symbol based on store currency
+export function formatCurrency(price: number, currencyCode: string = 'USD') {
+  const symbol = currencySymbols[currencyCode] || currencyCode;
+  
+  // Handle languages that place currency symbol after the number (like Hebrew)
+  const isRtlCurrency = currencyCode === 'ILS';
+  
+  if (isRtlCurrency) {
+    return `${price.toLocaleString()} ${symbol}`;
+  } else {
+    return `${symbol}${price.toLocaleString()}`;
+  }
+}
+
 export async function checkAndUpdateStoreCurrency(store: Store) {
   try {
     let baseUrl = store.url.replace(/\/+$/, '');

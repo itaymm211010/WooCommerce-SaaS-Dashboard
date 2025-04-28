@@ -73,6 +73,7 @@ export default function StoreProductsPage() {
             products={paginatedProducts}
             sortField={sortField}
             sortProducts={sortProducts}
+            store={store}
           />
         </div>
 
