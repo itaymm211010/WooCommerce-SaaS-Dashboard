@@ -1,7 +1,6 @@
 
 import { Shell } from "@/components/layout/Shell";
 import { useParams } from "react-router-dom";
-import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProductsTable } from "./components/ProductsTable";
@@ -10,16 +9,17 @@ import { ProductsHeader } from "./components/ProductsHeader";
 import { useProducts } from "./hooks/useProducts";
 import { useStore } from "./hooks/useStore";
 import { useProductSync } from "./hooks/useProductSync";
+import { useProductSearch } from "./hooks/useProductSearch";
+import { useProductPagination } from "./hooks/useProductPagination";
 import { SortField, SortDirection } from "./hooks/useProducts";
+import { useState } from "react";
 
 export default function StoreProductsPage() {
   const { id } = useParams();
-  const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 10;
-
+  const { searchQuery, setSearchQuery } = useProductSearch();
+  
   const { data: store } = useStore(id);
   const { data: products } = useProducts(id, sortField, sortDirection, searchQuery);
   const { 
@@ -30,6 +30,13 @@ export default function StoreProductsPage() {
     toggleAutoSync 
   } = useProductSync(store, id);
 
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedProducts
+  } = useProductPagination(products);
+
   const sortProducts = (field: SortField) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -38,12 +45,6 @@ export default function StoreProductsPage() {
       setSortDirection('asc');
     }
   };
-
-  const totalPages = products ? Math.ceil(products.length / itemsPerPage) : 0;
-  const paginatedProducts = products?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   return (
     <Shell>
