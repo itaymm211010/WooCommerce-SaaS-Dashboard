@@ -37,11 +37,15 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
       
       console.log(`Calling endpoint: ${supabaseUrl}/functions/v1/sync-woo-products`);
       
+      // Get the anon key directly from the supabase client configuration
+      const { data: authData } = await supabase.auth.getSession();
+      const authToken = authData.session?.access_token;
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/sync-woo-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.anon_key}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ store_id: storeId })
       });
