@@ -22,10 +22,10 @@ export function Shell({ children }: ShellProps) {
     <div className="relative flex min-h-screen flex-col">
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex flex-1 flex-col lg:pr-72">
+        <main className="flex flex-1 flex-col lg:pl-72">
           <TopBar />
-          {/* הוספת padding-top כדי למנוע הסתרת תוכן מהכותרת הקבועה */}
-          <div className="pt-16 flex-1 container mx-auto pb-8 max-w-7xl">
+          {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
+          <div className="flex-1 px-4 py-20 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
