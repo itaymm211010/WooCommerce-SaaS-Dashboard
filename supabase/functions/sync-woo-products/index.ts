@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -139,7 +138,7 @@ serve(async (req) => {
       }))
 
       // Save products to the database
-      console.log('Saving products to database...')
+      console.log('Saving products and images to database...')
       
       // First, delete existing products for this store to avoid duplicates
       const { error: deleteError } = await supabase
@@ -149,48 +148,79 @@ serve(async (req) => {
       
       if (deleteError) {
         console.error('Error deleting existing products:', deleteError)
-        return new Response(JSON.stringify({
-          error: `Failed to prepare database: ${deleteError.message}`
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
-        });
+        throw deleteError;
       }
       
-      // Insert new products
-      const productsToInsert = productsWithVariations.map(product => ({
-        store_id: store_id,
-        woo_id: product.id,
-        name: product.name,
-        price: parseFloat(product.price || '0'),
-        stock_quantity: product.stock_quantity,
-        status: product.status,
-        type: product.type || 'simple'
-      }))
-      
-      const { error: insertError } = await supabase
-        .from('products')
-        .insert(productsToInsert)
-      
-      if (insertError) {
-        console.error('Error inserting products:', insertError)
-        return new Response(JSON.stringify({
-          error: `Failed to save products: ${insertError.message}`
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
-        });
-      }
-      
-      console.log(`Successfully saved ${productsToInsert.length} products to database`)
+      // Insert new products and their images
+      for (const product of productsWithVariations) {
+        // Insert the product first
+        const { data: insertedProduct, error: insertError } = await supabase
+          .from('products')
+          .insert({
+            store_id: store_id,
+            woo_id: product.id,
+            name: product.name,
+            price: parseFloat(product.price || '0'),
+            stock_quantity: product.stock_quantity,
+            status: product.status,
+            type: product.type || 'simple'
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Error inserting product:', insertError);
+          continue;
+        }
 
-      return new Response(JSON.stringify({ 
-        products: productsWithVariations,
-        saved: productsToInsert.length
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
+        // Insert product images
+        if (product.images && product.images.length > 0) {
+          const imagesToInsert = product.images.map((image: any, index: number) => ({
+            store_id: store_id,
+            product_id: insertedProduct.id,
+            original_url: image.src,
+            storage_url: null,
+            storage_source: 'woocommerce',
+            type: index === 0 ? 'featured' : 'gallery',
+            alt_text: image.alt || '',
+            description: '',
+            display_order: index
+          }));
+
+          const { data: insertedImages, error: imageError } = await supabase
+            .from('product_images')
+            .insert(imagesToInsert)
+            .select();
+
+          if (imageError) {
+            console.error('Error inserting product images:', imageError);
+            continue;
+          }
+
+          // Update product with featured image if available
+          if (insertedImages && insertedImages[0]) {
+            const { error: updateError } = await supabase
+              .from('products')
+              .update({ featured_image_id: insertedImages[0].id })
+              .eq('id', insertedProduct.id);
+
+            if (updateError) {
+              console.error('Error updating product featured image:', updateError);
+            }
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Products and images synced successfully'
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
 
     } catch (fetchError) {
       console.error('Error fetching products from WooCommerce:', fetchError);
@@ -202,7 +232,6 @@ serve(async (req) => {
         status: 500,
       });
     }
-
   } catch (error) {
     console.error('Error in sync-woo-products function:', error);
     

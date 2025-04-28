@@ -98,9 +98,73 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          original_url: string
+          product_id: string
+          storage_source: string
+          storage_url: string | null
+          store_id: string
+          type: string
+          updated_at: string
+          variation_id: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          original_url: string
+          product_id: string
+          storage_source?: string
+          storage_url?: string | null
+          store_id: string
+          type?: string
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          original_url?: string
+          product_id?: string
+          storage_source?: string
+          storage_url?: string | null
+          store_id?: string
+          type?: string
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
+          featured_image_id: string | null
           id: string
           name: string
           price: number
@@ -113,6 +177,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          featured_image_id?: string | null
           id?: string
           name: string
           price: number
@@ -125,6 +190,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          featured_image_id?: string | null
           id?: string
           name?: string
           price?: number
@@ -136,6 +202,13 @@ export type Database = {
           woo_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "products_featured_image_id_fkey"
+            columns: ["featured_image_id"]
+            isOneToOne: false
+            referencedRelation: "product_images"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_store_id_fkey"
             columns: ["store_id"]
@@ -174,6 +247,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      store_users: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_users_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stores: {
         Row: {
