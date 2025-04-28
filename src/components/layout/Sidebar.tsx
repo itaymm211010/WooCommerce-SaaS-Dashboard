@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
@@ -9,7 +8,8 @@ import {
   BarChart,
   Menu,
   X,
-  User
+  User,
+  Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,6 +29,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Stores", href: "/stores", icon: Store },
   { name: "Profile", href: "/profile", icon: User },
+  { name: "ניהול תמונות", href: "/demo/image-management", icon: Image },
 ];
 
 const storeNavigation: NavigationItem[] = [
