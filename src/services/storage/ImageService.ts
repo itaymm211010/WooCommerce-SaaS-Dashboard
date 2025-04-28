@@ -1,5 +1,5 @@
 
-import { ImageMetadata, ImageStorageProvider } from "./types";
+import { ImageMetadata, ImageStorageProvider, ImageVersion } from "./types";
 import { SupabaseStorageProvider } from "./SupabaseStorageProvider";
 import { supabase } from "@/lib/supabase";
 import { nanoid } from "nanoid";
@@ -18,13 +18,15 @@ export class ImageService {
     metadata: ImageMetadata
   ) {
     try {
-      // Generate a unique path for the image
-      const fileName = `${nanoid()}-${file.name}`;
-      const path = `${storeId}/${productId}/${fileName}`;
-
-      // Optimize and upload the image
-      const optimizedFile = await this.storageProvider.optimizeImage?.(file) ?? file;
-      const storageUrl = await this.storageProvider.uploadImage(optimizedFile, path);
+      const fileVersions = await this.storageProvider.generateVersions(file);
+      const uploadedVersions: Record<ImageVersion, string> = {};
+      
+      // Upload each version
+      for (const [version, versionFile] of Object.entries(fileVersions)) {
+        const fileName = `${nanoid()}-${version}-${file.name}`;
+        const path = `${storeId}/${productId}/${fileName}`;
+        uploadedVersions[version as ImageVersion] = await this.storageProvider.uploadImage(versionFile, path);
+      }
 
       // Save image metadata to the database
       const { data, error } = await supabase
@@ -32,13 +34,14 @@ export class ImageService {
         .insert({
           store_id: storeId,
           product_id: productId,
-          original_url: storageUrl, // For now, same as storage_url
-          storage_url: storageUrl,
+          original_url: uploadedVersions.original,
+          storage_url: uploadedVersions.large, // Default display version
           storage_source: 'supabase',
           type: metadata.type,
           alt_text: metadata.alt_text,
           description: metadata.description,
-          display_order: metadata.display_order
+          display_order: metadata.display_order,
+          versions: uploadedVersions,
         })
         .select()
         .single();
@@ -61,8 +64,11 @@ export class ImageService {
 
       if (fetchError) throw fetchError;
 
-      if (image.storage_source === 'supabase') {
-        await this.storageProvider.deleteImage(image.storage_url);
+      if (image.storage_source === 'supabase' && image.versions) {
+        // Delete all versions of the image
+        for (const url of Object.values(image.versions)) {
+          await this.storageProvider.deleteImage(url);
+        }
       }
 
       const { error: deleteError } = await supabase
