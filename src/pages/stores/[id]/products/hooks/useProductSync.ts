@@ -32,7 +32,15 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
         return;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-woo-products`, {
+      // Get the Supabase URL from the environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('Missing Supabase URL configuration');
+      }
+
+      console.log(`Calling endpoint: ${supabaseUrl}/functions/v1/sync-woo-products`);
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/sync-woo-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,11 +50,43 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to sync products: ${errorData.error || response.statusText}`);
+        // Try to get error message from response if possible
+        let errorMessage;
+        try {
+          const errorData = await response.text();
+          // Only try to parse as JSON if it looks like JSON
+          if (errorData.startsWith('{')) {
+            const errorJson = JSON.parse(errorData);
+            errorMessage = errorJson.error || response.statusText;
+          } else {
+            errorMessage = errorData || response.statusText;
+          }
+        } catch (parseError) {
+          errorMessage = `Status ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(`Failed to sync products: ${errorMessage}`);
       }
 
-      toast.success('Successfully synced products');
+      // Check if response has content before trying to parse JSON
+      const text = await response.text();
+      let data;
+      
+      if (text.trim() !== '') {
+        try {
+          data = JSON.parse(text);
+        } catch (jsonError) {
+          console.error('Error parsing response as JSON:', jsonError, 'Response text:', text);
+          throw new Error('Invalid response format from server');
+        }
+      } else {
+        // Handle empty response
+        console.warn('Empty response from server');
+        data = {};
+      }
+
+      const productCount = data?.products?.length || 0;
+      toast.success(`Successfully synced ${productCount} products`);
       refetch();
     } catch (error) {
       console.error('Error syncing products:', error);

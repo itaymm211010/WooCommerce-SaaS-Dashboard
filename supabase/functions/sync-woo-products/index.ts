@@ -33,11 +33,21 @@ serve(async (req) => {
       .single()
 
     if (storeError || !store) {
-      throw new Error(`Store not found: ${storeError?.message}`)
+      return new Response(JSON.stringify({ 
+        error: `Store not found: ${storeError?.message || 'Unknown error'}` 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404
+      });
     }
 
     if (!store.url || !store.api_key || !store.api_secret) {
-      throw new Error('Missing store configuration')
+      return new Response(JSON.stringify({ 
+        error: 'Missing store configuration'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      });
     }
 
     // Format the base URL
@@ -49,58 +59,78 @@ serve(async (req) => {
     console.log(`Fetching products from ${baseUrl}/wp-json/wc/v3/products`)
 
     // Make request to WooCommerce API from the server
-    const wooResponse = await fetch(
-      `${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+    try {
+      const wooResponse = await fetch(
+        `${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    )
+      )
 
-    if (!wooResponse.ok) {
-      const errorText = await wooResponse.text()
-      throw new Error(`WooCommerce API Error: ${wooResponse.status} ${wooResponse.statusText} - ${errorText}`)
+      if (!wooResponse.ok) {
+        const errorText = await wooResponse.text()
+        return new Response(JSON.stringify({
+          error: `WooCommerce API Error: ${wooResponse.status} ${wooResponse.statusText} - ${errorText}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: wooResponse.status
+        });
+      }
+
+      const products = await wooResponse.json()
+
+      // Fetch variations for variable products
+      const productsWithVariations = await Promise.all(products.map(async (product) => {
+        if (product.type === 'variable') {
+          try {
+            const variationsResponse = await fetch(
+              `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+              {
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                }
+              }
+            )
+            
+            if (variationsResponse.ok) {
+              const variations = await variationsResponse.json()
+              return { ...product, variations }
+            }
+          } catch (error) {
+            console.error(`Failed to fetch variations for product ${product.id}:`, error)
+          }
+        }
+        return product
+      }))
+
+      return new Response(JSON.stringify({ products: productsWithVariations }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+
+    } catch (fetchError) {
+      console.error('Error fetching products from WooCommerce:', fetchError);
+      
+      return new Response(JSON.stringify({ 
+        error: fetchError instanceof Error ? fetchError.message : 'Unknown error fetching products'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
 
-    const products = await wooResponse.json()
-
-    // Fetch variations for variable products
-    const productsWithVariations = await Promise.all(products.map(async (product) => {
-      if (product.type === 'variable') {
-        try {
-          const variationsResponse = await fetch(
-            `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-            {
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              }
-            }
-          )
-          
-          if (variationsResponse.ok) {
-            const variations = await variationsResponse.json()
-            return { ...product, variations }
-          }
-        } catch (error) {
-          console.error(`Failed to fetch variations for product ${product.id}:`, error)
-        }
-      }
-      return product
-    }))
-
-    return new Response(JSON.stringify({ products: productsWithVariations }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
-
   } catch (error) {
-    console.error('Error fetching products:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error in sync-woo-products function:', error);
+    
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
-    })
+    });
   }
 })
