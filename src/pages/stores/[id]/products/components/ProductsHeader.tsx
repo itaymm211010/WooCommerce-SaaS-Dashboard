@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Store } from "@/types/database";
@@ -36,7 +36,7 @@ export const ProductsHeader = ({
             {store?.name ? `${store.name} - Products` : 'Products'}
           </h1>
           <p className="text-muted-foreground">
-            Manage your store products
+            Manage your store products and inventory
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -61,6 +61,16 @@ export const ProductsHeader = ({
               isSyncing && "animate-spin"
             )} />
             {isSyncing ? 'Syncing...' : 'Sync Products'}
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            asChild
+          >
+            <Link to={`/stores/${store?.id}/products/new/edit`}>
+              <Package className="h-4 w-4" />
+              New Product
+            </Link>
           </Button>
         </div>
       </div>
