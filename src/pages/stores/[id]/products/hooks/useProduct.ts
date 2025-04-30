@@ -18,6 +18,11 @@ export const useProduct = (storeId: string | undefined, productId: string | unde
             status: "draft",
             stock_quantity: 0,
             sku: "",
+            weight: 0,
+            length: 0,
+            width: 0,
+            height: 0,
+            type: "simple"
           } as Partial<Product>;
         }
         throw new Error("חסרים פרטי חנות או מוצר");

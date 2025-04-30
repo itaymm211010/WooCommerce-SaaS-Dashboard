@@ -1,5 +1,3 @@
-
-
 export interface Store {
   id: string;
   name: string;
@@ -17,12 +15,18 @@ export interface Product {
   store_id: string;
   woo_id: number;
   name: string;
+  description?: string; // Added missing property
   price: number | null;
   stock_quantity: number | null;
   status: string;
   type: string;
   created_at: string;
   updated_at: string;
+  sku?: string; // Added missing property
+  weight?: number; // Added missing property
+  length?: number; // Added missing property
+  width?: number; // Added missing property
+  height?: number; // Added missing property
 }
 
 export interface Order {
@@ -90,4 +94,3 @@ export interface Database {
     };
   };
 }
-
