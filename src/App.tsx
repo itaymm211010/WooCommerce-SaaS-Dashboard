@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import StoresPage from "./pages/stores";
 import OrdersPage from "./pages/stores/[id]/orders";
 import OrderDetailsPage from "./pages/stores/[id]/orders/[orderId]/details";
 import ProductsPage from "./pages/stores/[id]/products";
+import ProductEditorPage from "./pages/stores/[id]/products/[productId]/edit";
 import StoreUsersPage from "./pages/stores/[id]/users";
 import NotFound from "./pages/NotFound";
 
@@ -139,6 +141,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ProductsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/products/:productId/edit"
+              element={
+                <RequireAuth>
+                  <ProductEditorPage />
                 </RequireAuth>
               }
             />

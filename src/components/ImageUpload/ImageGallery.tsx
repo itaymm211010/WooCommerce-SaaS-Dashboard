@@ -14,7 +14,7 @@ interface ImageGalleryProps {
   selectedImageId?: string;
 }
 
-export function ImageGallery({ images, onImageSelect }: ImageGalleryProps) {
+export function ImageGallery({ images, onImageSelect, selectedImageId }: ImageGalleryProps) {
   if (images.length === 0) {
     return (
       <div className="text-center p-8 text-gray-500">
@@ -28,7 +28,7 @@ export function ImageGallery({ images, onImageSelect }: ImageGalleryProps) {
       {images.map((image) => (
         <div key={image.id} className="space-y-4">
           <div 
-            className="cursor-pointer relative group" 
+            className={`cursor-pointer relative group ${selectedImageId === image.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
             onClick={() => onImageSelect?.(image.id)}
           >
             <ImagePreview
@@ -38,9 +38,14 @@ export function ImageGallery({ images, onImageSelect }: ImageGalleryProps) {
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button variant="secondary" size="sm">
                 <Check className="h-4 w-4 mr-2" />
-                בחר כתמונה ראשית
+                {selectedImageId === image.id ? 'תמונה ראשית' : 'בחר כתמונה ראשית'}
               </Button>
             </div>
+            {selectedImageId === image.id && (
+              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+                <Check className="h-4 w-4" />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-3 gap-2">
             <ImagePreview url={image.versions.thumbnail} version="thumbnail" />
