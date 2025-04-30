@@ -13,12 +13,12 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
   const hasValidStoreConfig = () => {
     if (!store) return false;
     
-    return (
-      !!store.url && 
+    return Boolean(
+      store.url && 
       store.url.trim() !== '' && 
-      !!store.api_key && 
+      store.api_key && 
       store.api_key.trim() !== '' && 
-      !!store.api_secret && 
+      store.api_secret && 
       store.api_secret.trim() !== ''
     );
   };

@@ -65,7 +65,7 @@ export const ProductsHeader = ({
         </div>
       </div>
 
-      {!hasValidStoreConfig && (
+      {!hasValidStoreConfig && store && (
         <Alert variant="destructive">
           <AlertTitle>Missing store configuration</AlertTitle>
           <AlertDescription>
