@@ -6,6 +6,8 @@ import { ImageGallery } from '@/components/ImageUpload/ImageGallery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageVersion } from '@/services/storage/types';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from 'lucide-react';
 
 type DemoImage = {
   id: string;
@@ -15,18 +17,32 @@ type DemoImage = {
 export default function ImageManagementDemo() {
   const [images, setImages] = useState<DemoImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleUploadComplete = (imageData: any) => {
+    if (!imageData || !imageData.id || !imageData.versions) {
+      setError('התקבל מידע חסר מתהליך העלאת התמונה');
+      return;
+    }
+
     setImages((prev) => [...prev, {
       id: imageData.id,
       versions: imageData.versions || {}
     }]);
+    
+    setError(null);
     toast.success('תמונה הועלתה בהצלחה');
   };
 
   const handleImageSelect = (imageId: string) => {
     setSelectedImageId(imageId);
     toast.success('התמונה נבחרה כתמונה ראשית');
+  };
+
+  const handleUploadError = (errorMessage: string) => {
+    console.error('Upload error:', errorMessage);
+    setError(errorMessage);
+    toast.error(`שגיאה בהעלאת תמונה: ${errorMessage}`);
   };
 
   return (
@@ -39,6 +55,14 @@ export default function ImageManagementDemo() {
           </p>
         </div>
 
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>שגיאה</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6">
           <Card>
             <CardHeader>
@@ -49,6 +73,7 @@ export default function ImageManagementDemo() {
                 storeId="demo-store"
                 productId="demo-product"
                 onUploadComplete={handleUploadComplete}
+                onError={handleUploadError}
               />
             </CardContent>
           </Card>

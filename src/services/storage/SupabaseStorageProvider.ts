@@ -1,6 +1,6 @@
+
 import { supabase } from "@/lib/supabase";
 import { ImageOptimizationOptions, ImageStorageProvider, ImageVersion } from "./types";
-import { pipeline } from "@huggingface/transformers";
 
 export class SupabaseStorageProvider implements ImageStorageProvider {
   private bucket = 'product-images';
@@ -12,66 +12,106 @@ export class SupabaseStorageProvider implements ImageStorageProvider {
   };
 
   async uploadImage(file: File, path: string, options?: ImageOptimizationOptions): Promise<string> {
-    const { data, error } = await supabase.storage
-      .from(this.bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
+    try {
+      // Check if the user is authenticated
+      const { data: sessionData } = await supabase.auth.getSession();
+      const isAuthenticated = !!sessionData.session;
 
-    if (error) throw error;
+      // If not authenticated for demo purposes, use a more permissive approach
+      const { data, error } = await supabase.storage
+        .from(this.bucket)
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-    const { data: publicUrl } = supabase.storage
-      .from(this.bucket)
-      .getPublicUrl(data.path);
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw new Error(`העלאת התמונה נכשלה: ${error.message}`);
+      }
 
-    return publicUrl.publicUrl;
+      if (!data) {
+        throw new Error('לא התקבל מידע מהשרת לאחר העלאת התמונה');
+      }
+
+      const { data: publicUrl } = supabase.storage
+        .from(this.bucket)
+        .getPublicUrl(data.path);
+
+      if (!publicUrl || !publicUrl.publicUrl) {
+        throw new Error('לא ניתן לקבל כתובת ציבורית לתמונה');
+      }
+
+      return publicUrl.publicUrl;
+    } catch (error) {
+      console.error('Error in uploadImage:', error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('שגיאה לא ידועה בהעלאת התמונה');
+      }
+    }
   }
 
   async deleteImage(url: string): Promise<void> {
-    const path = url.split('/').slice(-2).join('/');
-    const { error } = await supabase.storage
-      .from(this.bucket)
-      .remove([path]);
+    try {
+      const path = url.split('/').slice(-2).join('/');
+      const { error } = await supabase.storage
+        .from(this.bucket)
+        .remove([path]);
 
-    if (error) throw error;
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      throw error;
+    }
   }
 
   async optimizeImage(file: File, options?: ImageOptimizationOptions): Promise<File> {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
 
-    const img = await createImageBitmap(file);
-    const { width, height } = this.calculateDimensions(img, options);
+      const img = await createImageBitmap(file);
+      const { width, height } = this.calculateDimensions(img, options);
 
-    canvas.width = width;
-    canvas.height = height;
-    ctx.drawImage(img, 0, 0, width, height);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
 
-    const format = options?.format || 'webp';
-    const quality = options?.quality || 0.9;
+      const format = options?.format || 'webp';
+      const quality = options?.quality ? options.quality / 100 : 0.9;
 
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), `image/${format}`, quality);
-    });
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), `image/${format}`, quality);
+      });
 
-    return new File([blob], file.name.replace(/\.[^/.]+$/, `.${format}`), {
-      type: `image/${format}`
-    });
+      return new File([blob], file.name.replace(/\.[^/.]+$/, `.${format}`), {
+        type: `image/${format}`
+      });
+    } catch (error) {
+      console.error('Error optimizing image:', error);
+      throw error;
+    }
   }
 
   async generateVersions(file: File): Promise<Record<ImageVersion, File>> {
-    const versions: Partial<Record<ImageVersion, File>> = {};
-    
-    for (const [version, config] of Object.entries(this.defaultVersionConfig)) {
-      versions[version as ImageVersion] = await this.optimizeImage(file, {
-        ...config,
-        format: this.isWebPSupported() ? 'webp' : 'jpeg'
-      });
-    }
+    try {
+      const versions: Partial<Record<ImageVersion, File>> = {};
+      
+      for (const [version, config] of Object.entries(this.defaultVersionConfig)) {
+        versions[version as ImageVersion] = await this.optimizeImage(file, {
+          ...config,
+          format: this.isWebPSupported() ? 'webp' : 'jpeg'
+        });
+      }
 
-    return versions as Record<ImageVersion, File>;
+      return versions as Record<ImageVersion, File>;
+    } catch (error) {
+      console.error('Error generating versions:', error);
+      throw error;
+    }
   }
 
   private calculateDimensions(

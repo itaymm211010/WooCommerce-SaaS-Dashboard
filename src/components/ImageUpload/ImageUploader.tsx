@@ -12,9 +12,10 @@ interface ImageUploaderProps {
   storeId: string;
   productId: string;
   onUploadComplete?: (imageData: any) => void;
+  onError?: (message: string) => void;
 }
 
-export function ImageUploader({ storeId, productId, onUploadComplete }: ImageUploaderProps) {
+export function ImageUploader({ storeId, productId, onUploadComplete, onError }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -22,6 +23,21 @@ export function ImageUploader({ storeId, productId, onUploadComplete }: ImageUpl
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      const errorMsg = 'סוג קובץ לא נתמך. אנא העלה תמונה בפורמט JPEG, PNG, WebP או GIF.';
+      onError?.(errorMsg);
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      const errorMsg = 'גודל הקובץ גדול מדי. הגודל המקסימלי הוא 10MB.';
+      onError?.(errorMsg);
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -48,21 +64,30 @@ export function ImageUploader({ storeId, productId, onUploadComplete }: ImageUpl
       );
 
       setProgress(100);
-      toast.success('תמונה הועלתה בהצלחה');
       onUploadComplete?.(uploadedImage);
 
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('שגיאה בהעלאת התמונה');
+      const errorMsg = error instanceof Error ? error.message : 'שגיאה לא ידועה בהעלאת התמונה';
+      onError?.(errorMsg);
     } finally {
       setIsUploading(false);
-      setProgress(0);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+      setTimeout(() => setProgress(0), 500); // Reset progress after a short delay
+      
+      // Only clear the preview if there was an error
+      if (!previewUrl) {
+        URL.revokeObjectURL(previewUrl!);
         setPreviewUrl(null);
       }
     }
-  }, [storeId, productId, onUploadComplete]);
+  }, [storeId, productId, onUploadComplete, onError]);
+
+  const clearPreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -107,12 +132,7 @@ export function ImageUploader({ storeId, productId, onUploadComplete }: ImageUpl
             variant="destructive"
             size="icon"
             className="absolute top-2 right-2"
-            onClick={() => {
-              if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-                setPreviewUrl(null);
-              }
-            }}
+            onClick={clearPreview}
           >
             <X className="h-4 w-4" />
           </Button>
