@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageVersion } from '@/services/storage/types';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Trash } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ImageService } from '@/services/storage/ImageService';
 
 type DemoImage = {
   id: string;
@@ -18,8 +20,11 @@ export default function ImageManagementDemo() {
   const [images, setImages] = useState<DemoImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUploadComplete = (imageData: any) => {
+    console.log('Upload complete, received data:', imageData);
+    
     if (!imageData || !imageData.id || !imageData.versions) {
       setError('התקבל מידע חסר מתהליך העלאת התמונה');
       return;
@@ -37,6 +42,27 @@ export default function ImageManagementDemo() {
   const handleImageSelect = (imageId: string) => {
     setSelectedImageId(imageId);
     toast.success('התמונה נבחרה כתמונה ראשית');
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      setIsDeleting(true);
+      const imageService = new ImageService();
+      await imageService.deleteProductImage(imageId);
+      
+      setImages(prev => prev.filter(img => img.id !== imageId));
+      
+      if (selectedImageId === imageId) {
+        setSelectedImageId(null);
+      }
+      
+      toast.success('התמונה נמחקה בהצלחה');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error(`שגיאה במחיקת תמונה: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleUploadError = (errorMessage: string) => {
@@ -80,8 +106,19 @@ export default function ImageManagementDemo() {
 
           {images.length > 0 && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>גלריית תמונות</CardTitle>
+                {selectedImageId && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteImage(selectedImageId)}
+                    disabled={isDeleting}
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    מחק תמונה נבחרת
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <ImageGallery 

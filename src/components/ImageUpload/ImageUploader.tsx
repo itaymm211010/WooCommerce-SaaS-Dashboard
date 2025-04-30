@@ -19,6 +19,7 @@ export function ImageUploader({ storeId, productId, onUploadComplete, onError }:
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,31 +41,48 @@ export function ImageUploader({ storeId, productId, onUploadComplete, onError }:
     }
 
     try {
-      setIsUploading(true);
-      setProgress(10);
-
       // Create preview
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
-      
-      setProgress(30);
+      setSelectedFile(file);
+    } catch (error) {
+      console.error('Error creating preview:', error);
+      onError?.(error instanceof Error ? error.message : 'שגיאה ביצירת תצוגה מקדימה');
+    }
+  }, [onError]);
 
+  const handleUpload = useCallback(async () => {
+    if (!selectedFile) {
+      onError?.('לא נבחרה תמונה להעלאה');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setProgress(10);
+
+      console.log('Starting upload process', { storeId, productId });
+      
       // Upload image with metadata
       const imageService = new ImageService();
+      setProgress(30);
+      
       const uploadedImage = await imageService.uploadProductImage(
-        file,
+        selectedFile,
         storeId,
         productId,
         {
           type: 'gallery',
-          alt_text: file.name,
+          alt_text: selectedFile.name,
           description: '',
           display_order: 0
         }
       );
 
       setProgress(100);
+      console.log('Upload completed successfully', uploadedImage);
       onUploadComplete?.(uploadedImage);
+      toast.success('תמונה הועלתה בהצלחה');
 
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -73,19 +91,14 @@ export function ImageUploader({ storeId, productId, onUploadComplete, onError }:
     } finally {
       setIsUploading(false);
       setTimeout(() => setProgress(0), 500); // Reset progress after a short delay
-      
-      // Only clear the preview if there was an error
-      if (!previewUrl) {
-        URL.revokeObjectURL(previewUrl!);
-        setPreviewUrl(null);
-      }
     }
-  }, [storeId, productId, onUploadComplete, onError]);
+  }, [selectedFile, storeId, productId, onUploadComplete, onError]);
 
   const clearPreview = () => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
+      setSelectedFile(null);
     }
   };
 
@@ -96,7 +109,7 @@ export function ImageUploader({ storeId, productId, onUploadComplete, onError }:
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <Upload className="w-8 h-8 mb-4 text-gray-500" />
             <p className="mb-2 text-sm text-gray-500">
-              <span className="font-semibold">לחץ להעלאת תמונה</span> או גרור לכאן
+              <span className="font-semibold">לחץ לבחירת תמונה</span> או גרור לכאן
             </p>
             <p className="text-xs text-gray-500">
               PNG, JPG או WebP (מקסימום 10MB)
@@ -122,20 +135,32 @@ export function ImageUploader({ storeId, productId, onUploadComplete, onError }:
       )}
 
       {previewUrl && (
-        <div className="relative">
-          <img
-            src={previewUrl}
-            alt="תצוגה מקדימה"
-            className="w-full h-48 object-cover rounded-lg"
-          />
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-2 right-2"
-            onClick={clearPreview}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        <div className="space-y-4">
+          <div className="relative">
+            <img
+              src={previewUrl}
+              alt="תצוגה מקדימה"
+              className="w-full h-48 object-cover rounded-lg"
+            />
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={clearPreview}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleUpload} 
+              disabled={isUploading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              העלאת התמונה
+            </Button>
+          </div>
         </div>
       )}
     </div>

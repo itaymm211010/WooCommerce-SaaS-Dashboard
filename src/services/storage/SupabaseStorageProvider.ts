@@ -13,11 +13,9 @@ export class SupabaseStorageProvider implements ImageStorageProvider {
 
   async uploadImage(file: File, path: string, options?: ImageOptimizationOptions): Promise<string> {
     try {
-      // Check if the user is authenticated
-      const { data: sessionData } = await supabase.auth.getSession();
-      const isAuthenticated = !!sessionData.session;
-
-      // If not authenticated for demo purposes, use a more permissive approach
+      console.log(`Uploading to bucket: ${this.bucket}, path: ${path}`);
+      
+      // Upload to the storage bucket
       const { data, error } = await supabase.storage
         .from(this.bucket)
         .upload(path, file, {
@@ -34,6 +32,7 @@ export class SupabaseStorageProvider implements ImageStorageProvider {
         throw new Error('לא התקבל מידע מהשרת לאחר העלאת התמונה');
       }
 
+      // Get the public URL for the uploaded file
       const { data: publicUrl } = supabase.storage
         .from(this.bucket)
         .getPublicUrl(data.path);
@@ -42,6 +41,7 @@ export class SupabaseStorageProvider implements ImageStorageProvider {
         throw new Error('לא ניתן לקבל כתובת ציבורית לתמונה');
       }
 
+      console.log('Uploaded successfully, public URL:', publicUrl.publicUrl);
       return publicUrl.publicUrl;
     } catch (error) {
       console.error('Error in uploadImage:', error);
@@ -55,12 +55,22 @@ export class SupabaseStorageProvider implements ImageStorageProvider {
 
   async deleteImage(url: string): Promise<void> {
     try {
-      const path = url.split('/').slice(-2).join('/');
+      // Extract path from URL
+      const pathMatch = url.match(/\/storage\/v1\/object\/public\/product-images\/(.+)$/);
+      if (!pathMatch || !pathMatch[1]) {
+        throw new Error('לא ניתן לחלץ את הנתיב מה-URL');
+      }
+      
+      const path = decodeURIComponent(pathMatch[1]);
+      console.log(`Deleting from bucket: ${this.bucket}, path: ${path}`);
+      
       const { error } = await supabase.storage
         .from(this.bucket)
         .remove([path]);
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`מחיקת התמונה נכשלה: ${error.message}`);
+      }
     } catch (error) {
       console.error('Error deleting image:', error);
       throw error;
