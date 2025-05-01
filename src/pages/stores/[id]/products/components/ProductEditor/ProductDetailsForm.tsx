@@ -246,7 +246,7 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
               <FormMessage />
             </FormItem>
           )}
-        </div>
+        />
 
         <Button
           type="submit"
