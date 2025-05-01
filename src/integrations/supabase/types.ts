@@ -163,42 +163,69 @@ export type Database = {
       }
       products: {
         Row: {
+          categories: Json | null
           created_at: string
+          description: string | null
           featured_image_id: string | null
+          height: number | null
           id: string
+          length: number | null
           name: string
           price: number
+          sale_price: number | null
+          short_description: string | null
+          sku: string | null
           status: string
           stock_quantity: number | null
           store_id: string
           type: string | null
           updated_at: string
+          weight: number | null
+          width: number | null
           woo_id: number
         }
         Insert: {
+          categories?: Json | null
           created_at?: string
+          description?: string | null
           featured_image_id?: string | null
+          height?: number | null
           id?: string
+          length?: number | null
           name: string
           price: number
+          sale_price?: number | null
+          short_description?: string | null
+          sku?: string | null
           status: string
           stock_quantity?: number | null
           store_id: string
           type?: string | null
           updated_at?: string
+          weight?: number | null
+          width?: number | null
           woo_id: number
         }
         Update: {
+          categories?: Json | null
           created_at?: string
+          description?: string | null
           featured_image_id?: string | null
+          height?: number | null
           id?: string
+          length?: number | null
           name?: string
           price?: number
+          sale_price?: number | null
+          short_description?: string | null
+          sku?: string | null
           status?: string
           stock_quantity?: number | null
           store_id?: string
           type?: string | null
           updated_at?: string
+          weight?: number | null
+          width?: number | null
           woo_id?: number
         }
         Relationships: [

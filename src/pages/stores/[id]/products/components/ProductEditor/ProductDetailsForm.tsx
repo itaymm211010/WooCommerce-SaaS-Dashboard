@@ -31,8 +31,10 @@ import { useNavigate } from "react-router-dom";
 // Schema for validation
 const productSchema = z.object({
   name: z.string().min(1, { message: "נדרש שם מוצר" }),
+  short_description: z.string().optional(),
   description: z.string().optional(),
   price: z.coerce.number().min(0, { message: "מחיר לא יכול להיות שלילי" }),
+  sale_price: z.coerce.number().min(0, { message: "מחיר מבצע לא יכול להיות שלילי" }).optional(),
   status: z.enum(["publish", "draft", "pending", "private"], {
     required_error: "נדרש סטטוס מוצר",
   }),
@@ -55,8 +57,10 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: initialData?.name || "",
+      short_description: initialData?.short_description || "",
       description: initialData?.description || "",
       price: initialData?.price || 0,
+      sale_price: initialData?.sale_price || 0,
       status: (initialData?.status as "publish" | "draft" | "pending" | "private") || "draft",
     },
   });
@@ -73,8 +77,10 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
             {
               store_id: storeId,
               name: data.name,
+              short_description: data.short_description,
               description: data.description,
               price: data.price,
+              sale_price: data.sale_price || null,
               status: data.status,
               woo_id: 0, // Temporary ID until synced with WooCommerce
             },
@@ -92,8 +98,10 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
           .from("products")
           .update({
             name: data.name,
+            short_description: data.short_description,
             description: data.description,
             price: data.price,
+            sale_price: data.sale_price || null,
             status: data.status,
             updated_at: new Date().toISOString(),
           })
@@ -132,6 +140,24 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
 
         <FormField
           control={form.control}
+          name="short_description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>תיאור קצר</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="תיאור קצר למוצר"
+                  rows={2}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
@@ -139,7 +165,7 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="תיאור המוצר"
+                  placeholder="תיאור מלא של המוצר"
                   rows={4}
                 />
               </FormControl>
@@ -154,7 +180,7 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>מחיר</FormLabel>
+                <FormLabel>מחיר רגיל</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5">₪</span>
@@ -173,30 +199,53 @@ export function ProductDetailsForm({ initialData, storeId, isNewProduct }: Produ
 
           <FormField
             control={form.control}
-            name="status"
+            name="sale_price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>סטטוס מוצר</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר סטטוס" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="publish">מפורסם</SelectItem>
-                    <SelectItem value="draft">טיוטה</SelectItem>
-                    <SelectItem value="pending">ממתין לאישור</SelectItem>
-                    <SelectItem value="private">פרטי</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>מחיר מבצע</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5">₪</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      className="pl-8"
+                      placeholder="השאר ריק אם אין מבצע"
+                    />
+                  </div>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>סטטוס מוצר</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סטטוס" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="publish">מפורסם</SelectItem>
+                  <SelectItem value="draft">טיוטה</SelectItem>
+                  <SelectItem value="pending">ממתין לאישור</SelectItem>
+                  <SelectItem value="private">פרטי</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         </div>
 
         <Button
