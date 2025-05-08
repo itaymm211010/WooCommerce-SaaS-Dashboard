@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImageVersion } from "@/services/storage/types";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ProductNotSavedAlert } from "./ProductNotSavedAlert";
 import { AlertCircle } from "lucide-react";
 
 interface ProductImagesTabProps {
@@ -134,13 +134,17 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
 
   if (!productId || productId === "new") {
     return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>יש לשמור את המוצר תחילה</AlertTitle>
-        <AlertDescription>
-          לפני הוספת תמונות, יש לשמור את המוצר בלשונית "פרטים כלליים".
-        </AlertDescription>
-      </Alert>
+      <ProductNotSavedAlert />
+    );
+  }
+
+  if (error && error.includes("infinite recursion")) {
+    return (
+      <ProductNotSavedAlert 
+        title="שגיאת הרשאות" 
+        description="נראה שיש בעיה בהרשאות הגישה למערכת. אנא צור קשר עם מנהל המערכת." 
+        variant="warning"
+      />
     );
   }
 
@@ -164,11 +168,11 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
       </Card>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>שגיאה</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <ProductNotSavedAlert 
+          title="שגיאה" 
+          description={error} 
+          variant="warning" 
+        />
       )}
 
       <Card>
