@@ -22,8 +22,10 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip 
+  Tooltip,
+  TooltipProps
 } from "recharts";
+import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const Index = () => {
   const { data: stores } = useQuery({
@@ -228,7 +230,9 @@ const Index = () => {
                                       Revenue
                                     </span>
                                     <span className="font-bold">
-                                      ${payload[0].value.toFixed(2)}
+                                      ${typeof payload[0].value === 'number' 
+                                        ? payload[0].value.toFixed(2) 
+                                        : Number(payload[0].value).toFixed(2)}
                                     </span>
                                   </div>
                                 </div>
