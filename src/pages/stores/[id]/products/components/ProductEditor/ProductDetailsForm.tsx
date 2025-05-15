@@ -2,12 +2,13 @@
 import React from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, RefreshCw } from "lucide-react";
 import { Product } from "@/types/database";
 import { useProductForm } from "../../hooks/useProductForm";
 import { TextField } from "./TextField";
 import { PriceField } from "./PriceField";
 import { StatusField } from "./StatusField";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductDetailsFormProps {
   initialData?: Partial<Product>;
@@ -29,11 +30,25 @@ export function ProductDetailsForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <TextField 
-          name="name" 
-          label="שם המוצר" 
-          placeholder="הכנס שם מוצר" 
-        />
+        <div className="flex justify-between items-center">
+          <div>
+            <TextField 
+              name="name" 
+              label="שם המוצר" 
+              placeholder="הכנס שם מוצר" 
+            />
+          </div>
+          {!isNewProduct && initialData?.woo_id && initialData.woo_id > 0 && (
+            <Badge variant="outline" className="mr-2 bg-green-50">
+              <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן עם WooCommerce
+            </Badge>
+          )}
+          {!isNewProduct && (!initialData?.woo_id || initialData.woo_id === 0) && (
+            <Badge variant="outline" className="mr-2 bg-yellow-50">
+              <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן עם WooCommerce
+            </Badge>
+          )}
+        </div>
 
         <TextField 
           name="short_description" 
@@ -71,9 +86,22 @@ export function ProductDetailsForm({
           className="mt-4"
           disabled={isSaving}
         >
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? "שומר..." : "שמור מוצר"}
+          {isSaving ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              {isNewProduct ? "יוצר ומסנכרן..." : "מעדכן ומסנכרן..."}
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              {isNewProduct ? "שמור ויצור ב-WooCommerce" : "עדכן ב-WooCommerce"}
+            </>
+          )}
         </Button>
+        
+        <p className="text-xs text-muted-foreground mt-2">
+          שמירת המוצר תעדכן אותו גם בחנות WooCommerce שלך
+        </p>
       </form>
     </Form>
   );

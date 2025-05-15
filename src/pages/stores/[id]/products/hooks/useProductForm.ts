@@ -17,6 +17,7 @@ interface UseProductFormProps {
 
 export function useProductForm({ initialData, storeId, isNewProduct }: UseProductFormProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingToWoo, setSyncingToWoo] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -36,6 +37,17 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
     try {
       setIsSaving(true);
 
+      let productId: string;
+      let productData: Partial<Product> = {
+        name: data.name,
+        short_description: data.short_description,
+        description: data.description,
+        price: data.price,
+        sale_price: data.sale_price || null,
+        status: data.status,
+        updated_at: new Date().toISOString(),
+      };
+
       if (isNewProduct) {
         // Create new product
         const { data: newProduct, error } = await supabase
@@ -43,12 +55,7 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
           .insert([
             {
               store_id: storeId,
-              name: data.name,
-              short_description: data.short_description,
-              description: data.description,
-              price: data.price,
-              sale_price: data.sale_price || null,
-              status: data.status,
+              ...productData,
               woo_id: 0, // Temporary ID until synced with WooCommerce
             },
           ])
@@ -56,30 +63,37 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
           .single();
 
         if (error) throw error;
-
+        productId = newProduct.id;
+        
         toast.success("המוצר נוצר בהצלחה");
-        navigate(`/stores/${storeId}/products/${newProduct.id}/edit`);
+        
+        // Navigate to edit page for the new product
+        navigate(`/stores/${storeId}/products/${productId}/edit`);
       } else {
         // Update existing product
+        productId = initialData?.id as string;
+        
         const { error } = await supabase
           .from("products")
-          .update({
-            name: data.name,
-            short_description: data.short_description,
-            description: data.description,
-            price: data.price,
-            sale_price: data.sale_price || null,
-            status: data.status,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", initialData?.id)
+          .update(productData)
+          .eq("id", productId)
           .eq("store_id", storeId);
 
         if (error) throw error;
-
+        
         toast.success("המוצר עודכן בהצלחה");
-        queryClient.invalidateQueries({ queryKey: ['product', storeId, initialData?.id] });
+        queryClient.invalidateQueries({ queryKey: ['product', storeId, productId] });
       }
+
+      // After saving locally, sync to WooCommerce
+      await syncToWooCommerce({
+        ...initialData,
+        ...productData,
+        id: productId,
+        woo_id: initialData?.woo_id || 0,
+        store_id: storeId
+      });
+      
     } catch (error: any) {
       console.error("Error saving product:", error);
       toast.error(`שגיאה בשמירת המוצר: ${error.message}`);
@@ -88,5 +102,78 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
     }
   };
 
-  return { form, isSaving, onSubmit };
+  const syncToWooCommerce = async (product: Partial<Product>) => {
+    try {
+      setSyncingToWoo(true);
+      
+      // Use the supabase URL from the client configuration
+      const supabaseUrl = 'https://wzpbsridzmqrcztafzip.supabase.co';
+      
+      // Get the auth token
+      const { data: authData } = await supabase.auth.getSession();
+      const authToken = authData.session?.access_token;
+      
+      if (!authToken) {
+        throw new Error('לא מחובר למערכת');
+      }
+      
+      console.log('מסנכרן מוצר ל-WooCommerce:', product.id);
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/update-woo-product`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ 
+          product, 
+          store_id: storeId 
+        })
+      });
+
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || response.statusText;
+        } catch {
+          errorMessage = `Status ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(`נכשל סנכרון ל-WooCommerce: ${errorMessage}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success("המוצר סונכרן בהצלחה עם WooCommerce");
+        
+        // If this was a new product, update the woo_id in our database
+        if (product.woo_id === 0 && result.woo_id) {
+          const { error } = await supabase
+            .from("products")
+            .update({ woo_id: result.woo_id })
+            .eq("id", product.id);
+            
+          if (error) {
+            console.error("Error updating product with new WooCommerce ID:", error);
+          } else {
+            // Invalidate the product query to refresh the data
+            queryClient.invalidateQueries({ queryKey: ['product', storeId, product.id] });
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Error syncing to WooCommerce:", error);
+      toast.error(`שגיאה בסנכרון ל-WooCommerce: ${error.message}`);
+    } finally {
+      setSyncingToWoo(false);
+    }
+  };
+
+  return { 
+    form, 
+    isSaving: isSaving || isSyncingToWoo, 
+    onSubmit 
+  };
 }
