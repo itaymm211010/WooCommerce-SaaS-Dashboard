@@ -12,10 +12,15 @@ import { ProductNotSavedAlert } from "./ProductNotSavedAlert";
 interface ProductInventoryTabProps {
   initialData?: Partial<Product>;
   storeId: string;
+  productId?: string;
 }
 
-export function ProductInventoryTab({ initialData, storeId }: ProductInventoryTabProps) {
-  const { form, isSaving, onSubmit } = useInventoryForm({ initialData, storeId });
+export function ProductInventoryTab({ initialData, storeId, productId }: ProductInventoryTabProps) {
+  const { form, isSaving, onSubmit } = useInventoryForm({ 
+    initialData, 
+    storeId,
+    productId: productId || (initialData?.id || "")
+  });
 
   if (!initialData?.id) {
     return <ProductNotSavedAlert />;

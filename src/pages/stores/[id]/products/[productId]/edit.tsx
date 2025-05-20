@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from "react-router-dom";
 import { Shell } from "@/components/layout/Shell";
@@ -88,6 +89,7 @@ export default function ProductEditorPage() {
                 <ProductInventoryTab 
                   initialData={product}
                   storeId={storeId || ""}
+                  productId={productId || ""}
                 />
               </TabsContent>
             </Tabs>
