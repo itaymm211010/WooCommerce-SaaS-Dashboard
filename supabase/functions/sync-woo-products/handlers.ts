@@ -28,7 +28,8 @@ export async function handleRequest(req: Request) {
     
     return createResponse({ 
       success: true,
-      message: 'Products and images synced successfully'
+      message: 'Products and images synced successfully',
+      count: products.length
     }, 200)
     
   } catch (fetchError) {

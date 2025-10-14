@@ -46,7 +46,7 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
 
       console.log('Response data:', data);
 
-      const productCount = data?.products?.length || 0;
+      const productCount = data?.count || 0;
       console.log(`Synced ${productCount} products. Checking if they were saved to the database...`);
       
       // Verify products were saved by checking the database
