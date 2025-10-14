@@ -32,7 +32,13 @@ export class ImageService {
       console.log('Uploading each version...');
       // Upload each version
       for (const [version, versionFile] of Object.entries(fileVersions)) {
-        const fileName = `${storeId}/${productId}/${nanoid()}-${version}-${file.name.replace(/\s+/g, '-')}`;
+        // Clean filename: remove Hebrew and special characters, keep only ASCII
+        const cleanName = file.name
+          .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+          .replace(/\s+/g, '-') // Replace spaces with dashes
+          .replace(/[^a-zA-Z0-9.-]/g, '') // Keep only alphanumeric, dots and dashes
+          .toLowerCase();
+        const fileName = `${storeId}/${productId}/${nanoid()}-${version}-${cleanName || 'image.jpg'}`;
         console.log(`Uploading ${version} version: ${fileName}`);
         uploadedVersions[version as ImageVersion] = await this.storageProvider.uploadImage(versionFile, fileName);
       }
