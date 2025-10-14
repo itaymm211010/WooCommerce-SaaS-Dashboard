@@ -111,53 +111,27 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
     try {
       setSyncingToWoo(true);
       
-      // Use the supabase URL from the client configuration
-      const supabaseUrl = 'https://wzpbsridzmqrcztafzip.supabase.co';
-      
-      // Get the auth token
-      const { data: authData } = await supabase.auth.getSession();
-      const authToken = authData.session?.access_token;
-      
-      if (!authToken) {
-        throw new Error('לא מחובר למערכת');
-      }
-      
       console.log('מסנכרן מוצר ל-WooCommerce:', product.id);
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/update-woo-product`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ 
+      const { data, error } = await supabase.functions.invoke('update-woo-product', {
+        body: { 
           product, 
           store_id: storeId 
-        })
+        }
       });
 
-      if (!response.ok) {
-        let errorMessage;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || response.statusText;
-        } catch {
-          errorMessage = `Status ${response.status}: ${response.statusText}`;
-        }
-        
-        throw new Error(`נכשל סנכרון ל-WooCommerce: ${errorMessage}`);
+      if (error) {
+        throw error;
       }
-
-      const result = await response.json();
       
-      if (result.success) {
+      if (data?.success) {
         toast.success("המוצר סונכרן בהצלחה עם WooCommerce");
         
         // If this was a new product, update the woo_id in our database
-        if (product.woo_id === 0 && result.woo_id) {
+        if (product.woo_id === 0 && data.woo_id) {
           const { error } = await supabase
             .from("products")
-            .update({ woo_id: result.woo_id })
+            .update({ woo_id: data.woo_id })
             .eq("id", product.id);
             
           if (error) {

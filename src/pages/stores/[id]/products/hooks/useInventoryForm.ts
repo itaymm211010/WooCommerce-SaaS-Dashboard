@@ -82,46 +82,20 @@ export function useInventoryForm({ initialData, storeId, productId }: UseInvento
       
       setSyncingToWoo(true);
       
-      // Use the supabase URL from the client configuration
-      const supabaseUrl = 'https://wzpbsridzmqrcztafzip.supabase.co';
-      
-      // Get the auth token
-      const { data: authData } = await supabase.auth.getSession();
-      const authToken = authData.session?.access_token;
-      
-      if (!authToken) {
-        throw new Error('לא מחובר למערכת');
-      }
-      
       console.log('מסנכרן פרטי מלאי ל-WooCommerce:', product.id);
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/update-woo-product`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ 
+      const { data, error } = await supabase.functions.invoke('update-woo-product', {
+        body: { 
           product, 
           store_id: storeId 
-        })
+        }
       });
 
-      if (!response.ok) {
-        let errorMessage;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || response.statusText;
-        } catch {
-          errorMessage = `Status ${response.status}: ${response.statusText}`;
-        }
-        
-        throw new Error(`נכשל סנכרון ל-WooCommerce: ${errorMessage}`);
+      if (error) {
+        throw error;
       }
-
-      const result = await response.json();
       
-      if (result.success) {
+      if (data?.success) {
         toast.success("פרטי המלאי סונכרנו בהצלחה עם WooCommerce");
       }
     } catch (error: any) {
