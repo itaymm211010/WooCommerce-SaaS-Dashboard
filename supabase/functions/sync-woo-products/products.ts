@@ -88,10 +88,19 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         store_id: storeId,
         woo_id: product.id,
         name: product.name,
+        description: product.description || '',
+        short_description: product.short_description || '',
+        sku: product.sku || '',
         price: parseFloat(product.price || '0'),
+        sale_price: product.sale_price ? parseFloat(product.sale_price) : null,
         stock_quantity: product.stock_quantity,
         status: product.status,
-        type: product.type || 'simple'
+        type: product.type || 'simple',
+        weight: product.weight ? parseFloat(product.weight) : null,
+        length: product.dimensions?.length ? parseFloat(product.dimensions.length) : null,
+        width: product.dimensions?.width ? parseFloat(product.dimensions.width) : null,
+        height: product.dimensions?.height ? parseFloat(product.dimensions.height) : null,
+        categories: product.categories || []
       })
       .select()
       .single()
