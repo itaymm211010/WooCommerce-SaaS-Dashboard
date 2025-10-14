@@ -24,7 +24,10 @@ import {
 import { Loader2, UserPlus, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AddStoreUserForm } from "./components/AddStoreUserForm";
-import type { Profile, StoreUser } from '@/types/database';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Profile = Tables<"profiles">;
+type StoreUser = Tables<"store_users">;
 
 type StoreUserWithProfile = StoreUser & {
   profiles: Profile;
@@ -56,21 +59,36 @@ export default function StoreUsersPage() {
     queryKey: ['store-users', storeId],
     queryFn: async () => {
       console.log("Fetching store users for store ID:", storeId);
-      const { data, error } = await supabase
+      const { data: storeUsersData, error: storeUsersError } = await supabase
         .from('store_users')
-        .select(`
-          *,
-          profiles(*)
-        `)
+        .select('*')
         .eq('store_id', storeId);
 
-      if (error) {
-        console.error("Error fetching store users:", error);
-        throw error;
+      if (storeUsersError) {
+        console.error("Error fetching store users:", storeUsersError);
+        throw storeUsersError;
       }
+
+      // Fetch profiles separately
+      const userIds = storeUsersData.map(su => su.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      // Combine the data
+      const combined = storeUsersData.map(storeUser => ({
+        ...storeUser,
+        profiles: profilesData.find(p => p.id === storeUser.user_id)!
+      }));
       
-      console.log("Store users data:", data);
-      return data as StoreUserWithProfile[];
+      console.log("Store users data:", combined);
+      return combined as StoreUserWithProfile[];
     },
     enabled: !!storeId,
     refetchOnMount: true,

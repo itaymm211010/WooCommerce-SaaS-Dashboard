@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
-import { Product } from '@/types/database';
+import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
 
 export const useProductPagination = (products: Product[] | undefined, itemsPerPage: number = 10) => {
   const [currentPage, setCurrentPage] = useState(1);

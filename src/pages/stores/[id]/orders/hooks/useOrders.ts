@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { SortDirection, SortField } from "../types";
 
+type Order = Tables<"orders">;
+
 export function useOrders(
   storeId: string | undefined,
   userHasAccess: boolean,
@@ -27,7 +29,10 @@ export function useOrders(
       }
 
       if (orderIdSearch) {
-        query = query.eq('woo_id', orderIdSearch);
+        const orderIdNum = parseInt(orderIdSearch, 10);
+        if (!isNaN(orderIdNum)) {
+          query = query.eq('woo_id', orderIdNum);
+        }
       }
       
       const { data, error } = await query.order(sortField, { ascending: sortDirection === 'asc' });

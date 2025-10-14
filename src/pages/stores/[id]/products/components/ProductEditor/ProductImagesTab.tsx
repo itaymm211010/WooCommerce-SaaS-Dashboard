@@ -46,7 +46,7 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
         // Transform the data to match our expected format
         const formattedImages = data.map(img => ({
           id: img.id,
-          versions: img.versions || {
+          versions: (img.versions as Record<string, string>) || {
             thumbnail: img.storage_url || img.original_url,
             medium: img.storage_url || img.original_url,
             large: img.storage_url || img.original_url,
@@ -54,7 +54,7 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
           },
         }));
 
-        setImages(formattedImages);
+        setImages(formattedImages as any);
 
         // Fetch the product to get the featured image ID
         const { data: productData } = await supabase

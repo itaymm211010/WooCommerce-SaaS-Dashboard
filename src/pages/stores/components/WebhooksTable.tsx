@@ -36,7 +36,7 @@ export function WebhooksTable({ webhooks, store, isDeletingWebhook, onWebhookUpd
       </TableHeader>
       <TableBody>
         {webhooks.map((webhook) => (
-          <TableRow key={webhook.webhook_id}>
+          <TableRow key={webhook.id}>
             <TableCell>
               {webhookTypes.find(type => type.value === webhook.topic)?.label || webhook.topic}
             </TableCell>
@@ -44,7 +44,7 @@ export function WebhooksTable({ webhooks, store, isDeletingWebhook, onWebhookUpd
               <Select
                 value={webhook.status}
                 onValueChange={async (value) => {
-                  const success = await toggleWebhookStatus(webhook.webhook_id, store, webhook.status);
+                  const success = await toggleWebhookStatus(webhook.woo_webhook_id || 0, store, webhook.status);
                   if (success) onWebhookUpdated();
                 }}
               >
@@ -62,7 +62,7 @@ export function WebhooksTable({ webhooks, store, isDeletingWebhook, onWebhookUpd
                 variant="ghost"
                 size="icon"
                 onClick={async () => {
-                  const success = await deleteWebhook(webhook.webhook_id, store);
+                  const success = await deleteWebhook(webhook.woo_webhook_id || 0, store);
                   if (success) onWebhookUpdated();
                 }}
                 disabled={isDeletingWebhook}

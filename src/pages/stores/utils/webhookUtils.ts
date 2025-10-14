@@ -41,7 +41,7 @@ export async function deleteWebhook(webhookId: number, store: Store) {
     const { error } = await supabase
       .from('webhooks')
       .delete()
-      .eq('webhook_id', webhookId)
+      .eq('woo_webhook_id', webhookId)
       .eq('store_id', store.id);
 
     if (error) {
@@ -88,7 +88,7 @@ export async function toggleWebhookStatus(webhookId: number, store: Store, curre
     const { error } = await supabase
       .from('webhooks')
       .update({ status: newStatus })
-      .eq('webhook_id', webhookId)
+      .eq('woo_webhook_id', webhookId)
       .eq('store_id', store.id);
 
     if (error) throw error;
@@ -138,8 +138,9 @@ export async function createWebhook(store: Store, selectedWebhookType: string, s
       .from('webhooks')
       .insert({
         store_id: store.id,
-        webhook_id: webhook.id,
+        woo_webhook_id: webhook.id,
         topic: webhook.topic,
+        delivery_url: endpoint,
         status: webhook.status
       });
 

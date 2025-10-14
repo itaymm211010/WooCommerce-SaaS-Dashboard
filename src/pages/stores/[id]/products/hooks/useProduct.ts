@@ -2,6 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
 import { toast } from "sonner";
 
 export const useProduct = (storeId: string | undefined, productId: string | undefined) => {

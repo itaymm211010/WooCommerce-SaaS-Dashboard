@@ -1,9 +1,13 @@
 
 export interface Webhook {
-  webhook_id: number;
+  id: string;
   store_id: string;
+  woo_webhook_id: number | null;
   topic: string;
+  delivery_url: string;
   status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WebhookType {

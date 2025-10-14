@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { OrderStatus } from "../types";
 
+type Store = Tables<"stores">;
+
 export async function updateOrderStatus({
   store,
   storeId,

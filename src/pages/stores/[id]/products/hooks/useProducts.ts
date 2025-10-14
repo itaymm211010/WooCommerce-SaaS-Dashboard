@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
+type Product = Tables<"products">;
+
 export type SortField = 'name' | 'price' | 'stock_quantity' | 'status' | 'updated_at';
 export type SortDirection = 'asc' | 'desc';
 

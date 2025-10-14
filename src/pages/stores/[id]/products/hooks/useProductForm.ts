@@ -54,13 +54,16 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
         // Create new product
         const { data: newProduct, error } = await supabase
           .from("products")
-          .insert([
-            {
-              store_id: storeId,
-              ...productData,
-              woo_id: 0, // Temporary ID until synced with WooCommerce
-            },
-          ])
+          .insert({
+            store_id: storeId,
+            name: productData.name!,
+            short_description: productData.short_description,
+            description: productData.description,
+            price: productData.price,
+            sale_price: productData.sale_price,
+            status: productData.status!,
+            woo_id: 0,
+          })
           .select()
           .single();
 

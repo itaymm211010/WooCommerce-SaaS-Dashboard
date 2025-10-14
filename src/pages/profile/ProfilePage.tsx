@@ -87,8 +87,8 @@ export default function ProfilePage() {
             </div>
             
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground">תפקיד</h3>
-              <p className="mt-1 text-lg">{profile.role === 'admin' ? 'מנהל' : 'משתמש'}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">אימייל</h3>
+              <p className="mt-1 text-lg">{profile.email || 'לא הוגדר'}</p>
             </div>
           </div>
         </div>
