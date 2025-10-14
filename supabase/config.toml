@@ -1,16 +1,1 @@
-
-project_id = "wzpbsridzmqrcztafzip"
-
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[realtime]
-enabled = true
-
-[storage]
-enabled = true
+project_id = "ddwlhgpugjyruzejggoz"
