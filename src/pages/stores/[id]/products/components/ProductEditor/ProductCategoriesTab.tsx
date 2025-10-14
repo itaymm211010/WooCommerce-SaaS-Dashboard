@@ -17,6 +17,12 @@ interface Tag {
   slug: string;
 }
 
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 interface ProductCategoriesTabProps {
   categories: Category[];
   tags: Tag[];
@@ -36,6 +42,7 @@ export function ProductCategoriesTab({
 }: ProductCategoriesTabProps) {
   const [newCategory, setNewCategory] = useState("");
   const [newTag, setNewTag] = useState("");
+  const [newBrand, setNewBrand] = useState("");
 
   const handleAddCategory = () => {
     if (!newCategory.trim()) return;
@@ -75,13 +82,45 @@ export function ProductCategoriesTab({
     <div className="space-y-6">
       {/* Brand */}
       <div className="space-y-2">
-        <Label htmlFor="brand">מותג</Label>
-        <Input
-          id="brand"
-          value={brand}
-          onChange={(e) => onBrandChange(e.target.value)}
-          placeholder="הזן שם מותג"
-        />
+        <Label>מותג</Label>
+        <div className="flex gap-2">
+          <Input
+            value={newBrand}
+            onChange={(e) => setNewBrand(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                if (newBrand.trim()) {
+                  onBrandChange(newBrand.trim());
+                  setNewBrand("");
+                }
+              }
+            }}
+            placeholder="הוסף מותג"
+          />
+          <Button 
+            type="button" 
+            onClick={() => {
+              if (newBrand.trim()) {
+                onBrandChange(newBrand.trim());
+                setNewBrand("");
+              }
+            }}
+          >
+            הוסף
+          </Button>
+        </div>
+        {brand && (
+          <Badge variant="secondary" className="gap-1">
+            {brand}
+            <button
+              type="button"
+              onClick={() => onBrandChange("")}
+              className="hover:text-destructive"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        )}
       </div>
 
       {/* Categories */}

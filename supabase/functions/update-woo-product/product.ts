@@ -3,6 +3,14 @@ import { formatBaseUrl } from "./utils.ts"
 
 // Transform product data for WooCommerce API
 export function transformProductForWooCommerce(product: any) {
+  // Filter out client-generated categories and tags (those with very large IDs from Date.now())
+  const filterValidItems = (items: any[]) => {
+    if (!items) return [];
+    return items
+      .filter(item => item.id < 1000000000000) // Filter out Date.now() generated IDs
+      .map(item => ({ id: item.id })); // Only send ID to WooCommerce
+  };
+
   const wooProduct: any = {
     name: product.name,
     description: product.description || "",
@@ -19,8 +27,8 @@ export function transformProductForWooCommerce(product: any) {
       width: product.width ? product.width.toString() : "",
       height: product.height ? product.height.toString() : "",
     },
-    categories: product.categories || [],
-    tags: product.tags || []
+    categories: filterValidItems(product.categories),
+    tags: filterValidItems(product.tags)
   }
   
   // Add brand as meta data if available
