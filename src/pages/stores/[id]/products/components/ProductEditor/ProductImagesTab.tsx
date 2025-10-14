@@ -78,7 +78,7 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
     fetchProductImages();
   }, [storeId, productId]);
 
-  const handleUploadComplete = (imageData: any) => {
+  const handleUploadComplete = async (imageData: any) => {
     if (!imageData || !imageData.id) {
       setError('התקבל מידע חסר מתהליך העלאת התמונה');
       return;
@@ -96,6 +96,28 @@ export function ProductImagesTab({ storeId, productId }: ProductImagesTabProps) 
     }
 
     toast.success('תמונה הועלתה בהצלחה');
+
+    // Sync to WooCommerce
+    try {
+      const { data: product } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (product && product.woo_id) {
+        await supabase.functions.invoke('update-woo-product', {
+          body: {
+            product,
+            store_id: storeId
+          }
+        });
+        toast.success('התמונה סונכרנה לווקומרס');
+      }
+    } catch (error) {
+      console.error('Error syncing to WooCommerce:', error);
+      toast.error('שגיאה בסנכרון לווקומרס');
+    }
   };
 
   const handleImageSelect = async (imageId: string) => {

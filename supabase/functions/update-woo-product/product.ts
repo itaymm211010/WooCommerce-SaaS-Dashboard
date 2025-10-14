@@ -3,7 +3,7 @@ import { formatBaseUrl } from "./utils.ts"
 
 // Transform product data for WooCommerce API
 export function transformProductForWooCommerce(product: any) {
-  return {
+  const wooProduct: any = {
     name: product.name,
     description: product.description || "",
     short_description: product.short_description || "",
@@ -20,6 +20,17 @@ export function transformProductForWooCommerce(product: any) {
       height: product.height ? product.height.toString() : "",
     }
   }
+
+  // Add images if available
+  if (product.images && product.images.length > 0) {
+    wooProduct.images = product.images.map((img: any, index: number) => ({
+      src: img.original_url || img.storage_url,
+      alt: img.alt_text || product.name,
+      position: index
+    }))
+  }
+
+  return wooProduct
 }
 
 // Create a new product in WooCommerce
