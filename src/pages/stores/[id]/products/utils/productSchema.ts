@@ -11,6 +11,15 @@ export const productSchema = z.object({
   status: z.enum(["publish", "draft", "pending", "private"], {
     required_error: "נדרש סטטוס מוצר",
   }),
+}).refine((data) => {
+  // If sale_price is set and greater than 0, it must be less than the regular price
+  if (data.sale_price && data.sale_price > 0) {
+    return data.sale_price < data.price;
+  }
+  return true;
+}, {
+  message: "מחיר מבצע חייב להיות נמוך מהמחיר הרגיל",
+  path: ["sale_price"], // Show error on sale_price field
 });
 
 export type ProductFormData = z.infer<typeof productSchema>;
