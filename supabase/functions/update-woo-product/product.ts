@@ -11,6 +11,7 @@ export function transformProductForWooCommerce(product: any) {
     return items.map(item => {
       // If ID is very large (from Date.now()), it's a new item created in our UI
       if (item.id > 1000000000000) {
+        console.log(`New item detected: ${item.name} (ID: ${item.id})`);
         return { name: item.name }; // Send name to create new item in WooCommerce
       }
       return { id: item.id }; // Send ID for existing items
@@ -37,11 +38,18 @@ export function transformProductForWooCommerce(product: any) {
     tags: transformItems(product.tags)
   }
   
-  // Add brand as meta data if available
+  console.log('Transformed categories:', JSON.stringify(wooProduct.categories));
+  console.log('Transformed tags:', JSON.stringify(wooProduct.tags));
+  
+  // Add brand as taxonomy (for WooCommerce brands plugins) and as meta data
   if (product.brand) {
+    // Try to add as taxonomy (will work if a brands plugin is installed)
+    wooProduct.brands = [{ name: product.brand }];
+    // Also add as meta data as fallback
     wooProduct.meta_data = [
       { key: '_brand', value: product.brand }
-    ]
+    ];
+    console.log('Adding brand:', product.brand);
   }
 
   // Add images if available
@@ -61,7 +69,7 @@ export async function createWooCommerceProduct(store: any, product: any) {
   const baseUrl = formatBaseUrl(store.url)
   const wooProduct = transformProductForWooCommerce(product)
 
-  console.log('Creating new product in WooCommerce')
+  console.log('Creating new product in WooCommerce:', JSON.stringify(wooProduct, null, 2))
   
   const response = await fetch(
     `${baseUrl}/wp-json/wc/v3/products?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
@@ -76,10 +84,13 @@ export async function createWooCommerceProduct(store: any, product: any) {
 
   if (!response.ok) {
     const errorData = await response.text()
+    console.error('WooCommerce API Error:', errorData)
     throw new Error(`WooCommerce API Error: ${response.status} ${response.statusText} - ${errorData}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+  console.log('WooCommerce response:', JSON.stringify(result, null, 2))
+  return result
 }
 
 // Update an existing product in WooCommerce
@@ -89,6 +100,7 @@ export async function updateWooCommerceProduct(store: any, product: any) {
   const wooId = product.woo_id
 
   console.log(`Updating existing product in WooCommerce with ID: ${wooId}`)
+  console.log('Product data:', JSON.stringify(wooProduct, null, 2))
   
   const response = await fetch(
     `${baseUrl}/wp-json/wc/v3/products/${wooId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
@@ -103,10 +115,13 @@ export async function updateWooCommerceProduct(store: any, product: any) {
 
   if (!response.ok) {
     const errorData = await response.text()
+    console.error('WooCommerce API Error:', errorData)
     throw new Error(`WooCommerce API Error: ${response.status} ${response.statusText} - ${errorData}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+  console.log('WooCommerce response:', JSON.stringify(result, null, 2))
+  return result
 }
 
 // Update variation in WooCommerce
