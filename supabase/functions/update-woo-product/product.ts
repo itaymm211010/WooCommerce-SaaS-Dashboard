@@ -51,6 +51,31 @@ async function createTag(store: any, tagName: string) {
   return newTag;
 }
 
+// Create a new brand in WooCommerce
+async function createBrand(store: any, brandName: string) {
+  const baseUrl = formatBaseUrl(store.url);
+  console.log(`Creating new brand: ${brandName}`);
+  
+  const response = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/brands?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: brandName })
+    }
+  );
+  
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('Failed to create brand:', errorData);
+    return null;
+  }
+  
+  const newBrand = await response.json();
+  console.log(`Brand created with ID: ${newBrand.id}`);
+  return newBrand;
+}
+
 // Process items (categories/tags) - create new ones and return all with IDs
 async function processItems(store: any, items: any[], type: 'category' | 'tag') {
   if (!items) return [];
@@ -77,11 +102,37 @@ async function processItems(store: any, items: any[], type: 'category' | 'tag') 
   return processedItems;
 }
 
+// Process brand - get existing or create new
+async function processBrand(store: any, brandName: string | null) {
+  if (!brandName) return null;
+  
+  const baseUrl = formatBaseUrl(store.url);
+  
+  // First, try to find existing brand by name
+  console.log(`Looking for existing brand: ${brandName}`);
+  const searchResponse = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/brands?search=${encodeURIComponent(brandName)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`
+  );
+  
+  if (searchResponse.ok) {
+    const existingBrands = await searchResponse.json();
+    if (existingBrands.length > 0) {
+      console.log(`Found existing brand with ID: ${existingBrands[0].id}`);
+      return existingBrands[0].id;
+    }
+  }
+  
+  // If not found, create new brand
+  const newBrand = await createBrand(store, brandName);
+  return newBrand ? newBrand.id : null;
+}
+
 // Transform product data for WooCommerce API
 export async function transformProductForWooCommerce(product: any, store: any) {
-  // Process categories and tags - create new ones first
+  // Process categories, tags, and brand - create new ones first
   const categories = await processItems(store, product.categories, 'category');
   const tags = await processItems(store, product.tags, 'tag');
+  const brandId = await processBrand(store, product.brand);
   
   const wooProduct: any = {
     name: product.name,
@@ -106,15 +157,10 @@ export async function transformProductForWooCommerce(product: any, store: any) {
   console.log('Final categories:', JSON.stringify(wooProduct.categories));
   console.log('Final tags:', JSON.stringify(wooProduct.tags));
   
-  // Add brand as taxonomy (for WooCommerce brands plugins) and as meta data
-  if (product.brand) {
-    // Try to add as taxonomy (will work if a brands plugin is installed)
-    wooProduct.brands = [{ name: product.brand }];
-    // Also add as meta data as fallback
-    wooProduct.meta_data = [
-      { key: '_brand', value: product.brand }
-    ];
-    console.log('Adding brand:', product.brand);
+  // Add brand as taxonomy with ID
+  if (brandId) {
+    wooProduct.brands = [{ id: brandId }];
+    console.log('Adding brand with ID:', brandId);
   }
 
   // Add images if available
