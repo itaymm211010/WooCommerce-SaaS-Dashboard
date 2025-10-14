@@ -234,6 +234,7 @@ export type Database = {
       }
       products: {
         Row: {
+          brand: string | null
           categories: Json | null
           created_at: string
           description: string | null
@@ -249,6 +250,7 @@ export type Database = {
           status: string
           stock_quantity: number | null
           store_id: string
+          tags: Json | null
           type: string
           updated_at: string
           weight: number | null
@@ -256,6 +258,7 @@ export type Database = {
           woo_id: number | null
         }
         Insert: {
+          brand?: string | null
           categories?: Json | null
           created_at?: string
           description?: string | null
@@ -271,6 +274,7 @@ export type Database = {
           status?: string
           stock_quantity?: number | null
           store_id: string
+          tags?: Json | null
           type?: string
           updated_at?: string
           weight?: number | null
@@ -278,6 +282,7 @@ export type Database = {
           woo_id?: number | null
         }
         Update: {
+          brand?: string | null
           categories?: Json | null
           created_at?: string
           description?: string | null
@@ -293,6 +298,7 @@ export type Database = {
           status?: string
           stock_quantity?: number | null
           store_id?: string
+          tags?: Json | null
           type?: string
           updated_at?: string
           weight?: number | null

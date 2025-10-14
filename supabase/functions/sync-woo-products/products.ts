@@ -100,7 +100,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         length: product.dimensions?.length ? parseFloat(product.dimensions.length) : null,
         width: product.dimensions?.width ? parseFloat(product.dimensions.width) : null,
         height: product.dimensions?.height ? parseFloat(product.dimensions.height) : null,
-        categories: product.categories || []
+        categories: product.categories || [],
+        tags: product.tags || [],
+        brand: product.brands && product.brands.length > 0 ? product.brands[0].name : null
       })
       .select()
       .single()

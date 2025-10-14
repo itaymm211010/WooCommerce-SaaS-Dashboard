@@ -18,7 +18,16 @@ export function transformProductForWooCommerce(product: any) {
       length: product.length ? product.length.toString() : "",
       width: product.width ? product.width.toString() : "",
       height: product.height ? product.height.toString() : "",
-    }
+    },
+    categories: product.categories || [],
+    tags: product.tags || []
+  }
+  
+  // Add brand as meta data if available
+  if (product.brand) {
+    wooProduct.meta_data = [
+      { key: '_brand', value: product.brand }
+    ]
   }
 
   // Add images if available
