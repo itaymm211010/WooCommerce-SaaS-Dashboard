@@ -91,7 +91,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         description: product.description || '',
         short_description: product.short_description || '',
         sku: product.sku || '',
-        price: parseFloat(product.price || '0'),
+        price: parseFloat(product.regular_price || '0'),
         sale_price: product.sale_price ? parseFloat(product.sale_price) : null,
         stock_quantity: product.stock_quantity,
         status: product.status,
