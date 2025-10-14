@@ -86,6 +86,76 @@ export async function updateWooCommerceProduct(store: any, product: any) {
   return await response.json()
 }
 
+// Update variation in WooCommerce
+export async function updateWooCommerceVariation(store: any, productWooId: number, variation: any) {
+  const baseUrl = formatBaseUrl(store.url)
+  
+  const wooVariation = {
+    sku: variation.sku || "",
+    regular_price: variation.regular_price ? variation.regular_price.toString() : "0",
+    sale_price: variation.sale_price ? variation.sale_price.toString() : "",
+    manage_stock: variation.stock_quantity !== null,
+    stock_quantity: variation.stock_quantity !== null ? variation.stock_quantity : null,
+    stock_status: variation.stock_status || 'instock',
+    attributes: variation.attributes || []
+  }
+
+  console.log(`Updating variation ${variation.woo_id} for product ${productWooId}`)
+  
+  const response = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/${productWooId}/variations/${variation.woo_id}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(wooVariation)
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.text()
+    throw new Error(`WooCommerce API Error: ${response.status} ${response.statusText} - ${errorData}`)
+  }
+
+  return await response.json()
+}
+
+// Create variation in WooCommerce
+export async function createWooCommerceVariation(store: any, productWooId: number, variation: any) {
+  const baseUrl = formatBaseUrl(store.url)
+  
+  const wooVariation = {
+    sku: variation.sku || "",
+    regular_price: variation.regular_price ? variation.regular_price.toString() : "0",
+    sale_price: variation.sale_price ? variation.sale_price.toString() : "",
+    manage_stock: variation.stock_quantity !== null,
+    stock_quantity: variation.stock_quantity !== null ? variation.stock_quantity : null,
+    stock_status: variation.stock_status || 'instock',
+    attributes: variation.attributes || []
+  }
+
+  console.log(`Creating variation for product ${productWooId}`)
+  
+  const response = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/${productWooId}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(wooVariation)
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.text()
+    throw new Error(`WooCommerce API Error: ${response.status} ${response.statusText} - ${errorData}`)
+  }
+
+  return await response.json()
+}
+
 // Update product in database with new WooCommerce ID
 export async function updateProductWooId(supabase: any, productId: string, wooId: number) {
   const { error: updateError } = await supabase
@@ -95,6 +165,19 @@ export async function updateProductWooId(supabase: any, productId: string, wooId
   
   if (updateError) {
     console.error('Error updating product with new WooCommerce ID:', updateError)
+    throw updateError
+  }
+}
+
+// Update variation in database with new WooCommerce ID
+export async function updateVariationWooId(supabase: any, variationId: string, wooId: number) {
+  const { error: updateError } = await supabase
+    .from('product_variations')
+    .update({ woo_id: wooId })
+    .eq('id', variationId)
+  
+  if (updateError) {
+    console.error('Error updating variation with new WooCommerce ID:', updateError)
     throw updateError
   }
 }

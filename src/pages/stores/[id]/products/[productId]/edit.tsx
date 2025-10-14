@@ -9,6 +9,7 @@ import { Loader } from "lucide-react";
 import { ProductDetailsForm } from "../components/ProductEditor/ProductDetailsForm";
 import { ProductImagesTab } from "../components/ProductEditor/ProductImagesTab";
 import { ProductInventoryTab } from "../components/ProductEditor/ProductInventoryTab";
+import { ProductVariationsTab } from "../components/ProductEditor/ProductVariationsTab";
 
 export default function ProductEditorPage() {
   const { id: storeId, productId } = useParams();
@@ -62,9 +63,9 @@ export default function ProductEditorPage() {
                 <TabsTrigger value="details">פרטים כלליים</TabsTrigger>
                 <TabsTrigger value="images">תמונות</TabsTrigger>
                 <TabsTrigger value="inventory">מלאי</TabsTrigger>
-                <TabsTrigger value="variations" disabled>
-                  וריאציות
-                </TabsTrigger>
+                {!isNewProduct && (
+                  <TabsTrigger value="variations">וריאציות</TabsTrigger>
+                )}
                 <TabsTrigger value="custom-fields" disabled>
                   שדות מותאמים
                 </TabsTrigger>
@@ -92,6 +93,15 @@ export default function ProductEditorPage() {
                   productId={productId || ""}
                 />
               </TabsContent>
+
+              {!isNewProduct && (
+                <TabsContent value="variations">
+                  <ProductVariationsTab 
+                    storeId={storeId || ""} 
+                    productId={productId || ""}
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>

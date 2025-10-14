@@ -58,6 +58,7 @@ export function ProductsTable({
               שם מוצר
               {sortField === "name" && " 🔍"}
             </TableHead>
+            <TableHead>סוג מוצר</TableHead>
             <TableHead
               className="cursor-pointer"
               onClick={() => sortProducts("status")}
@@ -86,6 +87,11 @@ export function ProductsTable({
           {products.map((product) => (
             <TableRow key={product.id}>
               <TableCell>{product.name}</TableCell>
+              <TableCell>
+                <Badge variant="secondary">
+                  {product.type === 'variable' ? 'משתנה' : product.type === 'simple' ? 'פשוט' : product.type}
+                </Badge>
+              </TableCell>
               <TableCell>
                 <Badge variant="outline" className={getStatusColor(product.status)}>
                   {product.status}

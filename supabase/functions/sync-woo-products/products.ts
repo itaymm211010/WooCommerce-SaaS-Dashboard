@@ -146,5 +146,62 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         }
       }
     }
+
+    // Save variations for variable products
+    if (product.type === 'variable' && product.variations && product.variations.length > 0) {
+      console.log(`Saving ${product.variations.length} variations for product ${product.name}`)
+      
+      for (const variation of product.variations) {
+        // Insert variation
+        const { data: insertedVariation, error: variationError } = await supabase
+          .from('product_variations')
+          .insert({
+            store_id: storeId,
+            product_id: insertedProduct.id,
+            woo_id: variation.id,
+            sku: variation.sku || '',
+            price: parseFloat(variation.price || '0'),
+            regular_price: parseFloat(variation.regular_price || '0'),
+            sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
+            stock_quantity: variation.stock_quantity,
+            stock_status: variation.stock_status || 'instock',
+            attributes: variation.attributes || []
+          })
+          .select()
+          .single()
+
+        if (variationError) {
+          console.error('Error inserting variation:', variationError)
+          continue
+        }
+
+        // Insert variation image if exists
+        if (variation.image && variation.image.src) {
+          const { data: variationImage, error: variationImageError } = await supabase
+            .from('product_images')
+            .insert({
+              store_id: storeId,
+              product_id: insertedProduct.id,
+              original_url: variation.image.src,
+              storage_url: null,
+              storage_source: 'woocommerce',
+              type: 'variation',
+              alt_text: variation.image.alt || '',
+              description: '',
+              display_order: 0
+            })
+            .select()
+            .single()
+
+          if (!variationImageError && variationImage) {
+            // Link image to variation
+            await supabase
+              .from('product_variations')
+              .update({ image_id: variationImage.id })
+              .eq('id', insertedVariation.id)
+          }
+        }
+      }
+    }
   }
 }

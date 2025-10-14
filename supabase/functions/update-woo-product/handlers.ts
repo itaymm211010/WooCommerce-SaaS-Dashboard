@@ -1,7 +1,14 @@
 
 import { createResponse, createSupabaseClient } from "./utils.ts"
 import { getStoreDetails } from "./store.ts"
-import { createWooCommerceProduct, updateWooCommerceProduct, updateProductWooId } from "./product.ts"
+import { 
+  createWooCommerceProduct, 
+  updateWooCommerceProduct, 
+  updateProductWooId,
+  createWooCommerceVariation,
+  updateWooCommerceVariation,
+  updateVariationWooId
+} from "./product.ts"
 
 // Main request handler
 export async function handleRequest(req: Request) {
@@ -48,6 +55,30 @@ export async function handleRequest(req: Request) {
   } else {
     // Update existing product
     const updatedWooProduct = await updateWooCommerceProduct(store, productWithImages)
+
+    // Handle variations if product is variable type
+    if (product.type === 'variable') {
+      const { data: variations } = await supabase
+        .from('product_variations')
+        .select('*')
+        .eq('product_id', product.id)
+        .eq('store_id', store_id)
+
+      if (variations && variations.length > 0) {
+        console.log(`Syncing ${variations.length} variations to WooCommerce`)
+        
+        for (const variation of variations) {
+          if (!variation.woo_id || variation.woo_id === 0) {
+            // Create new variation in WooCommerce
+            const newWooVariation = await createWooCommerceVariation(store, wooId, variation)
+            await updateVariationWooId(supabase, variation.id, newWooVariation.id)
+          } else {
+            // Update existing variation
+            await updateWooCommerceVariation(store, wooId, variation)
+          }
+        }
+      }
+    }
 
     return createResponse({ 
       success: true,
