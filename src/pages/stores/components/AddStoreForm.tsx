@@ -24,6 +24,12 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
     setIsLoading(true);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to add a store');
+      }
+
       // נקה את הURL מ-slashes בסוף
       let baseUrl = url.replace(/\/+$/, '');
       if (!baseUrl.startsWith('http')) {
@@ -60,7 +66,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
         api_key: apiKey,
         api_secret: apiSecret,
         currency: currencySetting.value,
-        user_id: '0244961a-6c5f-4f54-89a9-0c0555286e6e'
+        user_id: user.id
       });
 
       if (error) throw error;
