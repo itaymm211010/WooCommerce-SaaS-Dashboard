@@ -11,6 +11,7 @@ import { ProductImagesTab } from "../components/ProductEditor/ProductImagesTab";
 import { ProductInventoryTab } from "../components/ProductEditor/ProductInventoryTab";
 import { ProductVariationsTab } from "../components/ProductEditor/ProductVariationsTab";
 import { ProductCategoriesTab } from "../components/ProductEditor/ProductCategoriesTab";
+import { SyncToWooButton } from "../components/ProductEditor/SyncToWooButton";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function ProductEditorPage() {
@@ -44,15 +45,23 @@ export default function ProductEditorPage() {
   return (
     <Shell>
       <div className="space-y-6 w-full max-w-full">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isNewProduct ? "מוצר חדש" : `עריכת מוצר: ${product?.name || ""}`}
-          </h1>
-          <p className="text-muted-foreground">
-            {isNewProduct
-              ? "יצירת מוצר חדש בחנות"
-              : "עריכת פרטי המוצר וסנכרון עם ווקומרס"}
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {isNewProduct ? "מוצר חדש" : `עריכת מוצר: ${product?.name || ""}`}
+            </h1>
+            <p className="text-muted-foreground">
+              {isNewProduct
+                ? "יצירת מוצר חדש בחנות"
+                : "עריכת פרטי המוצר וסנכרון עם ווקומרס"}
+            </p>
+          </div>
+          {!isNewProduct && (
+            <SyncToWooButton 
+              storeId={storeId || ""} 
+              productId={productId || ""}
+            />
+          )}
         </div>
 
         <Card>
