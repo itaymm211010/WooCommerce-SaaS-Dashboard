@@ -1,23 +1,88 @@
 
 import { formatBaseUrl } from "./utils.ts"
 
-// Transform product data for WooCommerce API
-export function transformProductForWooCommerce(product: any) {
-  // Transform categories and tags:
-  // - Existing items (small IDs from WooCommerce) -> send only ID
-  // - New items (large IDs from Date.now()) -> send name so WooCommerce creates them
-  const transformItems = (items: any[]) => {
-    if (!items) return [];
-    return items.map(item => {
-      // If ID is very large (from Date.now()), it's a new item created in our UI
-      if (item.id > 1000000000000) {
-        console.log(`New item detected: ${item.name} (ID: ${item.id})`);
-        return { name: item.name }; // Send name to create new item in WooCommerce
-      }
-      return { id: item.id }; // Send ID for existing items
-    });
-  };
+// Create a new category in WooCommerce
+async function createCategory(store: any, categoryName: string) {
+  const baseUrl = formatBaseUrl(store.url);
+  console.log(`Creating new category: ${categoryName}`);
+  
+  const response = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/categories?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: categoryName })
+    }
+  );
+  
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('Failed to create category:', errorData);
+    return null;
+  }
+  
+  const newCategory = await response.json();
+  console.log(`Category created with ID: ${newCategory.id}`);
+  return newCategory;
+}
 
+// Create a new tag in WooCommerce
+async function createTag(store: any, tagName: string) {
+  const baseUrl = formatBaseUrl(store.url);
+  console.log(`Creating new tag: ${tagName}`);
+  
+  const response = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/tags?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tagName })
+    }
+  );
+  
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('Failed to create tag:', errorData);
+    return null;
+  }
+  
+  const newTag = await response.json();
+  console.log(`Tag created with ID: ${newTag.id}`);
+  return newTag;
+}
+
+// Process items (categories/tags) - create new ones and return all with IDs
+async function processItems(store: any, items: any[], type: 'category' | 'tag') {
+  if (!items) return [];
+  
+  const processedItems = [];
+  
+  for (const item of items) {
+    if (item.id > 1000000000000) {
+      // New item - create it in WooCommerce
+      console.log(`New ${type} detected: ${item.name} (ID: ${item.id})`);
+      const created = type === 'category' 
+        ? await createCategory(store, item.name)
+        : await createTag(store, item.name);
+      
+      if (created) {
+        processedItems.push({ id: created.id });
+      }
+    } else {
+      // Existing item - just use the ID
+      processedItems.push({ id: item.id });
+    }
+  }
+  
+  return processedItems;
+}
+
+// Transform product data for WooCommerce API
+export async function transformProductForWooCommerce(product: any, store: any) {
+  // Process categories and tags - create new ones first
+  const categories = await processItems(store, product.categories, 'category');
+  const tags = await processItems(store, product.tags, 'tag');
+  
   const wooProduct: any = {
     name: product.name,
     description: product.description || "",
@@ -34,12 +99,12 @@ export function transformProductForWooCommerce(product: any) {
       width: product.width ? product.width.toString() : "",
       height: product.height ? product.height.toString() : "",
     },
-    categories: transformItems(product.categories),
-    tags: transformItems(product.tags)
+    categories,
+    tags
   }
   
-  console.log('Transformed categories:', JSON.stringify(wooProduct.categories));
-  console.log('Transformed tags:', JSON.stringify(wooProduct.tags));
+  console.log('Final categories:', JSON.stringify(wooProduct.categories));
+  console.log('Final tags:', JSON.stringify(wooProduct.tags));
   
   // Add brand as taxonomy (for WooCommerce brands plugins) and as meta data
   if (product.brand) {
@@ -67,7 +132,7 @@ export function transformProductForWooCommerce(product: any) {
 // Create a new product in WooCommerce
 export async function createWooCommerceProduct(store: any, product: any) {
   const baseUrl = formatBaseUrl(store.url)
-  const wooProduct = transformProductForWooCommerce(product)
+  const wooProduct = await transformProductForWooCommerce(product, store)
 
   console.log('Creating new product in WooCommerce:', JSON.stringify(wooProduct, null, 2))
   
@@ -96,7 +161,7 @@ export async function createWooCommerceProduct(store: any, product: any) {
 // Update an existing product in WooCommerce
 export async function updateWooCommerceProduct(store: any, product: any) {
   const baseUrl = formatBaseUrl(store.url)
-  const wooProduct = transformProductForWooCommerce(product)
+  const wooProduct = await transformProductForWooCommerce(product, store)
   const wooId = product.woo_id
 
   console.log(`Updating existing product in WooCommerce with ID: ${wooId}`)
