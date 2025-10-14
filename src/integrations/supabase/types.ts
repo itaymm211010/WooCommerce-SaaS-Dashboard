@@ -159,6 +159,79 @@ export type Database = {
           },
         ]
       }
+      product_variations: {
+        Row: {
+          attributes: Json | null
+          created_at: string
+          id: string
+          image_id: string | null
+          price: number | null
+          product_id: string
+          regular_price: number | null
+          sale_price: number | null
+          sku: string | null
+          stock_quantity: number | null
+          stock_status: string | null
+          store_id: string
+          updated_at: string
+          woo_id: number | null
+        }
+        Insert: {
+          attributes?: Json | null
+          created_at?: string
+          id?: string
+          image_id?: string | null
+          price?: number | null
+          product_id: string
+          regular_price?: number | null
+          sale_price?: number | null
+          sku?: string | null
+          stock_quantity?: number | null
+          stock_status?: string | null
+          store_id: string
+          updated_at?: string
+          woo_id?: number | null
+        }
+        Update: {
+          attributes?: Json | null
+          created_at?: string
+          id?: string
+          image_id?: string | null
+          price?: number | null
+          product_id?: string
+          regular_price?: number | null
+          sale_price?: number | null
+          sku?: string | null
+          stock_quantity?: number | null
+          stock_status?: string | null
+          store_id?: string
+          updated_at?: string
+          woo_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "product_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           categories: Json | null
