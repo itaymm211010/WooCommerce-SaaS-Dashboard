@@ -14,16 +14,410 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_status_logs: {
+        Row: {
+          changed_by: string
+          created_at: string
+          id: string
+          new_status: string
+          old_status: string
+          order_id: number
+          store_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_status: string
+          old_status: string
+          order_id: number
+          store_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          old_status?: string
+          order_id?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          id: string
+          status: string
+          store_id: string
+          total: number
+          updated_at: string
+          woo_id: number
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          id?: string
+          status: string
+          store_id: string
+          total: number
+          updated_at?: string
+          woo_id: number
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          id?: string
+          status?: string
+          store_id?: string
+          total?: number
+          updated_at?: string
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          original_url: string
+          product_id: string | null
+          storage_source: string
+          storage_url: string | null
+          store_id: string
+          type: string
+          updated_at: string
+          versions: Json | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          original_url: string
+          product_id?: string | null
+          storage_source?: string
+          storage_url?: string | null
+          store_id: string
+          type?: string
+          updated_at?: string
+          versions?: Json | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          original_url?: string
+          product_id?: string | null
+          storage_source?: string
+          storage_url?: string | null
+          store_id?: string
+          type?: string
+          updated_at?: string
+          versions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          categories: Json | null
+          created_at: string
+          description: string | null
+          featured_image_id: string | null
+          height: number | null
+          id: string
+          length: number | null
+          name: string
+          price: number | null
+          sale_price: number | null
+          short_description: string | null
+          sku: string | null
+          status: string
+          stock_quantity: number | null
+          store_id: string
+          type: string
+          updated_at: string
+          weight: number | null
+          width: number | null
+          woo_id: number | null
+        }
+        Insert: {
+          categories?: Json | null
+          created_at?: string
+          description?: string | null
+          featured_image_id?: string | null
+          height?: number | null
+          id?: string
+          length?: number | null
+          name: string
+          price?: number | null
+          sale_price?: number | null
+          short_description?: string | null
+          sku?: string | null
+          status?: string
+          stock_quantity?: number | null
+          store_id: string
+          type?: string
+          updated_at?: string
+          weight?: number | null
+          width?: number | null
+          woo_id?: number | null
+        }
+        Update: {
+          categories?: Json | null
+          created_at?: string
+          description?: string | null
+          featured_image_id?: string | null
+          height?: number | null
+          id?: string
+          length?: number | null
+          name?: string
+          price?: number | null
+          sale_price?: number | null
+          short_description?: string | null
+          sku?: string | null
+          status?: string
+          stock_quantity?: number | null
+          store_id?: string
+          type?: string
+          updated_at?: string
+          weight?: number | null
+          width?: number | null
+          woo_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_users: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["store_role"]
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["store_role"]
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["store_role"]
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_users_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          api_key: string
+          api_secret: string
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          api_secret: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          api_secret?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          delivery_url: string
+          id: string
+          status: string
+          store_id: string
+          topic: string
+          updated_at: string
+          woo_webhook_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_url: string
+          id?: string
+          status?: string
+          store_id: string
+          topic: string
+          updated_at?: string
+          woo_webhook_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          delivery_url?: string
+          id?: string
+          status?: string
+          store_id?: string
+          topic?: string
+          updated_at?: string
+          woo_webhook_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      store_role: "owner" | "manager" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +544,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      store_role: ["owner", "manager", "viewer"],
+    },
   },
 } as const
