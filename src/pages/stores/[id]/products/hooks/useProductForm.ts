@@ -4,10 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { Product } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { productSchema, ProductFormData } from "../utils/productSchema";
+
+type Product = Tables<"products">;
 
 interface UseProductFormProps {
   initialData?: Partial<Product>;

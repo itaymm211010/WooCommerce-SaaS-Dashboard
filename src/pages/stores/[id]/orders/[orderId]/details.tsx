@@ -2,8 +2,10 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Shell } from "@/components/layout/Shell";
-import { supabase } from "@/lib/supabase";
-import { Order } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Order = Tables<"orders">;
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "../components/StatusBadge";
 

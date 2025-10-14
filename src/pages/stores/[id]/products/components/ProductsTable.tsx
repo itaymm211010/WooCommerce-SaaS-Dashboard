@@ -1,6 +1,9 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Product, Store } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
+type Store = Tables<"stores">;
 import { Badge } from "@/components/ui/badge";
 import { getStatusColor } from "../utils/productUtils";
 import { formatCurrency } from "../../../utils/currencyUtils";

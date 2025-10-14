@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Store } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ProductsHeaderProps {

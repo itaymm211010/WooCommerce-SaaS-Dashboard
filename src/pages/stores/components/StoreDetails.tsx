@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Store } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 import { Package, ShoppingCart, Users, Webhook } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

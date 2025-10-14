@@ -3,7 +3,9 @@ import React from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Save, RefreshCw } from "lucide-react";
-import { Product } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
 import { useProductForm } from "../../hooks/useProductForm";
 import { TextField } from "./TextField";
 import { PriceField } from "./PriceField";

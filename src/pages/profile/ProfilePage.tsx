@@ -1,8 +1,10 @@
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { EditProfileDialog } from "./EditProfileDialog";
-import type { Profile } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Profile = Tables<"profiles">;
 import { Loader2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 

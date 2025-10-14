@@ -3,7 +3,9 @@ import React from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
-import { Product } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
 import { useInventoryForm } from "../../hooks/useInventoryForm";
 import { InventoryBasicFields } from "./InventoryBasicFields";
 import { InventoryDimensionsFields } from "./InventoryDimensionsFields";

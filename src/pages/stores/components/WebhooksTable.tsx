@@ -1,5 +1,7 @@
 
-import { Store } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 import { Webhook, webhookTypes } from "@/types/webhook";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";

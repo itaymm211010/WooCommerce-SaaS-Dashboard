@@ -1,7 +1,7 @@
 
 import { ImageMetadata, ImageStorageProvider, ImageVersion } from "./types";
 import { SupabaseStorageProvider } from "./SupabaseStorageProvider";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from "nanoid";
 
 export class ImageService {

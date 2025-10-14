@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from "react-router-dom";
-import { Order } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Order = Tables<"orders">;
 import { OrderStatus, orderStatuses } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { StatusHistory } from "./StatusHistory";

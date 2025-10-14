@@ -1,7 +1,7 @@
 
 import { Shell } from "@/components/layout/Shell";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import StatCards from "@/components/dashboard/StatCards";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import { 

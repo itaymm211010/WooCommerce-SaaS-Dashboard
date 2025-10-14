@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { ImageOptimizationOptions, ImageStorageProvider, ImageVersion } from "./types";
 
 export class SupabaseStorageProvider implements ImageStorageProvider {

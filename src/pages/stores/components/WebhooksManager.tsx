@@ -2,13 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Store } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 import { webhookTypes } from "@/types/webhook";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { checkAndUpdateStoreCurrency } from "../utils/currencyUtils";
 import { getWebhookEndpoint, createWebhook } from "../utils/webhookUtils";
 import { WebhooksTable } from "./WebhooksTable";

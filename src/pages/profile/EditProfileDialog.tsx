@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EditProfileForm } from "./EditProfileForm";
-import type { Profile } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Profile = Tables<"profiles">;
 import { useState } from "react";
 
 interface EditProfileDialogProps {

@@ -1,6 +1,6 @@
 
-import { supabase } from "@/lib/supabase";
-import { Store } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { OrderStatus } from "../types";
 
 export async function updateOrderStatus({

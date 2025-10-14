@@ -1,5 +1,7 @@
 
-import { Order } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Order = Tables<"orders">;
 import { OrderStatus, SortDirection, SortField } from "../types";
 import { OrderStatusLog } from "../types";
 import { MobileOrderCard } from "./MobileOrderCard";

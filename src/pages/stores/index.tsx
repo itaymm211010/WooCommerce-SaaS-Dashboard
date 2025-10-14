@@ -20,8 +20,10 @@ import {
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2, Eye, Settings2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { Store } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 import { useState } from "react";
 import {
   AlertDialog,

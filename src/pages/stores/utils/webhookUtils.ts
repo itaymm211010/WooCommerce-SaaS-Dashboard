@@ -1,6 +1,8 @@
 
-import { Store } from "@/types/database";
-import { supabase } from "@/lib/supabase";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
+import { supabase } from "@/integrations/supabase/client";
 import { Webhook } from "@/types/webhook";
 import { toast } from "sonner";
 

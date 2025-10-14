@@ -27,7 +27,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Order } from "@/types/database";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Order = Tables<"orders">;
 import { OrderStatus, SortDirection, SortField, orderStatuses } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { StatusHistory } from "./StatusHistory";
