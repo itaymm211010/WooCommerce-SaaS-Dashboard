@@ -116,6 +116,21 @@ async function createCategory(store: any, categoryName: string) {
   const baseUrl = formatBaseUrl(store.url);
   console.log(`Creating new category: ${categoryName}`);
   
+  // First, try to find existing category
+  const searchResponse = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/categories?search=${encodeURIComponent(categoryName)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`
+  );
+  
+  if (searchResponse.ok) {
+    const existingCategories = await searchResponse.json();
+    const exactMatch = existingCategories.find((cat: any) => cat.name.toLowerCase() === categoryName.toLowerCase());
+    if (exactMatch) {
+      console.log(`Found existing category with ID: ${exactMatch.id}`);
+      return exactMatch;
+    }
+  }
+  
+  // If not found, create new
   const response = await fetch(
     `${baseUrl}/wp-json/wc/v3/products/categories?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
     {
@@ -141,6 +156,21 @@ async function createTag(store: any, tagName: string) {
   const baseUrl = formatBaseUrl(store.url);
   console.log(`Creating new tag: ${tagName}`);
   
+  // First, try to find existing tag
+  const searchResponse = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/tags?search=${encodeURIComponent(tagName)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`
+  );
+  
+  if (searchResponse.ok) {
+    const existingTags = await searchResponse.json();
+    const exactMatch = existingTags.find((tag: any) => tag.name.toLowerCase() === tagName.toLowerCase());
+    if (exactMatch) {
+      console.log(`Found existing tag with ID: ${exactMatch.id}`);
+      return exactMatch;
+    }
+  }
+  
+  // If not found, create new
   const response = await fetch(
     `${baseUrl}/wp-json/wc/v3/products/tags?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
     {
