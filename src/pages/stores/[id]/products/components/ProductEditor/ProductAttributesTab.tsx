@@ -26,6 +26,7 @@ interface ProductAttributesTabProps {
 
 export function ProductAttributesTab({ storeId, productId }: ProductAttributesTabProps) {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [newOptions, setNewOptions] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -243,58 +244,55 @@ export function ProductAttributesTab({ storeId, productId }: ProductAttributesTa
         </Card>
       ) : (
         <div className="space-y-4">
-          {attributes.map((attribute, index) => {
-            const [newOption, setNewOption] = useState('');
-            
-            return (
-              <Card key={attribute.id} className={index % 2 === 0 ? "bg-[#f3f3f3]" : "bg-[#fbf9ed]"}>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-base">תכונה #{index + 1}</CardTitle>
+          {attributes.map((attribute, index) => (
+            <Card key={attribute.id} className={index % 2 === 0 ? "bg-[#f3f3f3]" : "bg-[#fbf9ed]"}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-base">תכונה #{index + 1}</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveAttribute(index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>שם התכונה (למשל: צבע, גודל)</Label>
+                  <Input
+                    value={attribute.name}
+                    onChange={(e) => handleUpdateAttribute(index, 'name', e.target.value)}
+                    placeholder="שם התכונה"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>אפשרויות</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newOptions[attribute.id] || ''}
+                      onChange={(e) => setNewOptions({ ...newOptions, [attribute.id]: e.target.value })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddOption(index, newOptions[attribute.id] || '');
+                          setNewOptions({ ...newOptions, [attribute.id]: '' });
+                        }
+                      }}
+                      placeholder="הוסף אפשרות (למשל: אדום)"
+                    />
                     <Button
-                      variant="ghost"
+                      type="button"
                       size="sm"
-                      onClick={() => handleRemoveAttribute(index)}
+                      onClick={() => {
+                        handleAddOption(index, newOptions[attribute.id] || '');
+                        setNewOptions({ ...newOptions, [attribute.id]: '' });
+                      }}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      הוסף
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>שם התכונה (למשל: צבע, גודל)</Label>
-                    <Input
-                      value={attribute.name}
-                      onChange={(e) => handleUpdateAttribute(index, 'name', e.target.value)}
-                      placeholder="שם התכונה"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>אפשרויות</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newOption}
-                        onChange={(e) => setNewOption(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            handleAddOption(index, newOption);
-                            setNewOption('');
-                          }
-                        }}
-                        placeholder="הוסף אפשרות (למשל: אדום)"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => {
-                          handleAddOption(index, newOption);
-                          setNewOption('');
-                        }}
-                      >
-                        הוסף
-                      </Button>
-                    </div>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {attribute.options.map((option, optionIndex) => (
                         <Badge key={optionIndex} variant="outline" className="gap-1">
@@ -339,8 +337,7 @@ export function ProductAttributesTab({ storeId, productId }: ProductAttributesTa
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
+            ))}
         </div>
       )}
     </div>
