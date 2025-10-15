@@ -11,6 +11,7 @@ import { ProductImagesTab } from "../components/ProductEditor/ProductImagesTab";
 import { ProductInventoryTab } from "../components/ProductEditor/ProductInventoryTab";
 import { ProductVariationsTab } from "../components/ProductEditor/ProductVariationsTab";
 import { ProductCategoriesTab } from "../components/ProductEditor/ProductCategoriesTab";
+import { ProductAttributesTab } from "../components/ProductEditor/ProductAttributesTab";
 import { SyncToWooButton } from "../components/ProductEditor/SyncToWooButton";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -76,6 +77,7 @@ export default function ProductEditorPage() {
                 <TabsTrigger value="inventory">מלאי</TabsTrigger>
                 {!isNewProduct && (
                   <>
+                    <TabsTrigger value="attributes">תכונות</TabsTrigger>
                     <TabsTrigger value="variations">וריאציות</TabsTrigger>
                     <TabsTrigger value="categories">קטגוריות ותגים</TabsTrigger>
                   </>
@@ -109,6 +111,15 @@ export default function ProductEditorPage() {
               </TabsContent>
 
               {!isNewProduct && (
+                <TabsContent value="attributes">
+                  <ProductAttributesTab 
+                    storeId={storeId || ""} 
+                    productId={productId || ""}
+                  />
+                </TabsContent>
+              )}
+
+              {!isNewProduct && (
                 <TabsContent value="variations">
                   <ProductVariationsTab 
                     storeId={storeId || ""} 
@@ -122,7 +133,7 @@ export default function ProductEditorPage() {
                   <ProductCategoriesTab
                     categories={(product?.categories as any) || []}
                     tags={(product?.tags as any) || []}
-                    brand={product?.brand || ""}
+                    brands={(product?.brands as any) || []}
                     onCategoriesChange={(categories) => {
                       supabase
                         .from('products')
@@ -137,10 +148,10 @@ export default function ProductEditorPage() {
                         .eq('id', productId)
                         .then(() => refetch());
                     }}
-                    onBrandChange={(brand) => {
+                    onBrandsChange={(brands) => {
                       supabase
                         .from('products')
-                        .update({ brand })
+                        .update({ brands: brands as any })
                         .eq('id', productId)
                         .then(() => refetch());
                     }}

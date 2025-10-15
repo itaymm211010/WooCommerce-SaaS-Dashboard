@@ -26,19 +26,19 @@ interface Brand {
 interface ProductCategoriesTabProps {
   categories: Category[];
   tags: Tag[];
-  brand: string;
+  brands: Brand[];
   onCategoriesChange: (categories: Category[]) => void;
   onTagsChange: (tags: Tag[]) => void;
-  onBrandChange: (brand: string) => void;
+  onBrandsChange: (brands: Brand[]) => void;
 }
 
 export function ProductCategoriesTab({
   categories,
   tags,
-  brand,
+  brands,
   onCategoriesChange,
   onTagsChange,
-  onBrandChange,
+  onBrandsChange,
 }: ProductCategoriesTabProps) {
   const [newCategory, setNewCategory] = useState("");
   const [newTag, setNewTag] = useState("");
@@ -78,49 +78,53 @@ export function ProductCategoriesTab({
     onTagsChange(tags.filter(tag => tag.id !== id));
   };
 
+  const handleAddBrand = () => {
+    if (!newBrand.trim()) return;
+    
+    const brand: Brand = {
+      id: Date.now(),
+      name: newBrand.trim(),
+      slug: newBrand.trim().toLowerCase().replace(/\s+/g, '-')
+    };
+    
+    onBrandsChange([...brands, brand]);
+    setNewBrand("");
+  };
+
+  const handleRemoveBrand = (id: number) => {
+    onBrandsChange(brands.filter(brand => brand.id !== id));
+  };
+
   return (
     <div className="space-y-6">
-      {/* Brand */}
+      {/* Brands */}
       <div className="space-y-2">
-        <Label>מותג</Label>
+        <Label>מותגים</Label>
         <div className="flex gap-2">
           <Input
             value={newBrand}
             onChange={(e) => setNewBrand(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                if (newBrand.trim()) {
-                  onBrandChange(newBrand.trim());
-                  setNewBrand("");
-                }
-              }
-            }}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddBrand()}
             placeholder="הוסף מותג"
           />
-          <Button 
-            type="button" 
-            onClick={() => {
-              if (newBrand.trim()) {
-                onBrandChange(newBrand.trim());
-                setNewBrand("");
-              }
-            }}
-          >
+          <Button type="button" onClick={handleAddBrand}>
             הוסף
           </Button>
         </div>
-        {brand && (
-          <Badge variant="secondary" className="gap-1">
-            {brand}
-            <button
-              type="button"
-              onClick={() => onBrandChange("")}
-              className="hover:text-destructive"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        )}
+        <div className="flex flex-wrap gap-2 mt-2">
+          {brands.map((brand) => (
+            <Badge key={brand.id} variant="secondary" className="gap-1">
+              {brand.name}
+              <button
+                type="button"
+                onClick={() => handleRemoveBrand(brand.id)}
+                className="hover:text-destructive"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Categories */}

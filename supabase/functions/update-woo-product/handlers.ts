@@ -32,10 +32,19 @@ export async function handleRequest(req: Request) {
     .eq('store_id', store_id)
     .order('display_order', { ascending: true })
 
-  // Add images to product object
+  // Fetch product attributes (for variable products)
+  const { data: attributes } = await supabase
+    .from('product_attributes')
+    .select('*')
+    .eq('product_id', product.id)
+    .eq('store_id', store_id)
+    .order('position', { ascending: true })
+
+  // Add images and attributes to product object
   const productWithImages = {
     ...product,
-    images: images || []
+    images: images || [],
+    attributes: attributes || []
   }
 
   const wooId = product.woo_id

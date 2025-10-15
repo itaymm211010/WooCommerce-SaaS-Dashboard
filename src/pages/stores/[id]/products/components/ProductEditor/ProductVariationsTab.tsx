@@ -10,6 +10,13 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Variation = Database['public']['Tables']['product_variations']['Row'];
 
+interface Attribute {
+  id: string;
+  name: string;
+  options: string[];
+  variation: boolean;
+}
+
 interface ProductVariationsTabProps {
   storeId: string;
   productId: string;
@@ -17,36 +24,72 @@ interface ProductVariationsTabProps {
 
 export function ProductVariationsTab({ storeId, productId }: ProductVariationsTabProps) {
   const [variations, setVariations] = useState<Variation[]>([]);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchVariations();
+    fetchData();
   }, [storeId, productId]);
 
-  const fetchVariations = async () => {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch variations
+      const { data: variationsData, error: variationsError } = await supabase
         .from('product_variations')
         .select('*')
         .eq('product_id', productId)
         .eq('store_id', storeId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setVariations(data || []);
+      if (variationsError) throw variationsError;
+      setVariations(variationsData || []);
+
+      // Fetch attributes
+      const { data: attributesData, error: attributesError } = await supabase
+        .from('product_attributes')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('store_id', storeId)
+        .eq('variation', true)
+        .order('position', { ascending: true });
+
+      if (attributesError) throw attributesError;
+      
+      const formattedAttributes = (attributesData || []).map(attr => ({
+        id: attr.id,
+        name: attr.name,
+        options: Array.isArray(attr.options) 
+          ? (attr.options as any[]).map(opt => String(opt))
+          : [],
+        variation: attr.variation,
+      }));
+      
+      setAttributes(formattedAttributes);
     } catch (error) {
-      console.error('Error fetching variations:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא הצלחנו לטעון את הוריאציות',
+        description: 'לא הצלחנו לטעון את הנתונים',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getVariationName = (variation: Variation) => {
+    if (!variation.attributes || !Array.isArray(variation.attributes)) {
+      return 'ללא תכונות';
+    }
+    
+    const attrs = variation.attributes as any[];
+    if (attrs.length === 0) return 'ללא תכונות';
+    
+    return attrs.map((attr: any) => attr.option || attr.value).filter(Boolean).join(' / ');
   };
 
   const handleAddVariation = () => {
@@ -149,8 +192,8 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
         description: 'הוריאציות נשמרו בהצלחה',
       });
 
-      // Refresh variations
-      await fetchVariations();
+      // Refresh data
+      await fetchData();
 
       // Sync to WooCommerce
       const { data: product } = await supabase
@@ -194,7 +237,15 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">וריאציות מוצר</h3>
+        <div>
+          <h3 className="text-lg font-semibold">וריאציות מוצר</h3>
+          <p className="text-sm text-muted-foreground">
+            {attributes.length === 0 
+              ? 'יש להגדיר תכונות בטאב "תכונות" לפני יצירת וריאציות'
+              : 'נהל וריאציות שונות של המוצר על בסיס התכונות שהוגדרו'
+            }
+          </p>
+        </div>
         <div className="space-x-2 space-x-reverse">
           <Button onClick={handleAddVariation} variant="outline" size="sm">
             <Plus className="h-4 w-4 ml-2" />
@@ -224,7 +275,7 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-base">
-                    וריאציה #{index + 1}
+                    {getVariationName(variation) || `וריאציה #{index + 1}`}
                     {variation.woo_id && ` (WooCommerce ID: ${variation.woo_id})`}
                   </CardTitle>
                   <Button

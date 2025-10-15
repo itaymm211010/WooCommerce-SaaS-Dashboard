@@ -56,6 +56,20 @@ async function createBrand(store: any, brandName: string) {
   const baseUrl = formatBaseUrl(store.url);
   console.log(`Creating new brand: ${brandName}`);
   
+  // First, try to find existing brand
+  const searchResponse = await fetch(
+    `${baseUrl}/wp-json/wc/v3/products/brands?search=${encodeURIComponent(brandName)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`
+  );
+  
+  if (searchResponse.ok) {
+    const existingBrands = await searchResponse.json();
+    if (existingBrands.length > 0) {
+      console.log(`Found existing brand with ID: ${existingBrands[0].id}`);
+      return existingBrands[0];
+    }
+  }
+  
+  // If not found, create new
   const response = await fetch(
     `${baseUrl}/wp-json/wc/v3/products/brands?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
     {
@@ -102,37 +116,36 @@ async function processItems(store: any, items: any[], type: 'category' | 'tag') 
   return processedItems;
 }
 
-// Process brand - get existing or create new
-async function processBrand(store: any, brandName: string | null) {
-  if (!brandName) return null;
+// Process brands - create new ones and return all with IDs
+async function processBrands(store: any, brands: any[]) {
+  if (!brands || brands.length === 0) return [];
   
-  const baseUrl = formatBaseUrl(store.url);
+  const processedBrands = [];
   
-  // First, try to find existing brand by name
-  console.log(`Looking for existing brand: ${brandName}`);
-  const searchResponse = await fetch(
-    `${baseUrl}/wp-json/wc/v3/products/brands?search=${encodeURIComponent(brandName)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`
-  );
-  
-  if (searchResponse.ok) {
-    const existingBrands = await searchResponse.json();
-    if (existingBrands.length > 0) {
-      console.log(`Found existing brand with ID: ${existingBrands[0].id}`);
-      return existingBrands[0].id;
+  for (const brand of brands) {
+    if (brand.id > 1000000000000) {
+      // New brand - create it in WooCommerce
+      console.log(`New brand detected: ${brand.name} (ID: ${brand.id})`);
+      const created = await createBrand(store, brand.name);
+      
+      if (created) {
+        processedBrands.push({ id: created.id });
+      }
+    } else {
+      // Existing brand - just use the ID
+      processedBrands.push({ id: brand.id });
     }
   }
   
-  // If not found, create new brand
-  const newBrand = await createBrand(store, brandName);
-  return newBrand ? newBrand.id : null;
+  return processedBrands;
 }
 
 // Transform product data for WooCommerce API
 export async function transformProductForWooCommerce(product: any, store: any) {
-  // Process categories, tags, and brand - create new ones first
+  // Process categories, tags, and brands - create new ones first
   const categories = await processItems(store, product.categories, 'category');
   const tags = await processItems(store, product.tags, 'tag');
-  const brandId = await processBrand(store, product.brand);
+  const brands = await processBrands(store, product.brands);
   
   const wooProduct: any = {
     name: product.name,
@@ -157,10 +170,23 @@ export async function transformProductForWooCommerce(product: any, store: any) {
   console.log('Final categories:', JSON.stringify(wooProduct.categories));
   console.log('Final tags:', JSON.stringify(wooProduct.tags));
   
-  // Add brand as taxonomy with ID
-  if (brandId) {
-    wooProduct.brands = [{ id: brandId }];
-    console.log('Adding brand with ID:', brandId);
+  // Add brands as taxonomy with IDs
+  if (brands.length > 0) {
+    wooProduct.brands = brands;
+    console.log('Adding brands:', JSON.stringify(brands));
+  }
+
+  // Add attributes if available (for variable products)
+  if (product.attributes && Array.isArray(product.attributes)) {
+    wooProduct.attributes = product.attributes.map((attr: any) => ({
+      id: attr.woo_id || 0,
+      name: attr.name,
+      options: attr.options || [],
+      visible: attr.visible !== false,
+      variation: attr.variation !== false,
+      position: attr.position || 0
+    }));
+    console.log('Adding attributes:', JSON.stringify(wooProduct.attributes));
   }
 
   // Add images if available

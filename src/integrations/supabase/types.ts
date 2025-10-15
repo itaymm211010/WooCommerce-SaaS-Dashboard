@@ -96,6 +96,48 @@ export type Database = {
           },
         ]
       }
+      product_attributes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          options: Json
+          position: number
+          product_id: string
+          store_id: string
+          updated_at: string
+          variation: boolean
+          visible: boolean
+          woo_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          options?: Json
+          position?: number
+          product_id: string
+          store_id: string
+          updated_at?: string
+          variation?: boolean
+          visible?: boolean
+          woo_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          options?: Json
+          position?: number
+          product_id?: string
+          store_id?: string
+          updated_at?: string
+          variation?: boolean
+          visible?: boolean
+          woo_id?: number | null
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           alt_text: string | null
@@ -234,7 +276,7 @@ export type Database = {
       }
       products: {
         Row: {
-          brand: string | null
+          brands: Json
           categories: Json | null
           created_at: string
           description: string | null
@@ -258,7 +300,7 @@ export type Database = {
           woo_id: number | null
         }
         Insert: {
-          brand?: string | null
+          brands?: Json
           categories?: Json | null
           created_at?: string
           description?: string | null
@@ -282,7 +324,7 @@ export type Database = {
           woo_id?: number | null
         }
         Update: {
-          brand?: string | null
+          brands?: Json
           categories?: Json | null
           created_at?: string
           description?: string | null
