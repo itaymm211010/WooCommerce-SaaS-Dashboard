@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Plus, Trash2, Save } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -236,22 +236,37 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">וריאציות מוצר</h3>
-          <p className="text-sm text-muted-foreground">
-            {attributes.length === 0 
-              ? 'יש להגדיר תכונות בטאב "תכונות" לפני יצירת וריאציות'
-              : 'נהל וריאציות שונות של המוצר על בסיס התכונות שהוגדרו'
-            }
-          </p>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+            <Layers className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">וריאציות מוצר</h3>
+            <p className="text-sm text-muted-foreground">
+              {attributes.length === 0 
+                ? 'יש להגדיר תכונות בטאב "תכונות" לפני יצירת וריאציות'
+                : 'נהל וריאציות שונות של המוצר על בסיס התכונות שהוגדרו'
+              }
+            </p>
+          </div>
         </div>
         <div className="space-x-2 space-x-reverse">
-          <Button onClick={handleAddVariation} variant="outline" size="sm">
+          <Button 
+            onClick={handleAddVariation} 
+            variant="outline" 
+            size="sm"
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+          >
             <Plus className="h-4 w-4 ml-2" />
             הוסף וריאציה
           </Button>
-          <Button onClick={handleSaveVariations} disabled={isSaving} size="sm">
+          <Button 
+            onClick={handleSaveVariations} 
+            disabled={isSaving} 
+            size="sm"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+          >
             {isSaving ? (
               <Loader2 className="h-4 w-4 ml-2 animate-spin" />
             ) : (
@@ -271,17 +286,27 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
       ) : (
         <div className="space-y-4">
           {variations.map((variation, index) => (
-            <Card key={variation.id} className={index % 2 === 0 ? "bg-[#f3f3f3]" : "bg-[#fbf9ed]"}>
+            <Card key={variation.id} className="border-primary/20 hover:border-primary/40 transition-colors">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-base">
-                    {getVariationName(variation) || `וריאציה #{index + 1}`}
-                    {variation.woo_id && ` (WooCommerce ID: ${variation.woo_id})`}
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-gradient-to-br from-purple-500 to-pink-500">
+                      <Layers className="w-4 h-4 text-white" />
+                    </div>
+                    <CardTitle className="text-base">
+                      {getVariationName(variation) || `וריאציה #{index + 1}`}
+                      {variation.woo_id && (
+                        <span className="text-xs text-muted-foreground mr-2">
+                          (WooCommerce ID: {variation.woo_id})
+                        </span>
+                      )}
+                    </CardTitle>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveVariation(index)}
+                    className="hover:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

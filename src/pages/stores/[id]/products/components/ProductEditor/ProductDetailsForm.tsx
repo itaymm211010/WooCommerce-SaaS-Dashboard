@@ -37,29 +37,37 @@ export function ProductDetailsForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Header with badges */}
-        <div className="flex justify-between items-center gap-4 mb-4">
+        <div className="flex justify-between items-center gap-4 mb-6">
           <div className="flex gap-2">
             {isVariableProduct ? (
-              <Badge className="bg-orange-500 hover:bg-orange-600">
+              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0">
                 <Layers className="w-3 h-3 mr-1" /> מוצר עם וריאציות
               </Badge>
             ) : (
-              <Badge className="bg-blue-500 hover:bg-blue-600">
+              <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0">
                 <Package className="w-3 h-3 mr-1" /> מוצר רגיל
               </Badge>
             )}
             
             {!isNewProduct && initialData?.woo_id && initialData.woo_id > 0 && (
-              <Badge variant="outline" className="bg-green-50">
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
                 <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן עם WooCommerce
               </Badge>
             )}
             {!isNewProduct && (!initialData?.woo_id || initialData.woo_id === 0) && (
-              <Badge variant="outline" className="bg-yellow-50">
+              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0">
                 <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן עם WooCommerce
               </Badge>
             )}
           </div>
+        </div>
+        
+        {/* Section Headers with Icons */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+            <Package className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold">תיאור המוצר</h3>
         </div>
 
         <TextField 
@@ -90,6 +98,14 @@ export function ProductDetailsForm({
           multiline 
           rows={4} 
         />
+
+        {/* Price Section */}
+        <div className="flex items-center gap-3 mt-6 mb-4">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500">
+            <span className="text-white text-lg font-bold">₪</span>
+          </div>
+          <h3 className="text-lg font-semibold">מחירי המוצר</h3>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PriceField 

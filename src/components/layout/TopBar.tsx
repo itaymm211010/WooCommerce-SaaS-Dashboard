@@ -1,8 +1,15 @@
 
 import { Button } from "@/components/ui/button";
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export const TopBar = () => {
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed w-full top-0 z-40 lg:left-72 lg:w-[calc(100%-288px)]">
       <div className="flex h-16 items-center px-6 gap-4">
@@ -10,6 +17,13 @@ export const TopBar = () => {
         <div className="flex flex-1 items-center justify-between">
           <div />
           <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-primary" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
