@@ -45,31 +45,24 @@ export function MultiSelectCombobox({
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
-  // Save all items ever seen or created
-  const [allKnownItems, setAllKnownItems] = React.useState<MultiSelectItem[]>([]);
   
-  // Update known items whenever selected or options change
+  // Use ref to track all items ever seen - doesn't cause re-renders
+  const knownItemsRef = React.useRef<Map<number, MultiSelectItem>>(new Map());
+  
+  // Add items to known items map
+  const addToKnownItems = (items: MultiSelectItem[]) => {
+    items.forEach(item => {
+      if (!knownItemsRef.current.has(item.id)) {
+        knownItemsRef.current.set(item.id, item);
+      }
+    });
+  };
+  
+  // Add options and selected to known items
   React.useEffect(() => {
-    const itemsToAdd: MultiSelectItem[] = [];
-    
-    // Add from options
-    options.forEach((opt) => {
-      if (!allKnownItems.some((known) => known.id === opt.id)) {
-        itemsToAdd.push(opt);
-      }
-    });
-    
-    // Add from selected
-    selected.forEach((sel) => {
-      if (!allKnownItems.some((known) => known.id === sel.id)) {
-        itemsToAdd.push(sel);
-      }
-    });
-    
-    if (itemsToAdd.length > 0) {
-      setAllKnownItems((prev) => [...prev, ...itemsToAdd]);
-    }
-  }, [options, selected]); // Remove allKnownItems from deps to avoid infinite loop
+    addToKnownItems(options);
+    addToKnownItems(selected);
+  }, [options, selected]);
   
   const createSlug = (name: string) =>
     name
@@ -88,7 +81,7 @@ export function MultiSelectCombobox({
     };
 
     // Add to known items immediately
-    setAllKnownItems((prev) => [...prev, newItem]);
+    addToKnownItems([newItem]);
     onSelect([...selected, newItem]);
     setSearchValue("");
     setOpen(false);
@@ -108,21 +101,21 @@ export function MultiSelectCombobox({
     onSelect(selected.filter((s) => s.id !== item.id));
   };
 
-  // Show all known items (from options, selected, and history)
+  // Show all known items (from ref, options, and selected)
   const allOptions = React.useMemo(() => {
     const optionMap = new Map<number, MultiSelectItem>();
     
-    // Add all known items
-    allKnownItems.forEach((item) => optionMap.set(item.id, item));
+    // Add all known items from ref
+    knownItemsRef.current.forEach((item) => optionMap.set(item.id, item));
     
-    // Add current options
+    // Add current options (might have updates)
     options.forEach((opt) => optionMap.set(opt.id, opt));
     
-    // Add selected items
+    // Add selected items (in case they're new)
     selected.forEach((sel) => optionMap.set(sel.id, sel));
     
     return Array.from(optionMap.values());
-  }, [allKnownItems, options, selected]);
+  }, [options, selected, open]); // Add 'open' to force recalculation when dropdown opens
 
   const filteredOptions = allOptions.filter((option) =>
     option.name.toLowerCase().includes(searchValue.toLowerCase())
