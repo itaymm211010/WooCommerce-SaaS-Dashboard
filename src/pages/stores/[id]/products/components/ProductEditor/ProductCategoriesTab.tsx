@@ -1,9 +1,5 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import { useState } from "react";
+import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 
 interface Category {
   id: number;
@@ -40,151 +36,46 @@ export function ProductCategoriesTab({
   onTagsChange,
   onBrandsChange,
 }: ProductCategoriesTabProps) {
-  const [newCategory, setNewCategory] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [newBrand, setNewBrand] = useState("");
-
-  const handleAddCategory = () => {
-    if (!newCategory.trim()) return;
-    
-    const category: Category = {
-      id: Date.now(),
-      name: newCategory.trim(),
-      slug: newCategory.trim().toLowerCase().replace(/\s+/g, '-')
-    };
-    
-    onCategoriesChange([...categories, category]);
-    setNewCategory("");
-  };
-
-  const handleRemoveCategory = (id: number) => {
-    onCategoriesChange(categories.filter(cat => cat.id !== id));
-  };
-
-  const handleAddTag = () => {
-    if (!newTag.trim()) return;
-    
-    const tag: Tag = {
-      id: Date.now(),
-      name: newTag.trim(),
-      slug: newTag.trim().toLowerCase().replace(/\s+/g, '-')
-    };
-    
-    onTagsChange([...tags, tag]);
-    setNewTag("");
-  };
-
-  const handleRemoveTag = (id: number) => {
-    onTagsChange(tags.filter(tag => tag.id !== id));
-  };
-
-  const handleAddBrand = () => {
-    if (!newBrand.trim()) return;
-    
-    const brand: Brand = {
-      id: Date.now(),
-      name: newBrand.trim(),
-      slug: newBrand.trim().toLowerCase().replace(/\s+/g, '-')
-    };
-    
-    onBrandsChange([...brands, brand]);
-    setNewBrand("");
-  };
-
-  const handleRemoveBrand = (id: number) => {
-    onBrandsChange(brands.filter(brand => brand.id !== id));
-  };
 
   return (
     <div className="space-y-6">
-      {/* Brands */}
-      <div className="space-y-2">
-        <Label>מותגים</Label>
-        <div className="flex gap-2">
-          <Input
-            value={newBrand}
-            onChange={(e) => setNewBrand(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddBrand()}
-            placeholder="הוסף מותג"
-          />
-          <Button type="button" onClick={handleAddBrand}>
-            הוסף
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {brands.map((brand) => (
-            <Badge key={brand.id} variant="secondary" className="gap-1">
-              {brand.name}
-              <button
-                type="button"
-                onClick={() => handleRemoveBrand(brand.id)}
-                className="hover:text-destructive"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
-      </div>
-
       {/* Categories */}
       <div className="space-y-2">
         <Label>קטגוריות</Label>
-        <div className="flex gap-2">
-          <Input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-            placeholder="הוסף קטגוריה"
-          />
-          <Button type="button" onClick={handleAddCategory}>
-            הוסף
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {categories.map((category) => (
-            <Badge key={category.id} variant="secondary" className="gap-1">
-              {category.name}
-              <button
-                type="button"
-                onClick={() => handleRemoveCategory(category.id)}
-                className="hover:text-destructive"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
+        <MultiSelectCombobox
+          selected={categories}
+          onSelect={onCategoriesChange}
+          placeholder="בחר או צור קטגוריות..."
+          emptyMessage="לא נמצאו קטגוריות"
+          createLabel="צור קטגוריה"
+          badgeVariant="secondary"
+        />
       </div>
 
       {/* Tags */}
       <div className="space-y-2">
         <Label>תגים</Label>
-        <div className="flex gap-2">
-          <Input
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-            placeholder="הוסף תג"
-          />
-          <Button type="button" onClick={handleAddTag}>
-            הוסף
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {tags.map((tag) => (
-            <Badge key={tag.id} variant="outline" className="gap-1">
-              {tag.name}
-              <button
-                type="button"
-                onClick={() => handleRemoveTag(tag.id)}
-                className="hover:text-destructive"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
+        <MultiSelectCombobox
+          selected={tags}
+          onSelect={onTagsChange}
+          placeholder="בחר או צור תגים..."
+          emptyMessage="לא נמצאו תגים"
+          createLabel="צור תג"
+          badgeVariant="outline"
+        />
+      </div>
+
+      {/* Brands */}
+      <div className="space-y-2">
+        <Label>מותגים</Label>
+        <MultiSelectCombobox
+          selected={brands}
+          onSelect={onBrandsChange}
+          placeholder="בחר או צור מותגים..."
+          emptyMessage="לא נמצאו מותגים"
+          createLabel="צור מותג"
+          badgeVariant="default"
+        />
       </div>
     </div>
   );
