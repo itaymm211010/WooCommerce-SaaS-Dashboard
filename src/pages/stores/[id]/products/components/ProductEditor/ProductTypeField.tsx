@@ -93,11 +93,32 @@ export function ProductTypeField({
       // עדכון סוג המוצר
       const { error: updateError } = await supabase
         .from("products")
-        .update({ type: "simple" })
+        .update({ type: "simple", price: null, sale_price: null })
         .eq("id", productId)
         .eq("store_id", storeId);
 
       if (updateError) throw updateError;
+
+      // סנכרון ל-WooCommerce
+      const { data: productData } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", productId)
+        .single();
+
+      if (productData && productData.woo_id) {
+        const { error: syncError } = await supabase.functions.invoke('update-woo-product', {
+          body: { 
+            product: productData, 
+            store_id: storeId 
+          }
+        });
+        
+        if (syncError) {
+          console.error('Failed to sync to WooCommerce:', syncError);
+          toast.error('המוצר עודכן בהצלחה אך הסנכרון ל-WooCommerce נכשל');
+        }
+      }
 
       form.setValue("type", "simple");
       onTypeChange?.("simple");
@@ -141,6 +162,33 @@ export function ProductTypeField({
         .eq("store_id", storeId);
 
       if (updateError) throw updateError;
+
+      // סנכרון ל-WooCommerce כולל attributes
+      const { data: productData } = await supabase
+        .from("products")
+        .select(`
+          *,
+          product_attributes (*)
+        `)
+        .eq("id", productId)
+        .single();
+
+      if (productData && productData.woo_id) {
+        const { error: syncError } = await supabase.functions.invoke('update-woo-product', {
+          body: { 
+            product: {
+              ...productData,
+              attributes: productData.product_attributes
+            }, 
+            store_id: storeId 
+          }
+        });
+        
+        if (syncError) {
+          console.error('Failed to sync to WooCommerce:', syncError);
+          toast.error('המוצר עודכן בהצלחה אך הסנכרון ל-WooCommerce נכשל');
+        }
+      }
 
       form.setValue("type", "variable");
       onTypeChange?.("variable");

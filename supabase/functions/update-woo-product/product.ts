@@ -259,6 +259,7 @@ export async function transformProductForWooCommerce(product: any, store: any) {
   
   const wooProduct: any = {
     name: product.name,
+    type: product.type,
     description: product.description || "",
     short_description: product.short_description || "",
     regular_price: product.price ? product.price.toString() : "0",
