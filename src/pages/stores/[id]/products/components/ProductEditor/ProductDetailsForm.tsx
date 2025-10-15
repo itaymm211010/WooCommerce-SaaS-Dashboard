@@ -1,8 +1,8 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Save, RefreshCw } from "lucide-react";
+import { Save, RefreshCw, Package, Layers } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
@@ -11,6 +11,7 @@ import { TextField } from "./TextField";
 import { PriceField } from "./PriceField";
 import { StatusField } from "./StatusField";
 import { Badge } from "@/components/ui/badge";
+import { ProductTypeField } from "./ProductTypeField";
 
 interface ProductDetailsFormProps {
   initialData?: Partial<Product>;
@@ -29,28 +30,50 @@ export function ProductDetailsForm({
     isNewProduct,
   });
 
+  const [productType, setProductType] = useState(initialData?.type || "simple");
+  const isVariableProduct = productType === "variable";
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <TextField 
-              name="name" 
-              label="שם המוצר" 
-              placeholder="הכנס שם מוצר" 
-            />
+        {/* Header with badges */}
+        <div className="flex justify-between items-center gap-4 mb-4">
+          <div className="flex gap-2">
+            {isVariableProduct ? (
+              <Badge className="bg-orange-500 hover:bg-orange-600">
+                <Layers className="w-3 h-3 mr-1" /> מוצר עם וריאציות
+              </Badge>
+            ) : (
+              <Badge className="bg-blue-500 hover:bg-blue-600">
+                <Package className="w-3 h-3 mr-1" /> מוצר רגיל
+              </Badge>
+            )}
+            
+            {!isNewProduct && initialData?.woo_id && initialData.woo_id > 0 && (
+              <Badge variant="outline" className="bg-green-50">
+                <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן עם WooCommerce
+              </Badge>
+            )}
+            {!isNewProduct && (!initialData?.woo_id || initialData.woo_id === 0) && (
+              <Badge variant="outline" className="bg-yellow-50">
+                <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן עם WooCommerce
+              </Badge>
+            )}
           </div>
-          {!isNewProduct && initialData?.woo_id && initialData.woo_id > 0 && (
-            <Badge variant="outline" className="mr-2 bg-green-50">
-              <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן עם WooCommerce
-            </Badge>
-          )}
-          {!isNewProduct && (!initialData?.woo_id || initialData.woo_id === 0) && (
-            <Badge variant="outline" className="mr-2 bg-yellow-50">
-              <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן עם WooCommerce
-            </Badge>
-          )}
         </div>
+
+        <TextField 
+          name="name" 
+          label="שם המוצר" 
+          placeholder="הכנס שם מוצר" 
+        />
+
+        <ProductTypeField 
+          productId={initialData?.id}
+          storeId={storeId}
+          isNewProduct={isNewProduct}
+          onTypeChange={setProductType}
+        />
 
         <TextField 
           name="short_description" 
@@ -72,12 +95,16 @@ export function ProductDetailsForm({
           <PriceField 
             name="price" 
             label="מחיר רגיל"
+            disabled={isVariableProduct}
+            helpText={isVariableProduct ? "מחירים של מוצרים עם וריאציות מנוהלים בלשונית 'וריאציות'" : undefined}
           />
 
           <PriceField 
             name="sale_price" 
             label="מחיר מבצע" 
             placeholder="השאר ריק אם אין מבצע"
+            disabled={isVariableProduct}
+            helpText={isVariableProduct ? "מחירי מבצע של וריאציות מנוהלים בלשונית 'וריאציות'" : undefined}
           />
         </div>
 
