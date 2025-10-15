@@ -1,6 +1,116 @@
 
 import { formatBaseUrl } from "./utils.ts"
 
+// Fetch existing variations from WooCommerce
+export async function fetchWooCommerceVariations(store: any, productWooId: number) {
+  const baseUrl = formatBaseUrl(store.url)
+  
+  try {
+    const response = await fetch(
+      `${baseUrl}/wp-json/wc/v3/products/${productWooId}/variations?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch variations for product ${productWooId}:`, await response.text())
+      return []
+    }
+    
+    const variations = await response.json()
+    console.log(`Fetched ${variations.length} variations from WooCommerce for product ${productWooId}`)
+    return variations
+  } catch (error) {
+    console.error(`Error fetching WooCommerce variations:`, error)
+    return []
+  }
+}
+
+// Sync WooCommerce variations to our database
+export async function syncVariationsFromWooCommerce(
+  supabase: any, 
+  storeId: string, 
+  productId: string, 
+  productWooId: number, 
+  store: any
+) {
+  console.log(`🔄 Syncing variations from WooCommerce for product ${productWooId}...`)
+  
+  const wooVariations = await fetchWooCommerceVariations(store, productWooId)
+  
+  if (wooVariations.length === 0) {
+    console.log('No variations found in WooCommerce')
+    return
+  }
+  
+  let variationsSynced = 0
+  
+  for (const wooVar of wooVariations) {
+    // Check if variation exists in our DB by woo_id
+    const { data: existingByWooId } = await supabase
+      .from('product_variations')
+      .select('id')
+      .eq('woo_id', wooVar.id)
+      .eq('product_id', productId)
+      .maybeSingle()
+    
+    if (existingByWooId) {
+      console.log(`✓ Variation ${wooVar.id} already exists in DB`)
+      continue
+    }
+    
+    // Check if variation exists by SKU (in case woo_id was lost)
+    if (wooVar.sku) {
+      const { data: existingBySku } = await supabase
+        .from('product_variations')
+        .select('id, woo_id')
+        .eq('sku', wooVar.sku)
+        .eq('product_id', productId)
+        .maybeSingle()
+      
+      if (existingBySku) {
+        // Update existing variation with woo_id
+        console.log(`✓ Found variation by SKU (${wooVar.sku}), updating woo_id to ${wooVar.id}`)
+        await supabase
+          .from('product_variations')
+          .update({ woo_id: wooVar.id })
+          .eq('id', existingBySku.id)
+        variationsSynced++
+        continue
+      }
+    }
+    
+    // Insert missing variation
+    console.log(`➕ Inserting missing variation from WooCommerce: ${wooVar.id}`)
+    const { error: insertError } = await supabase
+      .from('product_variations')
+      .insert({
+        store_id: storeId,
+        product_id: productId,
+        woo_id: wooVar.id,
+        sku: wooVar.sku || '',
+        price: parseFloat(wooVar.price || '0'),
+        regular_price: parseFloat(wooVar.regular_price || '0'),
+        sale_price: wooVar.sale_price ? parseFloat(wooVar.sale_price) : null,
+        stock_quantity: wooVar.stock_quantity,
+        stock_status: wooVar.stock_status || 'instock',
+        attributes: wooVar.attributes || []
+      })
+    
+    if (insertError) {
+      console.error('Error inserting variation from WooCommerce:', insertError)
+    } else {
+      variationsSynced++
+    }
+  }
+  
+  console.log(`✅ Synced ${variationsSynced} variations from WooCommerce`)
+}
+
 // Create a new category in WooCommerce
 async function createCategory(store: any, categoryName: string) {
   const baseUrl = formatBaseUrl(store.url);

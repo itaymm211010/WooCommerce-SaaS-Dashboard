@@ -7,7 +7,8 @@ import {
   updateProductWooId,
   createWooCommerceVariation,
   updateWooCommerceVariation,
-  updateVariationWooId
+  updateVariationWooId,
+  syncVariationsFromWooCommerce
 } from "./product.ts"
 
 // Main request handler
@@ -67,6 +68,11 @@ export async function handleRequest(req: Request) {
 
     // Handle variations if product is variable type
     if (product.type === 'variable') {
+      // First, sync existing variations from WooCommerce to our DB
+      console.log('🔄 Step 1: Syncing existing variations from WooCommerce...')
+      await syncVariationsFromWooCommerce(supabase, store_id, product.id, wooId, store)
+      
+      // Then, fetch our local variations
       const { data: variations } = await supabase
         .from('product_variations')
         .select('*')
@@ -74,18 +80,24 @@ export async function handleRequest(req: Request) {
         .eq('store_id', store_id)
 
       if (variations && variations.length > 0) {
-        console.log(`Syncing ${variations.length} variations to WooCommerce`)
+        console.log(`🔄 Step 2: Syncing ${variations.length} variations to WooCommerce`)
         
         for (const variation of variations) {
           if (!variation.woo_id || variation.woo_id === 0) {
             // Create new variation in WooCommerce
+            console.log(`➕ Creating new variation in WooCommerce`)
             const newWooVariation = await createWooCommerceVariation(store, wooId, variation)
             await updateVariationWooId(supabase, variation.id, newWooVariation.id)
+            console.log(`✅ Created variation with WooCommerce ID: ${newWooVariation.id}`)
           } else {
             // Update existing variation
+            console.log(`🔄 Updating existing variation ${variation.woo_id}`)
             await updateWooCommerceVariation(store, wooId, variation)
+            console.log(`✅ Updated variation ${variation.woo_id}`)
           }
         }
+        
+        console.log(`✅ All variations synced successfully`)
       }
     }
 

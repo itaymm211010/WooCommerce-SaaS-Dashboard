@@ -68,48 +68,75 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
   
   console.log('Saving products and images to database...')
   
-  // First, delete existing products for this store to avoid duplicates
-  const { error: deleteError } = await supabase
-    .from('products')
-    .delete()
-    .eq('store_id', storeId)
+  let productsUpdated = 0
+  let productsCreated = 0
   
-  if (deleteError) {
-    console.error('Error deleting existing products:', deleteError)
-    throw deleteError
-  }
-  
-  // Insert new products and their images
+  // UPSERT products - update if exists, insert if new
   for (const product of productsWithVariations) {
-    // Insert the product first
-    const { data: insertedProduct, error: insertError } = await supabase
+    // Check if product exists by woo_id
+    const { data: existingProduct } = await supabase
       .from('products')
-      .insert({
-        store_id: storeId,
-        woo_id: product.id,
-        name: product.name,
-        description: product.description || '',
-        short_description: product.short_description || '',
-        sku: product.sku || '',
-        price: parseFloat(product.regular_price || '0'),
-        sale_price: product.sale_price ? parseFloat(product.sale_price) : null,
-        stock_quantity: product.stock_quantity,
-        status: product.status,
-        type: product.type || 'simple',
-        weight: product.weight ? parseFloat(product.weight) : null,
-        length: product.dimensions?.length ? parseFloat(product.dimensions.length) : null,
-        width: product.dimensions?.width ? parseFloat(product.dimensions.width) : null,
-        height: product.dimensions?.height ? parseFloat(product.dimensions.height) : null,
-        categories: product.categories || [],
-        tags: product.tags || [],
-        brand: product.brands && product.brands.length > 0 ? product.brands[0].name : null
-      })
-      .select()
-      .single()
+      .select('id')
+      .eq('store_id', storeId)
+      .eq('woo_id', product.id)
+      .maybeSingle()
     
-    if (insertError) {
-      console.error('Error inserting product:', insertError)
-      continue
+    const productData = {
+      store_id: storeId,
+      woo_id: product.id,
+      name: product.name,
+      description: product.description || '',
+      short_description: product.short_description || '',
+      sku: product.sku || '',
+      price: parseFloat(product.regular_price || '0'),
+      sale_price: product.sale_price ? parseFloat(product.sale_price) : null,
+      stock_quantity: product.stock_quantity,
+      status: product.status,
+      type: product.type || 'simple',
+      weight: product.weight ? parseFloat(product.weight) : null,
+      length: product.dimensions?.length ? parseFloat(product.dimensions.length) : null,
+      width: product.dimensions?.width ? parseFloat(product.dimensions.width) : null,
+      height: product.dimensions?.height ? parseFloat(product.dimensions.height) : null,
+      categories: product.categories || [],
+      tags: product.tags || [],
+      brands: product.brands ? product.brands.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        slug: b.slug
+      })) : []
+    }
+    
+    let insertedProduct: any
+    
+    if (existingProduct) {
+      // Update existing product
+      const { data, error: updateError } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', existingProduct.id)
+        .select()
+        .single()
+      
+      if (updateError) {
+        console.error('Error updating product:', updateError)
+        continue
+      }
+      insertedProduct = data
+      productsUpdated++
+    } else {
+      // Insert new product
+      const { data, error: insertError } = await supabase
+        .from('products')
+        .insert(productData)
+        .select()
+        .single()
+      
+      if (insertError) {
+        console.error('Error inserting product:', insertError)
+        continue
+      }
+      insertedProduct = data
+      productsCreated++
     }
 
     // Insert product images
@@ -154,27 +181,56 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
       console.log(`Saving ${product.variations.length} variations for product ${product.name}`)
       
       for (const variation of product.variations) {
-        // Insert variation
-        const { data: insertedVariation, error: variationError } = await supabase
+        // Check if variation exists by woo_id
+        const { data: existingVariation } = await supabase
           .from('product_variations')
-          .insert({
-            store_id: storeId,
-            product_id: insertedProduct.id,
-            woo_id: variation.id,
-            sku: variation.sku || '',
-            price: parseFloat(variation.price || '0'),
-            regular_price: parseFloat(variation.regular_price || '0'),
-            sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
-            stock_quantity: variation.stock_quantity,
-            stock_status: variation.stock_status || 'instock',
-            attributes: variation.attributes || []
-          })
-          .select()
-          .single()
+          .select('id')
+          .eq('store_id', storeId)
+          .eq('woo_id', variation.id)
+          .maybeSingle()
+        
+        const variationData = {
+          store_id: storeId,
+          product_id: insertedProduct.id,
+          woo_id: variation.id,
+          sku: variation.sku || '',
+          price: parseFloat(variation.price || '0'),
+          regular_price: parseFloat(variation.regular_price || '0'),
+          sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
+          stock_quantity: variation.stock_quantity,
+          stock_status: variation.stock_status || 'instock',
+          attributes: variation.attributes || []
+        }
+        
+        let insertedVariation: any
+        
+        if (existingVariation) {
+          // Update existing variation
+          const { data, error: updateError } = await supabase
+            .from('product_variations')
+            .update(variationData)
+            .eq('id', existingVariation.id)
+            .select()
+            .single()
+          
+          if (updateError) {
+            console.error('Error updating variation:', updateError)
+            continue
+          }
+          insertedVariation = data
+        } else {
+          // Insert new variation
+          const { data, error: insertError } = await supabase
+            .from('product_variations')
+            .insert(variationData)
+            .select()
+            .single()
 
-        if (variationError) {
-          console.error('Error inserting variation:', variationError)
-          continue
+          if (insertError) {
+            console.error('Error inserting variation:', insertError)
+            continue
+          }
+          insertedVariation = data
         }
 
         // Insert variation image if exists
@@ -206,4 +262,6 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
       }
     }
   }
+  
+  console.log(`✅ Sync complete: ${productsCreated} products created, ${productsUpdated} products updated`)
 }
