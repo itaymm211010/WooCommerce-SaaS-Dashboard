@@ -220,7 +220,7 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
       ) : (
         <div className="space-y-4">
           {variations.map((variation, index) => (
-            <Card key={variation.id}>
+            <Card key={variation.id} className={index % 2 === 0 ? "bg-[#f3f3f3]" : "bg-[#fbf9ed]"}>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-base">
