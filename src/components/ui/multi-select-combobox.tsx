@@ -45,19 +45,32 @@ export function MultiSelectCombobox({
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
+  // Save all items ever seen or created
+  const [allKnownItems, setAllKnownItems] = React.useState<MultiSelectItem[]>([]);
   
-  // Keep track of all items that were ever selected to allow re-selection
-  const [itemHistory, setItemHistory] = React.useState<MultiSelectItem[]>([]);
-
-  // Update history when selected items change
+  // Update known items whenever selected or options change
   React.useEffect(() => {
-    selected.forEach((item) => {
-      if (!itemHistory.some((h) => h.id === item.id)) {
-        setItemHistory((prev) => [...prev, item]);
+    const itemsToAdd: MultiSelectItem[] = [];
+    
+    // Add from options
+    options.forEach((opt) => {
+      if (!allKnownItems.some((known) => known.id === opt.id)) {
+        itemsToAdd.push(opt);
       }
     });
-  }, [selected]);
-
+    
+    // Add from selected
+    selected.forEach((sel) => {
+      if (!allKnownItems.some((known) => known.id === sel.id)) {
+        itemsToAdd.push(sel);
+      }
+    });
+    
+    if (itemsToAdd.length > 0) {
+      setAllKnownItems((prev) => [...prev, ...itemsToAdd]);
+    }
+  }, [options, selected]); // Remove allKnownItems from deps to avoid infinite loop
+  
   const createSlug = (name: string) =>
     name
       .trim()
@@ -74,6 +87,8 @@ export function MultiSelectCombobox({
       slug: createSlug(searchValue),
     };
 
+    // Add to known items immediately
+    setAllKnownItems((prev) => [...prev, newItem]);
     onSelect([...selected, newItem]);
     setSearchValue("");
     setOpen(false);
@@ -93,29 +108,21 @@ export function MultiSelectCombobox({
     onSelect(selected.filter((s) => s.id !== item.id));
   };
 
-  // Merge options with selected items AND history to show all available items
+  // Show all known items (from options, selected, and history)
   const allOptions = React.useMemo(() => {
     const optionMap = new Map<number, MultiSelectItem>();
     
-    // Add all provided options
+    // Add all known items
+    allKnownItems.forEach((item) => optionMap.set(item.id, item));
+    
+    // Add current options
     options.forEach((opt) => optionMap.set(opt.id, opt));
     
     // Add selected items
-    selected.forEach((sel) => {
-      if (!optionMap.has(sel.id)) {
-        optionMap.set(sel.id, sel);
-      }
-    });
-    
-    // Add historical items (so removed items can be re-selected)
-    itemHistory.forEach((hist) => {
-      if (!optionMap.has(hist.id)) {
-        optionMap.set(hist.id, hist);
-      }
-    });
+    selected.forEach((sel) => optionMap.set(sel.id, sel));
     
     return Array.from(optionMap.values());
-  }, [options, selected, itemHistory]);
+  }, [allKnownItems, options, selected]);
 
   const filteredOptions = allOptions.filter((option) =>
     option.name.toLowerCase().includes(searchValue.toLowerCase())
