@@ -14,6 +14,7 @@ import { ProductCategoriesTab } from "../components/ProductEditor/ProductCategor
 import { ProductAttributesTab } from "../components/ProductEditor/ProductAttributesTab";
 import { SyncToWooButton } from "../components/ProductEditor/SyncToWooButton";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function ProductEditorPage() {
   const { id: storeId, productId } = useParams();
@@ -134,26 +135,89 @@ export default function ProductEditorPage() {
                     categories={(product?.categories as any) || []}
                     tags={(product?.tags as any) || []}
                     brands={(product?.brands as any) || []}
-                    onCategoriesChange={(categories) => {
-                      supabase
-                        .from('products')
-                        .update({ categories: categories as any })
-                        .eq('id', productId)
-                        .then(() => refetch());
+                    onCategoriesChange={async (categories) => {
+                      try {
+                        await supabase
+                          .from('products')
+                          .update({ categories: categories as any })
+                          .eq('id', productId);
+                        
+                        toast.success("קטגוריות עודכנו בהצלחה");
+                        
+                        // Sync to WooCommerce
+                        const { error } = await supabase.functions.invoke('update-woo-product', {
+                          body: { 
+                            product: { ...product, categories, id: productId }, 
+                            store_id: storeId 
+                          }
+                        });
+                        
+                        if (error) {
+                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                        } else {
+                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                        }
+                        
+                        refetch();
+                      } catch (error) {
+                        toast.error("שגיאה בעדכון קטגוריות");
+                      }
                     }}
-                    onTagsChange={(tags) => {
-                      supabase
-                        .from('products')
-                        .update({ tags: tags as any })
-                        .eq('id', productId)
-                        .then(() => refetch());
+                    onTagsChange={async (tags) => {
+                      try {
+                        await supabase
+                          .from('products')
+                          .update({ tags: tags as any })
+                          .eq('id', productId);
+                        
+                        toast.success("תגים עודכנו בהצלחה");
+                        
+                        // Sync to WooCommerce
+                        const { error } = await supabase.functions.invoke('update-woo-product', {
+                          body: { 
+                            product: { ...product, tags, id: productId }, 
+                            store_id: storeId 
+                          }
+                        });
+                        
+                        if (error) {
+                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                        } else {
+                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                        }
+                        
+                        refetch();
+                      } catch (error) {
+                        toast.error("שגיאה בעדכון תגים");
+                      }
                     }}
-                    onBrandsChange={(brands) => {
-                      supabase
-                        .from('products')
-                        .update({ brands: brands as any })
-                        .eq('id', productId)
-                        .then(() => refetch());
+                    onBrandsChange={async (brands) => {
+                      try {
+                        await supabase
+                          .from('products')
+                          .update({ brands: brands as any })
+                          .eq('id', productId);
+                        
+                        toast.success("מותגים עודכנו בהצלחה");
+                        
+                        // Sync to WooCommerce
+                        const { error } = await supabase.functions.invoke('update-woo-product', {
+                          body: { 
+                            product: { ...product, brands, id: productId }, 
+                            store_id: storeId 
+                          }
+                        });
+                        
+                        if (error) {
+                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                        } else {
+                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                        }
+                        
+                        refetch();
+                      } catch (error) {
+                        toast.error("שגיאה בעדכון מותגים");
+                      }
                     }}
                   />
                 </TabsContent>

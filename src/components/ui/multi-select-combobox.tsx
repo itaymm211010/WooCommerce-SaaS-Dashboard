@@ -45,6 +45,18 @@ export function MultiSelectCombobox({
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
+  
+  // Keep track of all items that were ever selected to allow re-selection
+  const [itemHistory, setItemHistory] = React.useState<MultiSelectItem[]>([]);
+
+  // Update history when selected items change
+  React.useEffect(() => {
+    selected.forEach((item) => {
+      if (!itemHistory.some((h) => h.id === item.id)) {
+        setItemHistory((prev) => [...prev, item]);
+      }
+    });
+  }, [selected]);
 
   const createSlug = (name: string) =>
     name
@@ -64,6 +76,7 @@ export function MultiSelectCombobox({
 
     onSelect([...selected, newItem]);
     setSearchValue("");
+    setOpen(false);
   };
 
   const handleToggleItem = (item: MultiSelectItem) => {
@@ -80,22 +93,29 @@ export function MultiSelectCombobox({
     onSelect(selected.filter((s) => s.id !== item.id));
   };
 
-  // Merge options with selected items to show all
+  // Merge options with selected items AND history to show all available items
   const allOptions = React.useMemo(() => {
     const optionMap = new Map<number, MultiSelectItem>();
     
-    // Add all options
+    // Add all provided options
     options.forEach((opt) => optionMap.set(opt.id, opt));
     
-    // Add selected items that might not be in options
+    // Add selected items
     selected.forEach((sel) => {
       if (!optionMap.has(sel.id)) {
         optionMap.set(sel.id, sel);
       }
     });
     
+    // Add historical items (so removed items can be re-selected)
+    itemHistory.forEach((hist) => {
+      if (!optionMap.has(hist.id)) {
+        optionMap.set(hist.id, hist);
+      }
+    });
+    
     return Array.from(optionMap.values());
-  }, [options, selected]);
+  }, [options, selected, itemHistory]);
 
   const filteredOptions = allOptions.filter((option) =>
     option.name.toLowerCase().includes(searchValue.toLowerCase())
