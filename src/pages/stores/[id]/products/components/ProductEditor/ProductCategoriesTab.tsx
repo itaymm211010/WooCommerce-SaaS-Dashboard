@@ -1,5 +1,5 @@
 import { Label } from "@/components/ui/label";
-import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { MultiSelectCombobox, MultiSelectItem } from "@/components/ui/multi-select-combobox";
 
 interface Category {
   id: number;
@@ -26,6 +26,9 @@ interface ProductCategoriesTabProps {
   onCategoriesChange: (categories: Category[]) => void;
   onTagsChange: (tags: Tag[]) => void;
   onBrandsChange: (brands: Brand[]) => void;
+  availableCategories?: MultiSelectItem[];
+  availableTags?: MultiSelectItem[];
+  availableBrands?: MultiSelectItem[];
 }
 
 export function ProductCategoriesTab({
@@ -35,14 +38,17 @@ export function ProductCategoriesTab({
   onCategoriesChange,
   onTagsChange,
   onBrandsChange,
+  availableCategories = [],
+  availableTags = [],
+  availableBrands = [],
 }: ProductCategoriesTabProps) {
-
   return (
     <div className="space-y-6">
       {/* Categories */}
       <div className="space-y-2">
         <Label>קטגוריות</Label>
         <MultiSelectCombobox
+          options={availableCategories}
           selected={categories}
           onSelect={onCategoriesChange}
           placeholder="בחר או צור קטגוריות..."
@@ -56,6 +62,7 @@ export function ProductCategoriesTab({
       <div className="space-y-2">
         <Label>תגים</Label>
         <MultiSelectCombobox
+          options={availableTags}
           selected={tags}
           onSelect={onTagsChange}
           placeholder="בחר או צור תגים..."
@@ -69,6 +76,7 @@ export function ProductCategoriesTab({
       <div className="space-y-2">
         <Label>מותגים</Label>
         <MultiSelectCombobox
+          options={availableBrands}
           selected={brands}
           onSelect={onBrandsChange}
           placeholder="בחר או צור מותגים..."

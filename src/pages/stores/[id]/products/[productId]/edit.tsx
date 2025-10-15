@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProduct } from "../hooks/useProduct";
+import { useStoreTaxonomies } from "../hooks/useStoreTaxonomies";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader } from "lucide-react";
 import { ProductDetailsForm } from "../components/ProductEditor/ProductDetailsForm";
@@ -19,6 +20,7 @@ import { toast } from "sonner";
 export default function ProductEditorPage() {
   const { id: storeId, productId } = useParams();
   const { data: product, isLoading, error, refetch } = useProduct(storeId, productId);
+  const { data: taxonomies, isLoading: taxonomiesLoading } = useStoreTaxonomies(storeId);
 
   // Check for "new" product case
   const isNewProduct = productId === "new";
@@ -135,6 +137,9 @@ export default function ProductEditorPage() {
                     categories={(product?.categories as any) || []}
                     tags={(product?.tags as any) || []}
                     brands={(product?.brands as any) || []}
+                    availableCategories={taxonomies?.categories || []}
+                    availableTags={taxonomies?.tags || []}
+                    availableBrands={taxonomies?.brands || []}
                     onCategoriesChange={async (categories) => {
                       try {
                         await supabase
