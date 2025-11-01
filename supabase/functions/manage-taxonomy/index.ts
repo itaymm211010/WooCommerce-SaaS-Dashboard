@@ -119,12 +119,14 @@ serve(async (req) => {
         console.log('Created/fetched from WooCommerce:', created);
 
         // Check if already exists in local DB
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
           .from(table)
           .select('*')
           .eq('woo_id', created.id)
           .eq('store_id', storeId)
-          .single();
+          .maybeSingle();
+
+        console.log('Existing in DB:', existing, 'Error:', existingError);
 
         if (!existing) {
           // Insert to local DB
@@ -139,20 +141,70 @@ serve(async (req) => {
           if (type === 'category') {
             insertData.parent_woo_id = created.parent || null;
             insertData.image_url = created.image?.src || null;
+            console.log('Category insert data:', insertData);
           } else if (type === 'brand') {
             insertData.logo_url = null;
           }
 
-          const { error: insertError } = await supabase.from(table).insert(insertData);
+          const { error: insertError, data: insertedData } = await supabase.from(table).insert(insertData).select().single();
           
           if (insertError) {
             console.error('Error inserting to local DB:', insertError);
             throw insertError;
           }
           
-          console.log('Inserted to local DB:', insertData);
+          console.log('Inserted to local DB:', insertedData);
           
           // Update parent_id after insert if this is a category
+          if (type === 'category' && created.parent) {
+            console.log('Looking for parent category with woo_id:', created.parent);
+            
+            const { data: parentCategory, error: parentError } = await supabase
+              .from('store_categories')
+              .select('id, name, woo_id')
+              .eq('woo_id', created.parent)
+              .eq('store_id', storeId)
+              .single();
+            
+            console.log('Found parent category:', parentCategory, 'Error:', parentError);
+            
+            if (parentCategory) {
+              const { error: updateError } = await supabase
+                .from('store_categories')
+                .update({ parent_id: parentCategory.id })
+                .eq('woo_id', created.id)
+                .eq('store_id', storeId);
+              
+              if (updateError) {
+                console.error('Error updating parent_id:', updateError);
+              } else {
+                console.log('Updated parent_id to:', parentCategory.id);
+              }
+            } else {
+              console.warn('Parent category not found for woo_id:', created.parent);
+            }
+          }
+        } else {
+          console.log(`Item already exists in local DB with woo_id ${created.id}, updating it...`);
+          
+          // Update existing entry
+          const updateData: any = {
+            name: created.name,
+            slug: created.slug,
+            count: created.count || 0
+          };
+
+          if (type === 'category') {
+            updateData.parent_woo_id = created.parent || null;
+            updateData.image_url = created.image?.src || null;
+          }
+
+          await supabase
+            .from(table)
+            .update(updateData)
+            .eq('id', existing.id);
+
+          // Update parent_id if this is a category
           if (type === 'category' && created.parent) {
             const { data: parentCategory } = await supabase
               .from('store_categories')
@@ -165,14 +217,9 @@ serve(async (req) => {
               await supabase
                 .from('store_categories')
                 .update({ parent_id: parentCategory.id })
-                .eq('woo_id', created.id)
-                .eq('store_id', storeId);
-              
-              console.log('Updated parent_id to:', parentCategory.id);
+                .eq('id', existing.id);
             }
           }
-        } else {
-          console.log(`Item already exists in local DB, skipping insert`);
         }
 
         result = created;
