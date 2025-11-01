@@ -98,7 +98,29 @@ export async function syncBrands(store: any, storeId: string) {
     }
   }
   
-  console.log(`✅ Brands sync complete: ${created} created, ${updated} updated, ${failed} failed`)
+  // מחק מותגים שלא קיימים יותר בווקומרס
+  let deleted = 0
+  try {
+    const wooIds = allBrands.map(brand => brand.id)
+    
+    if (wooIds.length > 0) {
+      const { data: deleted_brands } = await supabase
+        .from('store_brands')
+        .delete()
+        .eq('store_id', storeId)
+        .not('woo_id', 'in', `(${wooIds.join(',')})`)
+        .select('id')
+      
+      deleted = deleted_brands?.length || 0
+      if (deleted > 0) {
+        console.log(`🗑️ Deleted ${deleted} brands that no longer exist in WooCommerce`)
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Failed to delete orphaned brands:', error)
+  }
   
-  return { created, updated, failed, errors: errors.length > 0 ? errors : undefined }
+  console.log(`✅ Brands sync complete: ${created} created, ${updated} updated, ${deleted} deleted, ${failed} failed`)
+  
+  return { created, updated, deleted, failed, errors: errors.length > 0 ? errors : undefined }
 }

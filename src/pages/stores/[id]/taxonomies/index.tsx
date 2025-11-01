@@ -79,7 +79,7 @@ export default function StoreTaxonomiesPage() {
       
       // הצג תוצאות
       toast.success('הסנכרון הושלם בהצלחה!', {
-        description: `נוצרו: ${data.summary.created}, עודכנו: ${data.summary.updated}`,
+        description: `נוצרו: ${data.summary.created}, עודכנו: ${data.summary.updated}, נמחקו: ${data.summary.deleted || 0}`,
       });
       
       // רענן את הנתונים

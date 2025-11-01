@@ -99,12 +99,34 @@ export async function syncCategories(store: any, storeId: string) {
     }
   }
   
+  // מחק קטגוריות שלא קיימות יותר בווקומרס
+  let deleted = 0
+  try {
+    const wooIds = allCategories.map(cat => cat.id)
+    
+    if (wooIds.length > 0) {
+      const { data: deleted_cats } = await supabase
+        .from('store_categories')
+        .delete()
+        .eq('store_id', storeId)
+        .not('woo_id', 'in', `(${wooIds.join(',')})`)
+        .select('id')
+      
+      deleted = deleted_cats?.length || 0
+      if (deleted > 0) {
+        console.log(`🗑️ Deleted ${deleted} categories that no longer exist in WooCommerce`)
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Failed to delete orphaned categories:', error)
+  }
+  
   // Update parent_id relationships
   await updateCategoryHierarchy(storeId)
   
-  console.log(`✅ Categories sync complete: ${created} created, ${updated} updated, ${failed} failed`)
+  console.log(`✅ Categories sync complete: ${created} created, ${updated} updated, ${deleted} deleted, ${failed} failed`)
   
-  return { created, updated, failed, errors: errors.length > 0 ? errors : undefined }
+  return { created, updated, deleted, failed, errors: errors.length > 0 ? errors : undefined }
 }
 
 async function updateCategoryHierarchy(storeId: string) {

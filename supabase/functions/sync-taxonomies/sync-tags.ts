@@ -89,7 +89,29 @@ export async function syncTags(store: any, storeId: string) {
     }
   }
   
-  console.log(`✅ Tags sync complete: ${created} created, ${updated} updated, ${failed} failed`)
+  // מחק תגים שלא קיימים יותר בווקומרס
+  let deleted = 0
+  try {
+    const wooIds = allTags.map(tag => tag.id)
+    
+    if (wooIds.length > 0) {
+      const { data: deleted_tags } = await supabase
+        .from('store_tags')
+        .delete()
+        .eq('store_id', storeId)
+        .not('woo_id', 'in', `(${wooIds.join(',')})`)
+        .select('id')
+      
+      deleted = deleted_tags?.length || 0
+      if (deleted > 0) {
+        console.log(`🗑️ Deleted ${deleted} tags that no longer exist in WooCommerce`)
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Failed to delete orphaned tags:', error)
+  }
   
-  return { created, updated, failed, errors: errors.length > 0 ? errors : undefined }
+  console.log(`✅ Tags sync complete: ${created} created, ${updated} updated, ${deleted} deleted, ${failed} failed`)
+  
+  return { created, updated, deleted, failed, errors: errors.length > 0 ? errors : undefined }
 }
