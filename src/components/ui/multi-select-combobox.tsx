@@ -32,6 +32,7 @@ interface MultiSelectComboboxProps {
   emptyMessage?: string;
   createLabel?: string;
   badgeVariant?: "default" | "secondary" | "outline" | "destructive";
+  onCreateNew?: (name: string) => Promise<MultiSelectItem | void>;
 }
 
 export function MultiSelectCombobox({
@@ -42,6 +43,7 @@ export function MultiSelectCombobox({
   emptyMessage = "לא נמצאו פריטים",
   createLabel = "צור",
   badgeVariant = "secondary",
+  onCreateNew,
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -71,18 +73,27 @@ export function MultiSelectCombobox({
       .replace(/\s+/g, "-")
       .replace(/[^\w\-]+/g, "");
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     if (!searchValue.trim()) return;
 
-    const newItem: MultiSelectItem = {
-      id: Date.now(),
-      name: searchValue.trim(),
-      slug: createSlug(searchValue),
-    };
+    if (onCreateNew) {
+      const newItem = await onCreateNew(searchValue.trim());
+      if (newItem) {
+        addToKnownItems([newItem]);
+        onSelect([...selected, newItem]);
+      }
+    } else {
+      const newItem: MultiSelectItem = {
+        id: Date.now(),
+        name: searchValue.trim(),
+        slug: createSlug(searchValue),
+      };
 
-    // Add to known items immediately
-    addToKnownItems([newItem]);
-    onSelect([...selected, newItem]);
+      // Add to known items immediately
+      addToKnownItems([newItem]);
+      onSelect([...selected, newItem]);
+    }
+    
     setSearchValue("");
     setOpen(false);
   };
@@ -145,7 +156,7 @@ export function MultiSelectCombobox({
         <PopoverContent className="w-full p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="חפש..."
+              placeholder="חפש / צור חדש"
               value={searchValue}
               onValueChange={setSearchValue}
             />
