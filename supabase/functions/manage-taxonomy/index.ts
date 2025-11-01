@@ -128,8 +128,30 @@ serve(async (req) => {
 
         console.log('Existing in DB:', existing, 'Error:', existingError);
 
+        // Find parent_id BEFORE insert/update (for categories with parent)
+        let parentId: string | null = null;
+        if (type === 'category' && created.parent) {
+          console.log('🔍 Looking for parent category with woo_id:', created.parent);
+          
+          const { data: parentCategory, error: parentError } = await supabase
+            .from('store_categories')
+            .select('id, name, woo_id')
+            .eq('woo_id', created.parent)
+            .eq('store_id', storeId)
+            .single();
+          
+          console.log('Found parent category:', parentCategory, 'Error:', parentError);
+          
+          if (parentCategory) {
+            parentId = parentCategory.id;
+            console.log('✅ Found parent_id:', parentId, 'for parent name:', parentCategory.name);
+          } else {
+            console.warn('⚠️ Parent category not found for woo_id:', created.parent);
+          }
+        }
+
         if (!existing) {
-          // Insert to local DB
+          // Insert to local DB with correct parent_id from the start
           const insertData: any = {
             store_id: storeId,
             woo_id: created.id,
@@ -139,55 +161,33 @@ serve(async (req) => {
           };
 
           if (type === 'category') {
+            insertData.parent_id = parentId;  // ✅ Already correct!
             insertData.parent_woo_id = created.parent || null;
             insertData.image_url = created.image?.src || null;
-            console.log('Category insert data:', insertData);
+            console.log('📦 Category insert data with parent_id:', insertData);
           } else if (type === 'brand') {
             insertData.logo_url = null;
           }
 
-          const { error: insertError, data: insertedData } = await supabase.from(table).insert(insertData).select().single();
+          const { error: insertError, data: insertedData } = await supabase
+            .from(table)
+            .insert(insertData)
+            .select()
+            .single();
           
           if (insertError) {
-            console.error('Error inserting to local DB:', insertError);
+            console.error('❌ Error inserting to local DB:', insertError);
             throw insertError;
           }
           
-          console.log('Inserted to local DB:', insertedData);
+          console.log('✅ Inserted to local DB with parent_id:', parentId || 'null (root)');
           
-          // Update parent_id after insert if this is a category
-          if (type === 'category' && created.parent) {
-            console.log('Looking for parent category with woo_id:', created.parent);
-            
-            const { data: parentCategory, error: parentError } = await supabase
-              .from('store_categories')
-              .select('id, name, woo_id')
-              .eq('woo_id', created.parent)
-              .eq('store_id', storeId)
-              .single();
-            
-            console.log('Found parent category:', parentCategory, 'Error:', parentError);
-            
-            if (parentCategory) {
-              const { error: updateError } = await supabase
-                .from('store_categories')
-                .update({ parent_id: parentCategory.id })
-                .eq('woo_id', created.id)
-                .eq('store_id', storeId);
-              
-              if (updateError) {
-                console.error('Error updating parent_id:', updateError);
-              } else {
-                console.log('Updated parent_id to:', parentCategory.id);
-              }
-            } else {
-              console.warn('Parent category not found for woo_id:', created.parent);
-            }
-          }
+          // ✅ No separate UPDATE needed anymore - parent_id is already correct!
+          
         } else {
-          console.log(`Item already exists in local DB with woo_id ${created.id}, updating it...`);
+          console.log(`ℹ️ Item already exists in local DB with woo_id ${created.id}, updating it...`);
           
-          // Update existing entry
+          // Update existing entry with correct parent_id
           const updateData: any = {
             name: created.name,
             slug: created.slug,
@@ -195,31 +195,25 @@ serve(async (req) => {
           };
 
           if (type === 'category') {
+            updateData.parent_id = parentId;  // ✅ Already correct!
             updateData.parent_woo_id = created.parent || null;
             updateData.image_url = created.image?.src || null;
+            console.log('📦 Category update data with parent_id:', updateData);
           }
 
-          await supabase
+          const { error: updateError } = await supabase
             .from(table)
             .update(updateData)
             .eq('id', existing.id);
 
-          // Update parent_id if this is a category
-          if (type === 'category' && created.parent) {
-            const { data: parentCategory } = await supabase
-              .from('store_categories')
-              .select('id')
-              .eq('woo_id', created.parent)
-              .eq('store_id', storeId)
-              .single();
-            
-            if (parentCategory) {
-              await supabase
-                .from('store_categories')
-                .update({ parent_id: parentCategory.id })
-                .eq('id', existing.id);
-            }
+          if (updateError) {
+            console.error('❌ Error updating existing entry:', updateError);
+            throw updateError;
           }
+
+          console.log('✅ Updated existing entry with parent_id:', parentId || 'null (root)');
+          
+          // ✅ No separate UPDATE needed anymore - parent_id is already correct!
         }
 
         result = created;
@@ -255,6 +249,23 @@ serve(async (req) => {
 
         if (type === 'category') {
           updateData.parent_woo_id = updated.parent || null;
+          
+          // Find parent_id if needed
+          let parentId: string | null = null;
+          if (updated.parent) {
+            const { data: parentCategory } = await supabase
+              .from('store_categories')
+              .select('id')
+              .eq('woo_id', updated.parent)
+              .eq('store_id', storeId)
+              .single();
+            
+            if (parentCategory) {
+              parentId = parentCategory.id;
+            }
+          }
+          
+          updateData.parent_id = parentId;
         }
 
         await supabase
