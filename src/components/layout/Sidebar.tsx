@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useStore } from "@/pages/stores/[id]/products/hooks/useStore";
 
 interface NavigationItem {
   name: string;
@@ -105,12 +106,21 @@ export const Sidebar = () => {
   
   // הפיכת הבדיקה לboolean מפורש
   const isInStore = Boolean(location.pathname.includes('/stores/') && id);
+  
+  // טען את פרטי החנות אם אנחנו בתוך חנות
+  const { data: store } = useStore(id);
 
   const sidebarContent = (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
-      <div className="flex h-16 shrink-0 items-center">
+      <div className="flex h-16 shrink-0 items-center border-b">
         <span className="text-xl font-semibold">SmartWoo</span>
       </div>
+      {isInStore && store && (
+        <div className="px-2 py-3 border-b">
+          <div className="text-xs text-muted-foreground mb-1">חנות נוכחית</div>
+          <div className="text-sm font-medium">{store.name}</div>
+        </div>
+      )}
       <Navigation isInStore={isInStore} id={id} />
     </div>
   );
