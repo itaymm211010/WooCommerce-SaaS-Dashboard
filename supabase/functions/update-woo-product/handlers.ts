@@ -25,11 +25,29 @@ export async function handleRequest(req: Request) {
   const store = await getStoreDetails(store_id)
   const supabase = createSupabaseClient()
   
+  // Fetch full product details from database if only ID was provided
+  let fullProduct = product
+  if (!product.name || !product.type) {
+    const { data: dbProduct, error: productError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', product.id)
+      .eq('store_id', store_id)
+      .single()
+    
+    if (productError || !dbProduct) {
+      throw new Error(`Failed to fetch product: ${productError?.message}`)
+    }
+    
+    fullProduct = dbProduct
+    console.log(`Fetched full product details from database: ${fullProduct.name}`)
+  }
+  
   // Fetch product images
   const { data: images } = await supabase
     .from('product_images')
     .select('*')
-    .eq('product_id', product.id)
+    .eq('product_id', fullProduct.id)
     .eq('store_id', store_id)
     .order('display_order', { ascending: true })
 
@@ -37,25 +55,25 @@ export async function handleRequest(req: Request) {
   const { data: attributes } = await supabase
     .from('product_attributes')
     .select('*')
-    .eq('product_id', product.id)
+    .eq('product_id', fullProduct.id)
     .eq('store_id', store_id)
     .order('position', { ascending: true })
 
   // Add images and attributes to product object
   const productWithImages = {
-    ...product,
+    ...fullProduct,
     images: images || [],
     attributes: attributes || []
   }
 
-  const wooId = product.woo_id
+  const wooId = fullProduct.woo_id
 
   // If no WooCommerce ID, create new product
   if (!wooId || wooId === 0) {
     const newWooProduct = await createWooCommerceProduct(store, productWithImages)
     
     // Update the product in our database with the new WooCommerce ID
-    await updateProductWooId(supabase, product.id, newWooProduct.id)
+    await updateProductWooId(supabase, fullProduct.id, newWooProduct.id)
 
     return createResponse({ 
       success: true,
@@ -70,13 +88,13 @@ export async function handleRequest(req: Request) {
     if (product.type === 'variable') {
       // First, sync existing variations from WooCommerce to our DB
       console.log('🔄 Step 1: Syncing existing variations from WooCommerce...')
-      await syncVariationsFromWooCommerce(supabase, store_id, product.id, wooId, store)
+      await syncVariationsFromWooCommerce(supabase, store_id, fullProduct.id, wooId, store)
       
       // Then, fetch our local variations
       const { data: variations } = await supabase
         .from('product_variations')
         .select('*')
-        .eq('product_id', product.id)
+        .eq('product_id', fullProduct.id)
         .eq('store_id', store_id)
 
       if (variations && variations.length > 0) {
