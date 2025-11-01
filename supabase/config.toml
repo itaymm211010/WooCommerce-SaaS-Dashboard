@@ -1,1 +1,19 @@
 project_id = "ddwlhgpugjyruzejggoz"
+
+[functions.sync-taxonomies]
+verify_jwt = false
+
+[functions.sync-woo-products]
+verify_jwt = false
+
+[functions.update-woo-product]
+verify_jwt = false
+
+[functions.woocommerce-order-status]
+verify_jwt = false
+
+[functions.manage-taxonomy]
+verify_jwt = false
+
+[functions.bulk-sync-to-woo]
+verify_jwt = false

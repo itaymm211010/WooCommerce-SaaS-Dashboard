@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw, Package } from "lucide-react";
+import { ArrowLeft, RefreshCw, Package, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -15,6 +15,8 @@ interface ProductsHeaderProps {
   hasValidStoreConfig: boolean;
   onAutoSyncToggle: () => void;
   onSyncProducts: () => void;
+  isBulkSyncing?: boolean;
+  onBulkSyncToWoo?: () => void;
 }
 
 export const ProductsHeader = ({
@@ -23,7 +25,9 @@ export const ProductsHeader = ({
   autoSync,
   hasValidStoreConfig,
   onAutoSyncToggle,
-  onSyncProducts
+  onSyncProducts,
+  isBulkSyncing,
+  onBulkSyncToWoo
 }: ProductsHeaderProps) => {
   return (
     <>
@@ -62,8 +66,23 @@ export const ProductsHeader = ({
               "h-4 w-4",
               isSyncing && "animate-spin"
             )} />
-            {isSyncing ? 'Syncing...' : 'Sync Products'}
+            {isSyncing ? 'Syncing...' : 'Sync from WooCommerce'}
           </Button>
+          {onBulkSyncToWoo && (
+            <Button 
+              onClick={onBulkSyncToWoo} 
+              variant="outline"
+              className="gap-2" 
+              disabled={isBulkSyncing || !hasValidStoreConfig}
+              title={!hasValidStoreConfig ? "Missing store configuration" : ""}
+            >
+              <Upload className={cn(
+                "h-4 w-4",
+                isBulkSyncing && "animate-spin"
+              )} />
+              {isBulkSyncing ? 'Syncing to WooCommerce...' : 'Sync All to WooCommerce'}
+            </Button>
+          )}
           <Button 
             variant="outline" 
             className="gap-2"

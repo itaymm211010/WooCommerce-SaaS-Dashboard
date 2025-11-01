@@ -11,6 +11,7 @@ import { useStore } from "./hooks/useStore";
 import { useProductSync } from "./hooks/useProductSync";
 import { useProductSearch } from "./hooks/useProductSearch";
 import { useProductPagination } from "./hooks/useProductPagination";
+import { useBulkSync } from "./hooks/useBulkSync";
 import { SortField, SortDirection } from "./hooks/useProducts";
 import { useState } from "react";
 
@@ -29,6 +30,7 @@ export default function StoreProductsPage() {
     syncProducts,
     toggleAutoSync 
   } = useProductSync(store, id);
+  const { syncAllProducts, isSyncing: isBulkSyncing } = useBulkSync(id);
 
   const {
     currentPage,
@@ -56,6 +58,8 @@ export default function StoreProductsPage() {
           hasValidStoreConfig={hasValidStoreConfig}
           onAutoSyncToggle={toggleAutoSync}
           onSyncProducts={syncProducts}
+          isBulkSyncing={isBulkSyncing}
+          onBulkSyncToWoo={syncAllProducts}
         />
 
         <div className="relative w-full">
