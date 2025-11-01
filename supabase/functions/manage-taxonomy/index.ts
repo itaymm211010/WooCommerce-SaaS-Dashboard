@@ -1,0 +1,197 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface ManageTaxonomyRequest {
+  storeId: string;
+  type: 'category' | 'tag' | 'brand';
+  action: 'create' | 'update' | 'delete';
+  data: {
+    name?: string;
+    parent_id?: number;
+    id?: number;
+  };
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { storeId, type, action, data } = await req.json() as ManageTaxonomyRequest;
+
+    // Fetch store
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('id', storeId)
+      .single();
+
+    if (storeError || !store) {
+      throw new Error('Store not found');
+    }
+
+    let baseUrl = store.url.replace(/\/+$/, '');
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+
+    const endpointMap = {
+      category: '/wp-json/wc/v3/products/categories',
+      tag: '/wp-json/wc/v3/products/tags',
+      brand: '/wp-json/wc/v3/products/brands'
+    };
+
+    const tableMap = {
+      category: 'store_categories',
+      tag: 'store_tags',
+      brand: 'store_brands'
+    };
+
+    const endpoint = endpointMap[type];
+    const table = tableMap[type];
+    const auth = btoa(`${store.api_key}:${store.api_secret}`);
+
+    let result;
+
+    switch (action) {
+      case 'create': {
+        // POST to WooCommerce
+        const response = await fetch(`${baseUrl}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: data.name,
+            ...(type === 'category' && data.parent_id ? { parent: data.parent_id } : {})
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`WooCommerce error: ${error}`);
+        }
+
+        const created = await response.json();
+
+        // Insert to local DB
+        const insertData: any = {
+          store_id: storeId,
+          woo_id: created.id,
+          name: created.name,
+          slug: created.slug,
+          count: 0
+        };
+
+        if (type === 'category') {
+          insertData.parent_woo_id = created.parent || null;
+          insertData.image_url = created.image?.src || null;
+        } else if (type === 'brand') {
+          insertData.logo_url = null;
+        }
+
+        await supabase.from(table).insert(insertData);
+
+        result = created;
+        break;
+      }
+
+      case 'update': {
+        // PUT to WooCommerce
+        const response = await fetch(`${baseUrl}${endpoint}/${data.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: data.name,
+            ...(type === 'category' && data.parent_id !== undefined ? { parent: data.parent_id } : {})
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`WooCommerce error: ${error}`);
+        }
+
+        const updated = await response.json();
+
+        // Update local DB
+        const updateData: any = {
+          name: updated.name,
+          slug: updated.slug
+        };
+
+        if (type === 'category') {
+          updateData.parent_woo_id = updated.parent || null;
+        }
+
+        await supabase
+          .from(table)
+          .update(updateData)
+          .eq('woo_id', data.id);
+
+        result = updated;
+        break;
+      }
+
+      case 'delete': {
+        // DELETE from WooCommerce
+        const response = await fetch(`${baseUrl}${endpoint}/${data.id}?force=true`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`WooCommerce error: ${error}`);
+        }
+
+        // Delete from local DB
+        await supabase
+          .from(table)
+          .delete()
+          .eq('woo_id', data.id);
+
+        result = { success: true };
+        break;
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, data: result }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in manage-taxonomy:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
+    );
+  }
+});

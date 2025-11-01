@@ -106,17 +106,24 @@ export function useStoreTaxonomies(storeId: string | undefined) {
       categories: (categories || []).map(cat => ({
         id: cat.woo_id,
         name: cat.name,
-        slug: cat.slug
+        slug: cat.slug,
+        count: cat.count,
+        parent_id: cat.parent_id,
+        parent_woo_id: cat.parent_woo_id,
+        image_url: cat.image_url
       })),
       tags: (tags || []).map(tag => ({
         id: tag.woo_id,
         name: tag.name,
-        slug: tag.slug
+        slug: tag.slug,
+        count: tag.count
       })),
       brands: (brands || []).map(brand => ({
         id: brand.woo_id,
         name: brand.name,
-        slug: brand.slug
+        slug: brand.slug,
+        count: brand.count,
+        logo_url: brand.logo_url
       })),
     },
     isLoading: categoriesLoading || tagsLoading || brandsLoading,
