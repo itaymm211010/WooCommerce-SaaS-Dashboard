@@ -363,6 +363,48 @@ export async function createWooCommerceProduct(store: any, product: any) {
   if (!response.ok) {
     const errorData = await response.text()
     console.error('WooCommerce API Error:', errorData)
+    
+    // Check if error is due to duplicate SKU
+    if (errorData.includes('product_invalid_sku') || errorData.includes('already present in the lookup table')) {
+      console.log(`Product with SKU ${product.sku} already exists. Attempting to find existing product...`)
+      
+      // Try to find the existing product by SKU
+      const searchResponse = await fetch(
+        `${baseUrl}/wp-json/wc/v3/products?sku=${encodeURIComponent(product.sku)}&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+      
+      if (searchResponse.ok) {
+        const existingProducts = await searchResponse.json()
+        if (existingProducts && existingProducts.length > 0) {
+          const existingProduct = existingProducts[0]
+          console.log(`Found existing product with ID: ${existingProduct.id}. Will update it instead.`)
+          
+          // Update the existing product
+          const updateResponse = await fetch(
+            `${baseUrl}/wp-json/wc/v3/products/${existingProduct.id}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(wooProduct)
+            }
+          )
+          
+          if (updateResponse.ok) {
+            const result = await updateResponse.json()
+            console.log('Successfully updated existing product:', JSON.stringify(result, null, 2))
+            return result
+          }
+        }
+      }
+    }
+    
     throw new Error(`WooCommerce API Error: ${response.status} ${response.statusText} - ${errorData}`)
   }
 
