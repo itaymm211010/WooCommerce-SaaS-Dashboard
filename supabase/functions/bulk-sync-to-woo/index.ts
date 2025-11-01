@@ -29,7 +29,7 @@ serve(async (req) => {
     // Fetch all products without woo_id for this store
     const { data: products, error: fetchError } = await supabase
       .from('products')
-      .select('id, name, sku')
+      .select('*')
       .eq('store_id', store_id)
       .is('woo_id', null)
 
@@ -66,7 +66,7 @@ serve(async (req) => {
         const { data, error } = await supabase.functions.invoke('update-woo-product', {
           body: {
             store_id: store_id,
-            product: { id: product.id }
+            product: product
           }
         })
 
