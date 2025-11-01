@@ -54,6 +54,43 @@ export function useCreateTaxonomy(storeId: string) {
 
       toast.success(`${type === 'category' ? 'קטגוריה' : type === 'tag' ? 'תג' : 'מותג'} נוצר בהצלחה`);
 
+      // For categories, calculate hierarchy prefix
+      if (type === 'category') {
+        const { data: newCat } = await supabase
+          .from('store_categories')
+          .select('woo_id, name, slug, parent_id')
+          .eq('woo_id', result.data.woo_id)
+          .eq('store_id', storeId)
+          .single();
+
+        if (newCat) {
+          // Calculate depth by traversing parents
+          let depth = 0;
+          let currentParentId = newCat.parent_id;
+
+          while (currentParentId) {
+            depth++;
+            const { data: parent } = await supabase
+              .from('store_categories')
+              .select('parent_id')
+              .eq('id', currentParentId)
+              .eq('store_id', storeId)
+              .single();
+
+            if (!parent) break;
+            currentParentId = parent.parent_id;
+          }
+
+          const prefix = '— '.repeat(depth);
+
+          return {
+            id: result.data.woo_id,
+            name: `${prefix}${result.data.name}`,
+            slug: result.data.slug,
+          };
+        }
+      }
+
       return {
         id: result.data.woo_id,
         name: result.data.name,
