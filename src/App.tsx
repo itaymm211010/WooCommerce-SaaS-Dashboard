@@ -21,6 +21,7 @@ import OrderDetailsPage from "./pages/stores/[id]/orders/[orderId]/details";
 import ProductsPage from "./pages/stores/[id]/products";
 import ProductEditorPage from "./pages/stores/[id]/products/[productId]/edit";
 import StoreUsersPage from "./pages/stores/[id]/users";
+import StoreTaxonomiesPage from "./pages/stores/[id]/taxonomies";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -157,6 +158,14 @@ function App() {
               element={
                 <RequireAuth>
                   <StoreUsersPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/taxonomies"
+              element={
+                <RequireAuth>
+                  <StoreTaxonomiesPage />
                 </RequireAuth>
               }
             />

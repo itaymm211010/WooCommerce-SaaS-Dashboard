@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   User,
-  Image
+  Image,
+  FolderTree
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -35,6 +36,7 @@ const globalNavigation: NavigationItem[] = [
 const storeNavigation: NavigationItem[] = [
   { name: "Products", href: "/stores/:id/products", icon: Package },
   { name: "Orders", href: "/stores/:id/orders", icon: ShoppingCart },
+  { name: "Taxonomies", href: "/stores/:id/taxonomies", icon: FolderTree },
   { name: "Analytics", href: "/stores/:id/analytics", icon: BarChart },
 ];
 
