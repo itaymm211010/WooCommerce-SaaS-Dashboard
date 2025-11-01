@@ -129,7 +129,7 @@ export function MultiSelectCombobox({
   }, [options, selected, open]); // Add 'open' to force recalculation when dropdown opens
 
   const filteredOptions = allOptions.filter((option) =>
-    option.name.toLowerCase().includes(searchValue.toLowerCase())
+    option?.name?.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const showCreateOption = searchValue.trim() && 

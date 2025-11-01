@@ -79,30 +79,70 @@ serve(async (req) => {
           })
         });
 
+        let created;
+        
         if (!response.ok) {
-          const error = await response.text();
-          throw new Error(`WooCommerce error: ${error}`);
+          const errorText = await response.text();
+          
+          // Check if the error is because the term already exists
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.code === 'term_exists' && errorJson.data?.resource_id) {
+              // Term exists, fetch it from WooCommerce
+              console.log(`Term already exists with ID: ${errorJson.data.resource_id}, fetching it...`);
+              
+              const fetchResponse = await fetch(`${baseUrl}${endpoint}/${errorJson.data.resource_id}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Basic ${auth}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (fetchResponse.ok) {
+                created = await fetchResponse.json();
+              } else {
+                throw new Error(`WooCommerce error: ${errorText}`);
+              }
+            } else {
+              throw new Error(`WooCommerce error: ${errorText}`);
+            }
+          } catch (parseError) {
+            throw new Error(`WooCommerce error: ${errorText}`);
+          }
+        } else {
+          created = await response.json();
         }
 
-        const created = await response.json();
+        // Check if already exists in local DB
+        const { data: existing } = await supabase
+          .from(table)
+          .select('*')
+          .eq('woo_id', created.id)
+          .eq('store_id', storeId)
+          .single();
 
-        // Insert to local DB
-        const insertData: any = {
-          store_id: storeId,
-          woo_id: created.id,
-          name: created.name,
-          slug: created.slug,
-          count: 0
-        };
+        if (!existing) {
+          // Insert to local DB
+          const insertData: any = {
+            store_id: storeId,
+            woo_id: created.id,
+            name: created.name,
+            slug: created.slug,
+            count: created.count || 0
+          };
 
-        if (type === 'category') {
-          insertData.parent_woo_id = created.parent || null;
-          insertData.image_url = created.image?.src || null;
-        } else if (type === 'brand') {
-          insertData.logo_url = null;
+          if (type === 'category') {
+            insertData.parent_woo_id = created.parent || null;
+            insertData.image_url = created.image?.src || null;
+          } else if (type === 'brand') {
+            insertData.logo_url = null;
+          }
+
+          await supabase.from(table).insert(insertData);
+        } else {
+          console.log(`Item already exists in local DB, skipping insert`);
         }
-
-        await supabase.from(table).insert(insertData);
 
         result = created;
         break;
