@@ -40,8 +40,15 @@ export function useCreateTaxonomy(storeId: string) {
 
       if (error) throw error;
 
-      // Invalidate queries to refresh data
+      // Wait a bit for DB to complete all updates
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Invalidate and refetch queries to refresh data immediately
       await queryClient.invalidateQueries({
+        queryKey: [`store-${type === 'category' ? 'categories' : type === 'tag' ? 'tags' : 'brands'}`, storeId],
+      });
+      
+      await queryClient.refetchQueries({
         queryKey: [`store-${type === 'category' ? 'categories' : type === 'tag' ? 'tags' : 'brands'}`, storeId],
       });
 
