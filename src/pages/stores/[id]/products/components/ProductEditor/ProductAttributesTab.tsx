@@ -217,12 +217,12 @@ export function ProductAttributesTab({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>שם התכונה (למשל: צבע, גודל)</Label>
+                  <Label className="text-foreground">שם התכונה (למשל: צבע, גודל)</Label>
                   <Input value={attribute.name} onChange={e => handleUpdateAttribute(index, 'name', e.target.value)} placeholder="שם התכונה" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>אפשרויות</Label>
+                  <Label className="text-foreground">אפשרויות</Label>
                   <div className="flex gap-2">
                     <Input value={newOptions[attribute.id] || ''} onChange={e => setNewOptions({
                 ...newOptions,
@@ -259,13 +259,13 @@ export function ProductAttributesTab({
                   <div className="flex gap-4">
                     <div className="flex items-center gap-2">
                       <Checkbox id={`variation-${index}`} checked={attribute.variation} onCheckedChange={checked => handleUpdateAttribute(index, 'variation', checked)} />
-                      <Label htmlFor={`variation-${index}`} className="cursor-pointer">
+                      <Label htmlFor={`variation-${index}`} className="cursor-pointer text-foreground">
                         משמש לוריאציות
                       </Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox id={`visible-${index}`} checked={attribute.visible} onCheckedChange={checked => handleUpdateAttribute(index, 'visible', checked)} />
-                      <Label htmlFor={`visible-${index}`} className="cursor-pointer">
+                      <Label htmlFor={`visible-${index}`} className="cursor-pointer text-foreground">
                         מוצג בדף המוצר
                       </Label>
                     </div>
