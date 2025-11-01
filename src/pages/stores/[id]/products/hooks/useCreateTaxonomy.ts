@@ -32,7 +32,7 @@ export function useCreateTaxonomy(storeId: string) {
                 .toLowerCase()
                 .replace(/\s+/g, '-')
                 .replace(/[^\w\-]+/g, ''),
-              ...(data.parent_id && { parent: data.parent_id }),
+              ...(data.parent_id && { parent_id: data.parent_id }),
             },
           },
         }
@@ -48,9 +48,9 @@ export function useCreateTaxonomy(storeId: string) {
       toast.success(`${type === 'category' ? 'קטגוריה' : type === 'tag' ? 'תג' : 'מותג'} נוצר בהצלחה`);
 
       return {
-        id: result.woo_id,
-        name: result.name,
-        slug: result.slug,
+        id: result.data.woo_id,
+        name: result.data.name,
+        slug: result.data.slug,
       };
     } catch (error) {
       console.error('Error creating taxonomy:', error);

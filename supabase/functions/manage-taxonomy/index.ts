@@ -66,6 +66,8 @@ serve(async (req) => {
 
     switch (action) {
       case 'create': {
+        console.log('Creating taxonomy with data:', data);
+        
         // POST to WooCommerce
         const response = await fetch(`${baseUrl}${endpoint}`, {
           method: 'POST',
@@ -114,6 +116,8 @@ serve(async (req) => {
           created = await response.json();
         }
 
+        console.log('Created/fetched from WooCommerce:', created);
+
         // Check if already exists in local DB
         const { data: existing } = await supabase
           .from(table)
@@ -139,7 +143,34 @@ serve(async (req) => {
             insertData.logo_url = null;
           }
 
-          await supabase.from(table).insert(insertData);
+          const { error: insertError } = await supabase.from(table).insert(insertData);
+          
+          if (insertError) {
+            console.error('Error inserting to local DB:', insertError);
+            throw insertError;
+          }
+          
+          console.log('Inserted to local DB:', insertData);
+          
+          // Update parent_id after insert if this is a category
+          if (type === 'category' && created.parent) {
+            const { data: parentCategory } = await supabase
+              .from('store_categories')
+              .select('id')
+              .eq('woo_id', created.parent)
+              .eq('store_id', storeId)
+              .single();
+            
+            if (parentCategory) {
+              await supabase
+                .from('store_categories')
+                .update({ parent_id: parentCategory.id })
+                .eq('woo_id', created.id)
+                .eq('store_id', storeId);
+              
+              console.log('Updated parent_id to:', parentCategory.id);
+            }
+          }
         } else {
           console.log(`Item already exists in local DB, skipping insert`);
         }
