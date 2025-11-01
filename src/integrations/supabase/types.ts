@@ -390,6 +390,190 @@ export type Database = {
         }
         Relationships: []
       }
+      store_brands: {
+        Row: {
+          count: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          last_synced_at: string | null
+          logo_url: string | null
+          name: string
+          slug: string
+          store_id: string
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string | null
+          woo_id: number
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          logo_url?: string | null
+          name: string
+          slug: string
+          store_id: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id: number
+        }
+        Update: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          store_id?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_brands_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_categories: {
+        Row: {
+          count: number | null
+          created_at: string | null
+          description: string | null
+          display: string | null
+          id: string
+          image_url: string | null
+          last_synced_at: string | null
+          menu_order: number | null
+          name: string
+          parent_id: string | null
+          parent_woo_id: number | null
+          slug: string
+          store_id: string
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string | null
+          woo_id: number
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          display?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string | null
+          menu_order?: number | null
+          name: string
+          parent_id?: string | null
+          parent_woo_id?: number | null
+          slug: string
+          store_id: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id: number
+        }
+        Update: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          display?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string | null
+          menu_order?: number | null
+          name?: string
+          parent_id?: string | null
+          parent_woo_id?: number | null
+          slug?: string
+          store_id?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "store_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_tags: {
+        Row: {
+          count: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          last_synced_at: string | null
+          name: string
+          slug: string
+          store_id: string
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string | null
+          woo_id: number
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          slug: string
+          store_id: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id: number
+        }
+        Update: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          slug?: string
+          store_id?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_tags_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_users: {
         Row: {
           created_at: string
@@ -461,6 +645,56 @@ export type Database = {
         }
         Relationships: []
       }
+      taxonomy_sync_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          id: string
+          items_created: number | null
+          items_failed: number | null
+          items_synced: number | null
+          items_updated: number | null
+          store_id: string
+          taxonomy_type: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          id?: string
+          items_created?: number | null
+          items_failed?: number | null
+          items_synced?: number | null
+          items_updated?: number | null
+          store_id: string
+          taxonomy_type: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          id?: string
+          items_created?: number | null
+          items_failed?: number | null
+          items_synced?: number | null
+          items_updated?: number | null
+          store_id?: string
+          taxonomy_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxonomy_sync_log_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -528,6 +762,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_taxonomy_sync_logs: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
