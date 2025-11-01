@@ -36,56 +36,57 @@ export interface BrandItem {
  */
 /**
  * בונה עץ קטגוריות עם hierarchy indicators (prefix של "—")
+ * משתמש ב-DFS (Depth-First Search) כדי לשמור על סדר היררכי מלא
  */
 function buildCategoryTree(categories: CategoryItem[]) {
   if (!categories || categories.length === 0) return [];
   
-  // יצירת map למציאת קטגוריות לפי ID
-  const categoryMap = new Map(categories.map(c => [c.id, c]));
+  // יצירת map למציאת קטגוריות לפי woo_id
+  const categoryMap = new Map(categories.map(c => [c.woo_id, c]));
   
-  // פונקציה רקורסיבית למציאת עומק הקטגוריה
-  const getDepth = (cat: CategoryItem): number => {
-    if (!cat.parent_id) return 0;
-    const parent = categoryMap.get(cat.parent_id);
-    return parent ? getDepth(parent) + 1 : 0;
+  // מציאת root categories (ללא parent)
+  const roots = categories.filter(cat => !cat.parent_woo_id);
+  
+  // פונקציה רקורסיבית למציאת children של קטגוריה
+  const getChildren = (parentWooId: number): CategoryItem[] => {
+    return categories
+      .filter(cat => cat.parent_woo_id === parentWooId)
+      .sort((a, b) => a.name.localeCompare(b.name, 'he'));
   };
   
-  // מיון: parent לפני children, ואז לפי שם
-  const sorted = [...categories].sort((a, b) => {
-    const aDepth = getDepth(a);
-    const bDepth = getDepth(b);
+  // פונקציה רקורסיבית לשטוח את העץ ב-DFS
+  const flattenTree = (items: CategoryItem[], depth: number = 0): any[] => {
+    const result: any[] = [];
     
-    // אם לאחד יש parent_id שהוא ה-ID של השני, הוא child
-    if (b.parent_id === a.id) return -1;
-    if (a.parent_id === b.id) return 1;
-    
-    // אם שניהם באותו רמה ואותו parent, לפי שם
-    if (aDepth === bDepth && a.parent_id === b.parent_id) {
-      return a.name.localeCompare(b.name, 'he');
+    for (const item of items) {
+      const prefix = '— '.repeat(depth);
+      
+      // הוסף את הקטגוריה הנוכחית
+      result.push({
+        id: item.woo_id,
+        name: `${prefix}${item.name}`,
+        slug: item.slug,
+        count: item.count,
+        parent_id: item.parent_id,
+        parent_woo_id: item.parent_woo_id,
+        image_url: item.image_url
+      });
+      
+      // הוסף את כל ה-children רקורסיבית
+      const children = getChildren(item.woo_id);
+      if (children.length > 0) {
+        result.push(...flattenTree(children, depth + 1));
+      }
     }
     
-    // אם רמות שונות, הרמה הנמוכה לפני
-    if (aDepth !== bDepth) return aDepth - bDepth;
-    
-    // default: לפי שם
-    return a.name.localeCompare(b.name, 'he');
-  });
+    return result;
+  };
   
-  // הוספת prefix לפי עומק
-  return sorted.map(cat => {
-    const depth = getDepth(cat);
-    const prefix = '— '.repeat(depth);
-    
-    return {
-      id: cat.woo_id,
-      name: `${prefix}${cat.name}`,
-      slug: cat.slug,
-      count: cat.count,
-      parent_id: cat.parent_id,
-      parent_woo_id: cat.parent_woo_id,
-      image_url: cat.image_url
-    };
-  });
+  // מיון root categories לפי שם
+  const sortedRoots = roots.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  
+  // בנה את הרשימה המשוטחת
+  return flattenTree(sortedRoots);
 }
 
 export function useStoreTaxonomies(storeId: string | undefined) {
