@@ -107,7 +107,7 @@ export function useStoreTaxonomies(storeId: string | undefined) {
       if (error) throw error;
       return data as CategoryItem[];
     },
-    staleTime: 5 * 60 * 1000,    // 5 דקות - לא יטען מחדש בתוך הזמן הזה
+    staleTime: 0,    // תמיד יטען מחדש
     gcTime: 10 * 60 * 1000,      // 10 דקות - זמן cache בזיכרון
     enabled: !!storeId
   });
@@ -129,7 +129,7 @@ export function useStoreTaxonomies(storeId: string | undefined) {
       if (error) throw error;
       return data as TagItem[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,    // תמיד יטען מחדש
     gcTime: 10 * 60 * 1000,
     enabled: !!storeId
   });
@@ -151,7 +151,7 @@ export function useStoreTaxonomies(storeId: string | undefined) {
       if (error) throw error;
       return data as BrandItem[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,    // תמיד יטען מחדש
     gcTime: 10 * 60 * 1000,
     enabled: !!storeId
   });
