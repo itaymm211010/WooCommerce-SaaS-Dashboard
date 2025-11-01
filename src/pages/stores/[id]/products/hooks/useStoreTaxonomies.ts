@@ -1,79 +1,129 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface TaxonomyItem {
-  id: number;
+export interface CategoryItem {
+  id: string;
+  woo_id: number;
   name: string;
   slug: string;
+  parent_id?: string | null;
+  parent_woo_id?: number | null;
+  image_url?: string | null;
+  count: number;
 }
 
+export interface TagItem {
+  id: string;
+  woo_id: number;
+  name: string;
+  slug: string;
+  count: number;
+}
+
+export interface BrandItem {
+  id: string;
+  woo_id: number;
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+  count: number;
+}
+
+/**
+ * טוען קטגוריות, תגים ומותגים מהטבלאות הייעודיות (לא מהמוצרים!)
+ * זה מבטיח שהמשתמש רואה את כל הטקסונומיות מווקומרס, 
+ * גם אלו שעדיין לא משוייכות לאף מוצר.
+ */
 export function useStoreTaxonomies(storeId: string | undefined) {
-  return useQuery({
-    queryKey: ['store-taxonomies', storeId],
+  // Categories
+  const { 
+    data: categories, 
+    isLoading: categoriesLoading,
+    error: categoriesError
+  } = useQuery({
+    queryKey: ['store-categories', storeId],
     queryFn: async () => {
-      if (!storeId) return { categories: [], tags: [], brands: [] };
-
-      // Get all products from this store
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('categories, tags, brands')
-        .eq('store_id', storeId);
-
+      const { data, error } = await supabase
+        .from('store_categories')
+        .select('*')
+        .eq('store_id', storeId!)
+        .order('name');
+      
       if (error) throw error;
-
-      // Collect unique items from all products
-      const categoriesMap = new Map<number, TaxonomyItem>();
-      const tagsMap = new Map<number, TaxonomyItem>();
-      const brandsMap = new Map<number, TaxonomyItem>();
-
-      products?.forEach((product) => {
-        // Process categories
-        if (Array.isArray(product.categories)) {
-          product.categories.forEach((cat: any) => {
-            if (cat?.id && cat?.name) {
-              categoriesMap.set(cat.id, {
-                id: cat.id,
-                name: cat.name,
-                slug: cat.slug || '',
-              });
-            }
-          });
-        }
-
-        // Process tags
-        if (Array.isArray(product.tags)) {
-          product.tags.forEach((tag: any) => {
-            if (tag?.id && tag?.name) {
-              tagsMap.set(tag.id, {
-                id: tag.id,
-                name: tag.name,
-                slug: tag.slug || '',
-              });
-            }
-          });
-        }
-
-        // Process brands
-        if (Array.isArray(product.brands)) {
-          product.brands.forEach((brand: any) => {
-            if (brand?.id && brand?.name) {
-              brandsMap.set(brand.id, {
-                id: brand.id,
-                name: brand.name,
-                slug: brand.slug || '',
-              });
-            }
-          });
-        }
-      });
-
-      return {
-        categories: Array.from(categoriesMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
-        tags: Array.from(tagsMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
-        brands: Array.from(brandsMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
-      };
+      return data as CategoryItem[];
     },
-    enabled: !!storeId,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,    // 5 דקות - לא יטען מחדש בתוך הזמן הזה
+    gcTime: 10 * 60 * 1000,      // 10 דקות - זמן cache בזיכרון
+    enabled: !!storeId
   });
+  
+  // Tags
+  const { 
+    data: tags, 
+    isLoading: tagsLoading,
+    error: tagsError
+  } = useQuery({
+    queryKey: ['store-tags', storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('store_tags')
+        .select('*')
+        .eq('store_id', storeId!)
+        .order('name');
+      
+      if (error) throw error;
+      return data as TagItem[];
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: !!storeId
+  });
+  
+  // Brands
+  const { 
+    data: brands, 
+    isLoading: brandsLoading,
+    error: brandsError
+  } = useQuery({
+    queryKey: ['store-brands', storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('store_brands')
+        .select('*')
+        .eq('store_id', storeId!)
+        .order('name');
+      
+      if (error) throw error;
+      return data as BrandItem[];
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: !!storeId
+  });
+  
+  return {
+    data: {
+      categories: (categories || []).map(cat => ({
+        id: cat.woo_id,
+        name: cat.name,
+        slug: cat.slug
+      })),
+      tags: (tags || []).map(tag => ({
+        id: tag.woo_id,
+        name: tag.name,
+        slug: tag.slug
+      })),
+      brands: (brands || []).map(brand => ({
+        id: brand.woo_id,
+        name: brand.name,
+        slug: brand.slug
+      })),
+    },
+    isLoading: categoriesLoading || tagsLoading || brandsLoading,
+    errors: {
+      categories: categoriesError,
+      tags: tagsError,
+      brands: brandsError
+    }
+  };
 }
