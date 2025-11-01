@@ -34,6 +34,60 @@ export interface BrandItem {
  * זה מבטיח שהמשתמש רואה את כל הטקסונומיות מווקומרס, 
  * גם אלו שעדיין לא משוייכות לאף מוצר.
  */
+/**
+ * בונה עץ קטגוריות עם hierarchy indicators (prefix של "—")
+ */
+function buildCategoryTree(categories: CategoryItem[]) {
+  if (!categories || categories.length === 0) return [];
+  
+  // יצירת map למציאת קטגוריות לפי ID
+  const categoryMap = new Map(categories.map(c => [c.id, c]));
+  
+  // פונקציה רקורסיבית למציאת עומק הקטגוריה
+  const getDepth = (cat: CategoryItem): number => {
+    if (!cat.parent_id) return 0;
+    const parent = categoryMap.get(cat.parent_id);
+    return parent ? getDepth(parent) + 1 : 0;
+  };
+  
+  // מיון: parent לפני children, ואז לפי שם
+  const sorted = [...categories].sort((a, b) => {
+    const aDepth = getDepth(a);
+    const bDepth = getDepth(b);
+    
+    // אם לאחד יש parent_id שהוא ה-ID של השני, הוא child
+    if (b.parent_id === a.id) return -1;
+    if (a.parent_id === b.id) return 1;
+    
+    // אם שניהם באותו רמה ואותו parent, לפי שם
+    if (aDepth === bDepth && a.parent_id === b.parent_id) {
+      return a.name.localeCompare(b.name, 'he');
+    }
+    
+    // אם רמות שונות, הרמה הנמוכה לפני
+    if (aDepth !== bDepth) return aDepth - bDepth;
+    
+    // default: לפי שם
+    return a.name.localeCompare(b.name, 'he');
+  });
+  
+  // הוספת prefix לפי עומק
+  return sorted.map(cat => {
+    const depth = getDepth(cat);
+    const prefix = '— '.repeat(depth);
+    
+    return {
+      id: cat.woo_id,
+      name: `${prefix}${cat.name}`,
+      slug: cat.slug,
+      count: cat.count,
+      parent_id: cat.parent_id,
+      parent_woo_id: cat.parent_woo_id,
+      image_url: cat.image_url
+    };
+  });
+}
+
 export function useStoreTaxonomies(storeId: string | undefined) {
   // Categories
   const { 
@@ -103,15 +157,7 @@ export function useStoreTaxonomies(storeId: string | undefined) {
   
   return {
     data: {
-      categories: (categories || []).map(cat => ({
-        id: cat.woo_id,
-        name: cat.name,
-        slug: cat.slug,
-        count: cat.count,
-        parent_id: cat.parent_id,
-        parent_woo_id: cat.parent_woo_id,
-        image_url: cat.image_url
-      })),
+      categories: buildCategoryTree(categories || []),
       tags: (tags || []).map(tag => ({
         id: tag.woo_id,
         name: tag.name,
