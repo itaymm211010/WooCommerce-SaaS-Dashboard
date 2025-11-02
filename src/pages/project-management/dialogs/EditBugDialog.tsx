@@ -51,7 +51,7 @@ export const EditBugDialog = ({ bug }: EditBugDialogProps) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bug-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["bug_reports"] });
       toast.success("הבאג עודכן בהצלחה");
       setOpen(false);
     },
