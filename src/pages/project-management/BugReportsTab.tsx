@@ -74,20 +74,22 @@ export const BugReportsTab = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>כותרת</TableHead>
-              <TableHead>חומרה</TableHead>
-              <TableHead>סטטוס</TableHead>
-              <TableHead>מדווח</TableHead>
-              <TableHead>תיאור</TableHead>
-              <TableHead>נוצר ב</TableHead>
-              <TableHead>נפתר ב</TableHead>
-              <TableHead>פעולות</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>כותרת</TableHead>
+                <TableHead>חומרה</TableHead>
+                <TableHead>סטטוס</TableHead>
+                <TableHead>מדווח</TableHead>
+                <TableHead>תיאור</TableHead>
+                <TableHead>נוצר ב</TableHead>
+                <TableHead>נפתר ב</TableHead>
+                <TableHead>פעולות</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {bugs?.map((bug) => (
                 <TableRow key={bug.id}>
                   <TableCell className="font-medium">{bug.title}</TableCell>
@@ -122,8 +124,57 @@ export const BugReportsTab = () => {
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+          {bugs?.map((bug) => (
+            <Card key={bug.id} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <h3 className="font-medium text-lg">{bug.title}</h3>
+                  <EditBugDialog bug={bug} />
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={getSeverityColor(bug.severity)}>
+                    {bug.severity}
+                  </Badge>
+                  <Badge variant={getStatusColor(bug.status)}>
+                    {bug.status}
+                  </Badge>
+                </div>
+
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {bug.description}
+                </p>
+
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">מדווח:</span>
+                    <span>
+                      {bug.reporter 
+                        ? `${bug.reporter.first_name || ''} ${bug.reporter.last_name || ''}`.trim() || bug.reporter.email
+                        : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">נוצר:</span>
+                    <span>{format(new Date(bug.created_at), "MMM d, yyyy")}</span>
+                  </div>
+                  {bug.resolved_at && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">נפתר:</span>
+                      <span>{format(new Date(bug.resolved_at), "MMM d, yyyy")}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
