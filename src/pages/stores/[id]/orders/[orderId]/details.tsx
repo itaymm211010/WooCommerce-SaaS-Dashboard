@@ -8,6 +8,8 @@ import type { Tables } from "@/integrations/supabase/types";
 type Order = Tables<"orders">;
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "../components/StatusBadge";
+import { EditOrderStatus } from "../components/EditOrderStatus";
+import { OrderNotes } from "../components/OrderNotes";
 
 export default function OrderDetailsPage() {
   const { id: storeId, orderId } = useParams();
@@ -73,7 +75,17 @@ export default function OrderDetailsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Order #{orderId}</h1>
-          <StatusBadge status={order?.status || 'unknown'} />
+          <div className="flex items-center gap-3">
+            <StatusBadge status={order?.status || 'unknown'} />
+            {store && (
+              <EditOrderStatus 
+                currentStatus={order?.status || 'pending'}
+                orderId={orderId!}
+                storeId={storeId!}
+                store={store}
+              />
+            )}
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -161,6 +173,8 @@ export default function OrderDetailsPage() {
               </CardContent>
             </Card>
           )}
+
+          <OrderNotes notes={order?.order_notes || []} />
         </div>
       </div>
     </Shell>
