@@ -79,6 +79,10 @@ const Index = () => {
     enabled: !!user && (isAdmin || !!stores)
   });
 
+  // Get currency for selected store (or first store if no selection)
+  const selectedStore = stores?.find(s => s.id === selectedStoreId);
+  const currency = selectedStore?.currency || stores?.[0]?.currency || 'ILS';
+
   // Calculate dashboard statistics
   const stats = calculateDashboardStats(orders, products);
   
@@ -127,7 +131,8 @@ const Index = () => {
         <StatCards 
           stats={stats} 
           revenueChangePercentage={revenueChangePercentage} 
-          revenueTrend={revenueTrend} 
+          revenueTrend={revenueTrend}
+          currency={currency}
         />
 
         <div className="grid gap-4 grid-cols-1">

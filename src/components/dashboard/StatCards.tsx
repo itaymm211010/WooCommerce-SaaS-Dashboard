@@ -16,9 +16,10 @@ interface StatCardsProps {
   };
   revenueChangePercentage: number;
   revenueTrend: 'up' | 'down' | 'neutral';
+  currency?: string;
 }
 
-const StatCards = ({ stats, revenueChangePercentage, revenueTrend }: StatCardsProps) => {
+const StatCards = ({ stats, revenueChangePercentage, revenueTrend, currency = 'ILS' }: StatCardsProps) => {
   const { 
     totalRevenue, 
     totalOrders, 
@@ -33,7 +34,7 @@ const StatCards = ({ stats, revenueChangePercentage, revenueTrend }: StatCardsPr
   const statCards = [
     {
       name: "Total Revenue",
-      value: formatCurrency(totalRevenue),
+      value: formatCurrency(totalRevenue, currency),
       description: `${revenueChangePercentage}% ${revenueTrend === 'up' ? 'increase' : 'decrease'} from last day`,
       trend: revenueTrend,
       icon: TrendingUp
@@ -53,7 +54,7 @@ const StatCards = ({ stats, revenueChangePercentage, revenueTrend }: StatCardsPr
     },
     {
       name: "Avg. Order Value",
-      value: formatCurrency(averageOrderValue),
+      value: formatCurrency(averageOrderValue, currency),
       description: `${totalOrders} total orders`,
       icon: TrendingUp
     }
