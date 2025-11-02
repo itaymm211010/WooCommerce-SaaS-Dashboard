@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StatCards from "@/components/dashboard/StatCards";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import { StoreSelector } from "@/components/dashboard/StoreSelector";
+import { RecentOrderNotes } from "@/components/dashboard/RecentOrderNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { 
@@ -135,8 +136,12 @@ const Index = () => {
           currency={currency}
         />
 
-        <div className="grid gap-4 grid-cols-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           <RevenueChart data={last7DaysData} />
+          <RecentOrderNotes 
+            store={selectedStore || stores?.[0]} 
+            orders={orders}
+          />
         </div>
       </div>
     </Shell>
