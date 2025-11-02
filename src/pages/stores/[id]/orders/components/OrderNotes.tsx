@@ -2,6 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { AddOrderNote } from "./AddOrderNote";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Store = Tables<"stores">;
 
 interface OrderNote {
   id: number;
@@ -15,14 +19,18 @@ interface OrderNotesProps {
   notes?: OrderNote[];
   isLoading?: boolean;
   error?: Error | null;
+  storeId: string;
+  orderId: string;
+  store?: Store;
 }
 
-export const OrderNotes = ({ notes, isLoading, error }: OrderNotesProps) => {
+export const OrderNotes = ({ notes, isLoading, error, storeId, orderId, store }: OrderNotesProps) => {
   if (error) {
     return (
       <Card className="md:col-span-2">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Order Notes</CardTitle>
+          <AddOrderNote storeId={storeId} orderId={orderId} store={store} />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Failed to load order notes</p>
@@ -34,8 +42,9 @@ export const OrderNotes = ({ notes, isLoading, error }: OrderNotesProps) => {
   if (isLoading) {
     return (
       <Card className="md:col-span-2">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Order Notes</CardTitle>
+          <AddOrderNote storeId={storeId} orderId={orderId} store={store} />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -50,8 +59,9 @@ export const OrderNotes = ({ notes, isLoading, error }: OrderNotesProps) => {
   if (!notes || notes.length === 0) {
     return (
       <Card className="md:col-span-2">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Order Notes</CardTitle>
+          <AddOrderNote storeId={storeId} orderId={orderId} store={store} />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">No notes for this order</p>
@@ -62,8 +72,9 @@ export const OrderNotes = ({ notes, isLoading, error }: OrderNotesProps) => {
 
   return (
     <Card className="md:col-span-2">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Order Notes</CardTitle>
+        <AddOrderNote storeId={storeId} orderId={orderId} store={store} />
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

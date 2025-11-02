@@ -185,6 +185,9 @@ export default function OrderDetailsPage() {
             notes={orderNotes} 
             isLoading={notesLoading} 
             error={notesError}
+            storeId={storeId!}
+            orderId={orderId!}
+            store={store}
           />
         </div>
       </div>
