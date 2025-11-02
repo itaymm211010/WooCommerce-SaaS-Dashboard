@@ -4,8 +4,50 @@ import StatCards from "@/components/dashboard/StatCards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, CheckCircle, Clock, Bug } from "lucide-react";
+import { RecentOrderNotes } from "@/components/dashboard/RecentOrderNotes";
+import { StoreSelector } from "@/components/dashboard/StoreSelector";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 export const OverviewTab = () => {
+  const { user, isAdmin } = useAuth();
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+
+  const { data: stores } = useQuery({
+    queryKey: ['stores', user?.id, isAdmin],
+    queryFn: async () => {
+      let query = supabase.from('stores').select('*');
+      
+      if (!isAdmin) {
+        query = query.eq('user_id', user?.id);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  const { data: orders } = useQuery({
+    queryKey: ['orders', selectedStoreId, isAdmin, stores],
+    queryFn: async () => {
+      let query = supabase.from('orders').select('*');
+      
+      if (selectedStoreId) {
+        query = query.eq('store_id', selectedStoreId);
+      } else if (!isAdmin && stores && stores.length > 0) {
+        const storeIds = stores.map(s => s.id);
+        query = query.in('store_id', storeIds);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && (isAdmin || !!stores)
+  });
+
   const { data: tasks } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -52,8 +94,21 @@ export const OverviewTab = () => {
     criticalBugs: bugs?.filter((b) => b.severity === "critical" && b.status === "open").length || 0,
   };
 
+  const selectedStore = stores?.find(s => s.id === selectedStoreId);
+
   return (
     <div className="space-y-6">
+      {stores && (isAdmin || stores.length > 1) && (
+        <div className="flex justify-end">
+          <StoreSelector
+            stores={stores}
+            selectedStoreId={selectedStoreId}
+            onStoreSelect={setSelectedStoreId}
+            isAdmin={isAdmin}
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -126,6 +181,11 @@ export const OverviewTab = () => {
           </CardContent>
         </Card>
       )}
+
+      <RecentOrderNotes 
+        store={selectedStore || stores?.[0]} 
+        orders={orders}
+      />
     </div>
   );
 };
