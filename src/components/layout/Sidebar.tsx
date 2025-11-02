@@ -10,7 +10,8 @@ import {
   X,
   User,
   Image,
-  FolderTree
+  FolderTree,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -30,6 +31,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "Products", href: "/stores", icon: Package, needsStore: true },
   { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Stores", href: "/stores", icon: Store },
+  { name: "Project Management", href: "/project-management", icon: ClipboardList },
   { name: "Profile", href: "/profile", icon: User },
   { name: "ניהול תמונות", href: "/demo/image-management", icon: Image },
 ];

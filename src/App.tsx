@@ -10,6 +10,7 @@ import { toast } from "sonner";
 // Pages
 import Index from "./pages/Index";
 import ProfilePage from "./pages/profile/ProfilePage";
+import ProjectManagement from "./pages/project-management/Index";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ImageManagementDemo from "./pages/demo/ImageManagementDemo";
@@ -117,6 +118,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ProfilePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/project-management"
+              element={
+                <RequireAuth>
+                  <ProjectManagement />
                 </RequireAuth>
               }
             />
