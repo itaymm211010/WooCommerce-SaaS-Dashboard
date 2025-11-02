@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { useStore } from "@/pages/stores/[id]/products/hooks/useStore";
+import { useDirection } from "@/hooks/useDirection";
 
 interface NavigationItem {
   name: string;
@@ -45,7 +46,7 @@ const storeNavigation: NavigationItem[] = [
   { name: "Analytics", href: "/stores/:id/analytics", icon: BarChart },
 ];
 
-const Navigation = ({ isInStore, id }: { isInStore: boolean; id?: string }) => {
+const Navigation = ({ isInStore, id, isRTL }: { isInStore: boolean; id?: string; isRTL: boolean }) => {
   const location = useLocation();
   const navigation = isInStore 
     ? storeNavigation.map(item => ({
@@ -87,7 +88,8 @@ const Navigation = ({ isInStore, id }: { isInStore: boolean; id?: string }) => {
                       "transition-colors duration-200",
                       isActive
                         ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                      isRTL && "flex-row-reverse"
                     )}
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
@@ -107,31 +109,14 @@ export const Sidebar = () => {
   const location = useLocation();
   const { id } = useParams();
   const [open, setOpen] = useState(false);
-  const [sheetSide, setSheetSide] = useState<'left' | 'right'>('left');
+  const direction = useDirection();
+  const isRTL = direction === 'rtl';
   
   // הפיכת הבדיקה לboolean מפורש
   const isInStore = Boolean(location.pathname.includes('/stores/') && id);
   
   // טען את פרטי החנות אם אנחנו בתוך חנות
   const { data: store } = useStore(id);
-
-  // זיהוי כיוון ועדכון Sheet
-  useEffect(() => {
-    const updateDirection = () => {
-      const dir = document.documentElement.dir || 'ltr';
-      setSheetSide(dir === 'rtl' ? 'right' : 'left');
-    };
-    
-    updateDirection();
-    
-    const observer = new MutationObserver(updateDirection);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['dir']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
 
   const sidebarContent = (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
@@ -144,14 +129,17 @@ export const Sidebar = () => {
           <div className="text-sm font-medium">{store.name}</div>
         </div>
       )}
-      <Navigation isInStore={isInStore} id={id} />
+      <Navigation isInStore={isInStore} id={id} isRTL={isRTL} />
     </div>
   );
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col lg:start-0 border-e">
+      <div className={cn(
+        "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col transition-all duration-300",
+        isRTL ? "lg:right-0 lg:border-l" : "lg:left-0 lg:border-r"
+      )}>
         {sidebarContent}
       </div>
 
@@ -166,7 +154,7 @@ export const Sidebar = () => {
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side={sheetSide} className="w-72 p-0">
+        <SheetContent side={isRTL ? 'right' : 'left'} className="w-72 p-0">
           {sidebarContent}
         </SheetContent>
       </Sheet>

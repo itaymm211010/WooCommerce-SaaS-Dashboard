@@ -8,12 +8,16 @@ import { toast } from "sonner";
 import { ThemeSelector } from "./ThemeSelector";
 import { LanguageSelector } from "./LanguageSelector";
 import { useTranslation } from "react-i18next";
+import { useDirection } from "@/hooks/useDirection";
+import { cn } from "@/lib/utils";
 
 export const TopBar = () => {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const direction = useDirection();
+  const isRTL = direction === 'rtl';
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -30,7 +34,11 @@ export const TopBar = () => {
   };
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed w-full top-0 z-40 lg:start-72 lg:w-[calc(100%-288px)]">
+    <header className={cn(
+      "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      "fixed w-full top-0 z-40 transition-all duration-300",
+      isRTL ? "lg:pr-72 lg:w-[calc(100%-288px)]" : "lg:pl-72 lg:w-[calc(100%-288px)]"
+    )}>
       <div className="flex h-14 sm:h-16 items-center px-4 sm:px-6 gap-2 sm:gap-4">
         <div className="lg:hidden w-12" /> {/* Spacing for mobile menu button */}
         <div className="flex flex-1 items-center justify-between">

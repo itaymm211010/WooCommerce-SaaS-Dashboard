@@ -2,6 +2,8 @@
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { useEffect, useState } from "react";
+import { useDirection } from "@/hooks/useDirection";
+import { cn } from "@/lib/utils";
 
 interface ShellProps {
   children: React.ReactNode;
@@ -9,6 +11,8 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const direction = useDirection();
+  const isRTL = direction === 'rtl';
 
   useEffect(() => {
     setIsMounted(true);
@@ -22,7 +26,10 @@ export function Shell({ children }: ShellProps) {
     <div className="relative flex min-h-screen flex-col">
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex flex-1 flex-col lg:ps-72">
+        <main className={cn(
+          "flex flex-1 flex-col transition-all duration-300",
+          isRTL ? "lg:pr-72" : "lg:pl-72"
+        )}>
           <TopBar />
           {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
           <div className="flex-1 px-3 py-16 sm:px-4 sm:py-20 lg:px-8">
