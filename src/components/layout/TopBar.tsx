@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { ThemeSelector } from "./ThemeSelector";
 
 export const TopBar = () => {
   const { theme, setTheme } = useTheme();
@@ -32,6 +33,7 @@ export const TopBar = () => {
         <div className="flex flex-1 items-center justify-between">
           <div />
           <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeSelector />
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 sm:h-10 sm:w-10">
               {theme === "dark" ? (
                 <Sun className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />

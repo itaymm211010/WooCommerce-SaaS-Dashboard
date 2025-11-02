@@ -68,6 +68,102 @@
     --gradient-accent: linear-gradient(135deg, hsl(173 58% 50%), hsl(197 37% 50%));
     --shadow-glow: 0 0 40px hsl(280 100% 70% / 0.4);
   }
+
+  .theme-blue {
+    --primary: 221 83% 53%;
+    --ring: 221 83% 53%;
+    --chart-1: 221 83% 53%;
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 63%));
+    --shadow-glow: 0 0 40px hsl(221 83% 53% / 0.3);
+  }
+
+  .theme-blue.dark {
+    --primary: 217 91% 60%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
+    --shadow-glow: 0 0 40px hsl(217 91% 60% / 0.4);
+  }
+
+  .theme-green {
+    --primary: 142 76% 36%;
+    --ring: 142 76% 36%;
+    --chart-1: 142 76% 36%;
+    --gradient-primary: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
+    --shadow-glow: 0 0 40px hsl(142 76% 36% / 0.3);
+  }
+
+  .theme-green.dark {
+    --primary: 142 71% 45%;
+    --ring: 142 71% 45%;
+    --chart-1: 142 71% 45%;
+    --gradient-primary: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 55%));
+    --shadow-glow: 0 0 40px hsl(142 71% 45% / 0.4);
+  }
+
+  .theme-orange {
+    --primary: 24 95% 53%;
+    --ring: 24 95% 53%;
+    --chart-1: 24 95% 53%;
+    --gradient-primary: linear-gradient(135deg, hsl(24 95% 53%), hsl(24 95% 63%));
+    --shadow-glow: 0 0 40px hsl(24 95% 53% / 0.3);
+  }
+
+  .theme-orange.dark {
+    --primary: 21 90% 48%;
+    --ring: 21 90% 48%;
+    --chart-1: 21 90% 48%;
+    --gradient-primary: linear-gradient(135deg, hsl(21 90% 48%), hsl(21 90% 58%));
+    --shadow-glow: 0 0 40px hsl(21 90% 48% / 0.4);
+  }
+
+  .theme-red {
+    --primary: 0 72% 51%;
+    --ring: 0 72% 51%;
+    --chart-1: 0 72% 51%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 61%));
+    --shadow-glow: 0 0 40px hsl(0 72% 51% / 0.3);
+  }
+
+  .theme-red.dark {
+    --primary: 0 84% 60%;
+    --ring: 0 84% 60%;
+    --chart-1: 0 84% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
+    --shadow-glow: 0 0 40px hsl(0 84% 60% / 0.4);
+  }
+
+  .theme-rose {
+    --primary: 346 77% 50%;
+    --ring: 346 77% 50%;
+    --chart-1: 346 77% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(346 77% 50%), hsl(346 77% 60%));
+    --shadow-glow: 0 0 40px hsl(346 77% 50% / 0.3);
+  }
+
+  .theme-rose.dark {
+    --primary: 346 84% 61%;
+    --ring: 346 84% 61%;
+    --chart-1: 346 84% 61%;
+    --gradient-primary: linear-gradient(135deg, hsl(346 84% 61%), hsl(346 84% 71%));
+    --shadow-glow: 0 0 40px hsl(346 84% 61% / 0.4);
+  }
+
+  .theme-violet {
+    --primary: 262 83% 58%;
+    --ring: 262 83% 58%;
+    --chart-1: 262 83% 58%;
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%));
+    --shadow-glow: 0 0 40px hsl(262 83% 58% / 0.3);
+  }
+
+  .theme-violet.dark {
+    --primary: 263 70% 50%;
+    --ring: 263 70% 50%;
+    --chart-1: 263 70% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(263 70% 50%), hsl(263 70% 60%));
+    --shadow-glow: 0 0 40px hsl(263 70% 50% / 0.4);
+  }
  
   * {
     @apply border-border;
