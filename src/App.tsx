@@ -14,6 +14,7 @@ import ProjectManagement from "./pages/project-management/Index";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ImageManagementDemo from "./pages/demo/ImageManagementDemo";
+import AIChat from "./pages/AIChat";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -126,6 +127,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ProjectManagement />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/ai-chat"
+              element={
+                <RequireAuth>
+                  <AIChat />
                 </RequireAuth>
               }
             />
