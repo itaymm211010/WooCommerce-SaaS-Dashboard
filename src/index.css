@@ -223,21 +223,6 @@
   left: auto;
 }
 
-/* Sheet positioning - flip sides */
-[dir="rtl"] [data-side="left"] {
-  right: 0 !important;
-  left: auto !important;
-  border-left: 1px solid hsl(var(--border));
-  border-right: none;
-}
-
-[dir="rtl"] [data-side="right"] {
-  left: 0 !important;
-  right: auto !important;
-  border-right: 1px solid hsl(var(--border));
-  border-left: none;
-}
-
 /* Text alignment */
 [dir="rtl"] .text-left {
   text-align: right;

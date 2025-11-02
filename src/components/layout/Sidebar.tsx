@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/pages/stores/[id]/products/hooks/useStore";
 
 interface NavigationItem {
@@ -107,12 +107,31 @@ export const Sidebar = () => {
   const location = useLocation();
   const { id } = useParams();
   const [open, setOpen] = useState(false);
+  const [sheetSide, setSheetSide] = useState<'left' | 'right'>('left');
   
   // הפיכת הבדיקה לboolean מפורש
   const isInStore = Boolean(location.pathname.includes('/stores/') && id);
   
   // טען את פרטי החנות אם אנחנו בתוך חנות
   const { data: store } = useStore(id);
+
+  // זיהוי כיוון ועדכון Sheet
+  useEffect(() => {
+    const updateDirection = () => {
+      const dir = document.documentElement.dir || 'ltr';
+      setSheetSide(dir === 'rtl' ? 'right' : 'left');
+    };
+    
+    updateDirection();
+    
+    const observer = new MutationObserver(updateDirection);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['dir']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
 
   const sidebarContent = (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
@@ -132,7 +151,7 @@ export const Sidebar = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col lg:start-0 border-e">
         {sidebarContent}
       </div>
 
@@ -147,7 +166,7 @@ export const Sidebar = () => {
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0 [&[data-side=left]]:start-0">
+        <SheetContent side={sheetSide} className="w-72 p-0">
           {sidebarContent}
         </SheetContent>
       </Sheet>
