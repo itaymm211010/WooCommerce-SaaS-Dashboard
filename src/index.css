@@ -212,21 +212,30 @@
 }
 
 /* TopBar positioning */
-[dir="rtl"] header.lg\:left-72 {
+[dir="rtl"] header.lg\:start-72 {
   left: auto;
   right: 288px;
 }
 
 /* Mobile menu button */
-[dir="rtl"] .fixed.left-2 {
-  left: auto;
+[dir="rtl"] .fixed.start-2 {
   right: 0.5rem;
+  left: auto;
 }
 
-/* Sheet positioning */
+/* Sheet positioning - flip sides */
 [dir="rtl"] [data-side="left"] {
-  right: 0;
-  left: auto;
+  right: 0 !important;
+  left: auto !important;
+  border-left: 1px solid hsl(var(--border));
+  border-right: none;
+}
+
+[dir="rtl"] [data-side="right"] {
+  left: 0 !important;
+  right: auto !important;
+  border-right: 1px solid hsl(var(--border));
+  border-left: none;
 }
 
 /* Text alignment */
@@ -235,6 +244,14 @@
 }
 
 [dir="rtl"] .text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .text-start {
+  text-align: right;
+}
+
+[dir="rtl"] .text-end {
   text-align: left;
 }
 
@@ -275,4 +292,9 @@
 [dir="rtl"] [data-radix-sheet-close] {
   left: 1rem;
   right: auto;
+}
+
+/* Button icon spacing */
+[dir="rtl"] button .gap-2 {
+  flex-direction: row-reverse;
 }

@@ -105,8 +105,8 @@ export default function StoresPage() {
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Store
+                <Plus className="h-4 w-4" />
+                <span className="ms-2">Add Store</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -135,7 +135,7 @@ export default function StoresPage() {
               <TableHead>URL</TableHead>
               <TableHead>API Key</TableHead>
               <TableHead>Added</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,7 +145,7 @@ export default function StoresPage() {
                 <TableCell>{store.url}</TableCell>
                 <TableCell>{store.api_key.slice(0, 8)}...</TableCell>
                 <TableCell>{new Date(store.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <div className="flex items-center justify-end gap-2">
                     <Sheet>
                       <SheetTrigger asChild>

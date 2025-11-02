@@ -78,20 +78,20 @@ export function StoreDetails({ store }: StoreDetailsProps) {
       <div className="flex gap-4 pt-4">
         <Link to={`/stores/${store.id}/products`} className="flex-1">
           <Button className="w-full" variant="outline">
-            <Package className="mr-2 h-4 w-4" />
-            מוצרים
+            <Package className="h-4 w-4" />
+            <span className="ms-2">מוצרים</span>
           </Button>
         </Link>
         <Link to={`/stores/${store.id}/orders`} className="flex-1">
           <Button className="w-full" variant="outline">
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            הזמנות
+            <ShoppingCart className="h-4 w-4" />
+            <span className="ms-2">הזמנות</span>
           </Button>
         </Link>
         <Link to={`/stores/${store.id}/users`} className="flex-1">
           <Button className="w-full" variant="outline">
-            <Users className="mr-2 h-4 w-4" />
-            משתמשים
+            <Users className="h-4 w-4" />
+            <span className="ms-2">משתמשים</span>
           </Button>
         </Link>
       </div>
