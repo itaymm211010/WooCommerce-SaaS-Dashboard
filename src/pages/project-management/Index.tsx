@@ -1,5 +1,6 @@
 import { Shell } from "@/components/layout/Shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { OverviewTab } from "./OverviewTab";
 import { TasksTab } from "./TasksTab";
 import { SprintsTab } from "./SprintsTab";
@@ -19,14 +20,16 @@ const ProjectManagement = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="sprints">Sprints</TabsTrigger>
-            <TabsTrigger value="bugs">Bug Reports</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
-            <TabsTrigger value="deployments">Deployments</TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-auto">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="tasks">Tasks</TabsTrigger>
+              <TabsTrigger value="sprints">Sprints</TabsTrigger>
+              <TabsTrigger value="bugs">Bug Reports</TabsTrigger>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="deployments">Deployments</TabsTrigger>
+            </TabsList>
+          </ScrollArea>
 
           <TabsContent value="overview">
             <OverviewTab />
