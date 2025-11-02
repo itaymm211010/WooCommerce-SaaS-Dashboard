@@ -27,13 +27,15 @@ export const BugReportsTab = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
+      case "blocker":
+        return "destructive";
       case "critical":
         return "destructive";
-      case "high":
-        return "destructive";
-      case "medium":
+      case "major":
         return "secondary";
-      case "low":
+      case "moderate":
+        return "secondary";
+      case "minor":
         return "outline";
       default:
         return "outline";
