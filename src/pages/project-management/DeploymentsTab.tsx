@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { GitCommit, Clock } from "lucide-react";
+import { CreateDeploymentDialog } from "./dialogs/CreateDeploymentDialog";
 
 export const DeploymentsTab = () => {
   const { data: deployments, isLoading } = useQuery({
@@ -39,6 +40,9 @@ export const DeploymentsTab = () => {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <CreateDeploymentDialog />
+      </div>
       {deployments?.map((deployment) => (
         <Card key={deployment.id}>
           <CardHeader>

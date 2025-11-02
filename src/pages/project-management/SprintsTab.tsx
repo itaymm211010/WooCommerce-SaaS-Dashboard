@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Calendar } from "lucide-react";
+import { CreateSprintDialog } from "./dialogs/CreateSprintDialog";
 
 export const SprintsTab = () => {
   const { data: sprints, isLoading } = useQuery({
@@ -36,7 +37,11 @@ export const SprintsTab = () => {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <CreateSprintDialog />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {sprints?.map((sprint) => (
         <Card key={sprint.id}>
           <CardHeader>
@@ -63,6 +68,7 @@ export const SprintsTab = () => {
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 };

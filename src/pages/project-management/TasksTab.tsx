@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import { CreateTaskDialog } from "./dialogs/CreateTaskDialog";
 
 export const TasksTab = () => {
   const { data: tasks, isLoading } = useQuery({
@@ -58,7 +59,10 @@ export const TasksTab = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Tasks</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>All Tasks</CardTitle>
+          <CreateTaskDialog />
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

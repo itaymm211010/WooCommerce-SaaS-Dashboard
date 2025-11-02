@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import { CreateBugDialog } from "./dialogs/CreateBugDialog";
 
 export const BugReportsTab = () => {
   const { data: bugs, isLoading } = useQuery({
@@ -62,7 +63,10 @@ export const BugReportsTab = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bug Reports</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Bug Reports</CardTitle>
+          <CreateBugDialog />
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
