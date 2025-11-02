@@ -23,10 +23,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setUserRole(data.role);
+        setIsAdmin(data.role === 'admin');
+      } else {
+        setUserRole(null);
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setUserRole(null);
+      setIsAdmin(false);
+    }
+  };
+
   useEffect(() => {
-    // Get initial session
+    // Get initial session and check role
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      
+      // Check role on initial load
+      if (session?.user) {
+        checkUserRole(session.user.id);
+      }
+      
       setLoading(false);
     });
 
@@ -39,22 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Check user role when session changes
       if (session?.user) {
-        setTimeout(() => {
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setUserRole(data.role);
-                setIsAdmin(data.role === 'admin');
-              } else {
-                setUserRole(null);
-                setIsAdmin(false);
-              }
-            });
-        }, 0);
+        checkUserRole(session.user.id);
       } else {
         setUserRole(null);
         setIsAdmin(false);
