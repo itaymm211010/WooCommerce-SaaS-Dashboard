@@ -18,12 +18,12 @@ export function OrdersFilters({
   return (
     <div className="flex gap-4">
       <div className="relative flex-1">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute start-2 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by customer name..."
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
-          className="pl-8"
+          className="ps-8"
         />
       </div>
       <div className="relative w-[200px]">
