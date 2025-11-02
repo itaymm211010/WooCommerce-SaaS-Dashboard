@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 interface OrderNote {
@@ -11,17 +12,53 @@ interface OrderNote {
 }
 
 interface OrderNotesProps {
-  notes: OrderNote[];
+  notes?: OrderNote[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export const OrderNotes = ({ notes }: OrderNotesProps) => {
-  if (!notes || notes.length === 0) {
-    return null;
+export const OrderNotes = ({ notes, isLoading, error }: OrderNotesProps) => {
+  if (error) {
+    return (
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>Order Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Failed to load order notes</p>
+        </CardContent>
+      </Card>
+    );
   }
 
-  const sortedNotes = [...notes].sort(
-    (a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
-  );
+  if (isLoading) {
+    return (
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>Order Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!notes || notes.length === 0) {
+    return (
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>Order Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No notes for this order</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="md:col-span-2">
@@ -30,7 +67,7 @@ export const OrderNotes = ({ notes }: OrderNotesProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {sortedNotes.map((note) => (
+          {notes.map((note) => (
             <div
               key={note.id}
               className="border-l-2 border-primary pl-4 py-2"

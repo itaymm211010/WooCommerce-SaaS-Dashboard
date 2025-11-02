@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "../components/StatusBadge";
 import { EditOrderStatus } from "../components/EditOrderStatus";
 import { OrderNotes } from "../components/OrderNotes";
+import { useOrderNotes } from "../hooks/useOrderNotes";
 
 export default function OrderDetailsPage() {
   const { id: storeId, orderId } = useParams();
@@ -58,6 +59,12 @@ export default function OrderDetailsPage() {
     },
     enabled: !!storeId && !!orderId && !!store
   });
+
+  const { data: orderNotes, isLoading: notesLoading, error: notesError } = useOrderNotes(
+    storeId!,
+    orderId!,
+    store
+  );
 
   if (isLoading) {
     return (
@@ -174,7 +181,11 @@ export default function OrderDetailsPage() {
             </Card>
           )}
 
-          <OrderNotes notes={order?.order_notes || []} />
+          <OrderNotes 
+            notes={orderNotes} 
+            isLoading={notesLoading} 
+            error={notesError}
+          />
         </div>
       </div>
     </Shell>
