@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -75,6 +76,7 @@ export const EditBugDialog = ({ bug }: EditBugDialogProps) => {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>עריכת באג</DialogTitle>
+          <DialogDescription>ערוך את פרטי הבאג</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
