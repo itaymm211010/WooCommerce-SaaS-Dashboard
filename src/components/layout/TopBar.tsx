@@ -35,7 +35,7 @@ export const TopBar = () => {
         <div className="lg:hidden w-12" /> {/* Spacing for mobile menu button */}
         <div className="flex flex-1 items-center justify-between">
           <div />
-          <div className="flex items-center gap-2 sm:gap-4 flex-row-reverse">
+          <div className="flex items-center gap-2 sm:gap-4">
             <LanguageSelector />
             <ThemeSelector />
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 sm:h-10 sm:w-10">
