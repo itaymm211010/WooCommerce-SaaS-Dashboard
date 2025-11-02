@@ -1,13 +1,28 @@
-
 import { Button } from "@/components/ui/button";
-import { Bell, Settings, Moon, Sun } from "lucide-react";
+import { Bell, Settings, Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export const TopBar = () => {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("התנתקת בהצלחה");
+      navigate("/signin");
+    } catch (error) {
+      toast.error("שגיאה בהתנתקות");
+    }
   };
 
   return (
@@ -30,6 +45,17 @@ export const TopBar = () => {
             <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 hidden sm:flex">
               <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
+            {user && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogout}
+                className="h-8 w-8 sm:h-10 sm:w-10"
+                title="התנתק"
+              >
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
