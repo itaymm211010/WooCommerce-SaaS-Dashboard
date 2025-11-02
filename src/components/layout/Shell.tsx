@@ -22,7 +22,7 @@ export function Shell({ children }: ShellProps) {
     <div className="relative flex min-h-screen flex-col">
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex flex-1 flex-col lg:pl-72">
+        <main className="flex flex-1 flex-col lg:ps-72">
           <TopBar />
           {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
           <div className="flex-1 px-3 py-16 sm:px-4 sm:py-20 lg:px-8">

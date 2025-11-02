@@ -61,10 +61,10 @@ const Navigation = ({ isInStore, id }: { isInStore: boolean; id?: string }) => {
           <li>
             <Link
               to="/stores"
-              className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground"
+              className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
-              <Store className="mr-2 h-4 w-4" />
-              Back to Stores
+              <Store className="h-4 w-4" />
+              <span>Back to Stores</span>
             </Link>
           </li>
         )}
@@ -83,7 +83,7 @@ const Navigation = ({ isInStore, id }: { isInStore: boolean; id?: string }) => {
                   <Link
                     to={item.href}
                     className={cn(
-                      "flex gap-x-3 rounded-md p-2 text-sm leading-6",
+                      "flex items-center gap-x-3 rounded-md p-2 text-sm leading-6",
                       "transition-colors duration-200",
                       isActive
                         ? "bg-accent text-accent-foreground"
@@ -91,7 +91,7 @@ const Navigation = ({ isInStore, id }: { isInStore: boolean; id?: string }) => {
                     )}
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
-                    {item.name}
+                    <span>{item.name}</span>
                   </Link>
                 </li>
               );
@@ -142,12 +142,12 @@ export const Sidebar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden fixed left-2 top-2 z-50 h-10 w-10"
+            className="lg:hidden fixed start-2 top-2 z-50 h-10 w-10"
           >
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-72 p-0 [&[data-side=left]]:start-0">
           {sidebarContent}
         </SheetContent>
       </Sheet>
