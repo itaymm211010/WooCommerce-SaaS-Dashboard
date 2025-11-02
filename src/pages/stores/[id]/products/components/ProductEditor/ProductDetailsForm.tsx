@@ -37,26 +37,26 @@ export function ProductDetailsForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Header with badges */}
-        <div className="flex justify-between items-center gap-4 mb-6">
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+          <div className="flex flex-wrap gap-2">
             {isVariableProduct ? (
-              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0">
+              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 text-xs">
                 <Layers className="w-3 h-3 mr-1" /> מוצר עם וריאציות
               </Badge>
             ) : (
-              <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0">
+              <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 text-xs">
                 <Package className="w-3 h-3 mr-1" /> מוצר רגיל
               </Badge>
             )}
             
             {!isNewProduct && initialData?.woo_id && initialData.woo_id > 0 && (
-              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
-                <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן עם WooCommerce
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 text-xs">
+                <RefreshCw className="w-3 h-3 mr-1" /> מסונכרן
               </Badge>
             )}
             {!isNewProduct && (!initialData?.woo_id || initialData.woo_id === 0) && (
-              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0">
-                <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן עם WooCommerce
+              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">
+                <RefreshCw className="w-3 h-3 mr-1" /> לא מסונכרן
               </Badge>
             )}
           </div>
@@ -128,18 +128,21 @@ export function ProductDetailsForm({
 
         <Button
           type="submit"
-          className="mt-4"
+          className="mt-4 w-full sm:w-auto"
+          size="sm"
           disabled={isSaving}
         >
           {isSaving ? (
             <>
               <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              {isNewProduct ? "יוצר ומסנכרן..." : "מעדכן ומסנכרן..."}
+              <span className="hidden sm:inline">{isNewProduct ? "יוצר ומסנכרן..." : "מעדכן ומסנכרן..."}</span>
+              <span className="sm:hidden">{isNewProduct ? "שומר..." : "מעדכן..."}</span>
             </>
           ) : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              {isNewProduct ? "שמור ויצור ב-WooCommerce" : "עדכן ב-WooCommerce"}
+              <span className="hidden sm:inline">{isNewProduct ? "שמור ויצור ב-WooCommerce" : "עדכן ב-WooCommerce"}</span>
+              <span className="sm:hidden">{isNewProduct ? "שמור" : "עדכן"}</span>
             </>
           )}
         </Button>

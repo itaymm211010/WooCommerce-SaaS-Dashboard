@@ -67,10 +67,12 @@ export function SyncToWooButton({ storeId, productId, disabled }: SyncToWooButto
       onClick={handleSync}
       disabled={disabled || isSyncing}
       variant="outline"
-      className="gap-2"
+      size="sm"
+      className="gap-2 w-full sm:w-auto"
     >
       <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-      {isSyncing ? "מסנכרן..." : "עדכן ב-WooCommerce"}
+      <span className="hidden sm:inline">{isSyncing ? "מסנכרן..." : "עדכן ב-WooCommerce"}</span>
+      <span className="sm:hidden">{isSyncing ? "מסנכרן..." : "עדכן"}</span>
     </Button>
   );
 }

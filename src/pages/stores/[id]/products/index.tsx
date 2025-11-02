@@ -50,7 +50,7 @@ export default function StoreProductsPage() {
 
   return (
     <Shell>
-      <div className="space-y-4 sm:space-y-6 w-full max-w-full">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
         <ProductsHeader
           store={store}
           isSyncing={isSyncing}
@@ -62,7 +62,7 @@ export default function StoreProductsPage() {
           onBulkSyncToWoo={syncAllProducts}
         />
 
-        <div className="relative w-full">
+        <div className="relative w-full max-w-full">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="חיפוש מוצרים..."
@@ -72,12 +72,14 @@ export default function StoreProductsPage() {
           />
         </div>
 
-        <ProductsTable 
-          products={paginatedProducts}
-          sortField={sortField}
-          sortProducts={sortProducts}
-          store={store}
-        />
+        <div className="w-full max-w-full overflow-hidden">
+          <ProductsTable 
+            products={paginatedProducts}
+            sortField={sortField}
+            sortProducts={sortProducts}
+            store={store}
+          />
+        </div>
 
         <ProductsPagination
           currentPage={currentPage}

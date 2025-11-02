@@ -48,13 +48,13 @@ export default function ProductEditorPage() {
 
   return (
     <Shell>
-      <div className="space-y-6 w-full max-w-full">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight truncate">
               {isNewProduct ? "מוצר חדש" : `עריכת מוצר: ${product?.name || ""}`}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               {isNewProduct
                 ? "יצירת מוצר חדש בחנות"
                 : "עריכת פרטי המוצר וסנכרון עם ווקומרס"}
@@ -68,24 +68,24 @@ export default function ProductEditorPage() {
           )}
         </div>
 
-        <Card>
+        <Card className="w-full max-w-full">
           <CardHeader>
-            <CardTitle>{isNewProduct ? "פרטי מוצר חדש" : "פרטי מוצר"}</CardTitle>
+            <CardTitle className="text-base sm:text-lg">{isNewProduct ? "פרטי מוצר חדש" : "פרטי מוצר"}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="details">פרטים כלליים</TabsTrigger>
-                <TabsTrigger value="images">תמונות</TabsTrigger>
-                <TabsTrigger value="inventory">מלאי</TabsTrigger>
+              <TabsList className="mb-4 w-full flex-wrap h-auto justify-start gap-1">
+                <TabsTrigger value="details" className="text-xs sm:text-sm">פרטים</TabsTrigger>
+                <TabsTrigger value="images" className="text-xs sm:text-sm">תמונות</TabsTrigger>
+                <TabsTrigger value="inventory" className="text-xs sm:text-sm">מלאי</TabsTrigger>
                 {!isNewProduct && (
                   <>
-                    <TabsTrigger value="attributes">תכונות</TabsTrigger>
-                    <TabsTrigger value="variations">וריאציות</TabsTrigger>
-                    <TabsTrigger value="categories">קטגוריות ותגים</TabsTrigger>
+                    <TabsTrigger value="attributes" className="text-xs sm:text-sm">תכונות</TabsTrigger>
+                    <TabsTrigger value="variations" className="text-xs sm:text-sm">וריאציות</TabsTrigger>
+                    <TabsTrigger value="categories" className="text-xs sm:text-sm">קטגוריות</TabsTrigger>
                   </>
                 )}
-                <TabsTrigger value="custom-fields" disabled>
+                <TabsTrigger value="custom-fields" disabled className="text-xs sm:text-sm">
                   שדות מותאמים
                 </TabsTrigger>
               </TabsList>
