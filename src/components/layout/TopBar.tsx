@@ -19,7 +19,7 @@ export const TopBar = () => {
     try {
       await supabase.auth.signOut();
       toast.success("התנתקת בהצלחה");
-      navigate("/signin");
+      navigate("/auth/signin");
     } catch (error) {
       toast.error("שגיאה בהתנתקות");
     }
