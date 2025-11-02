@@ -101,7 +101,14 @@ function App() {
         <Router>
           <HandleInvites />
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route 
+              path="/" 
+              element={
+                <RequireAuth>
+                  <Index />
+                </RequireAuth>
+              } 
+            />
             <Route path="/auth/signin" element={<SignIn />} />
             <Route path="/auth/signup" element={<SignUp />} />
             <Route path="/demo/image-management" element={<ImageManagementDemo />} />
@@ -130,7 +137,7 @@ function App() {
               }
             />
             <Route
-              path="/stores/:id/orders/:orderId"
+              path="/stores/:id/orders/:orderId/details"
               element={
                 <RequireAuth>
                   <OrderDetailsPage />

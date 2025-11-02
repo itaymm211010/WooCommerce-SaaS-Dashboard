@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import StatCards from "@/components/dashboard/StatCards";
 import RevenueChart from "@/components/dashboard/RevenueChart";
+import { StoreSelector } from "@/components/dashboard/StoreSelector";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 import { 
   calculateDashboardStats, 
   getLastNDaysData, 
@@ -11,31 +14,69 @@ import {
 } from "@/utils/dashboardUtils";
 
 const Index = () => {
+  const { user, isAdmin } = useAuth();
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+
+  // Query for stores - admin sees all, regular users see their own
   const { data: stores } = useQuery({
-    queryKey: ['stores'],
+    queryKey: ['stores', user?.id, isAdmin],
     queryFn: async () => {
-      const { data, error } = await supabase.from('stores').select('*');
+      let query = supabase.from('stores').select('*');
+      
+      // If not admin, filter to user's stores only
+      if (!isAdmin) {
+        query = query.eq('user_id', user?.id);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!user
   });
 
+  // Query for products - filtered by selected store
   const { data: products } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', selectedStoreId, isAdmin, stores],
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*');
+      let query = supabase.from('products').select('*');
+      
+      if (selectedStoreId) {
+        // Specific store selected
+        query = query.eq('store_id', selectedStoreId);
+      } else if (!isAdmin && stores && stores.length > 0) {
+        // Regular user - only their stores
+        const storeIds = stores.map(s => s.id);
+        query = query.in('store_id', storeIds);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!user && (isAdmin || !!stores)
   });
 
+  // Query for orders - filtered by selected store
   const { data: orders } = useQuery({
-    queryKey: ['orders'],
+    queryKey: ['orders', selectedStoreId, isAdmin, stores],
     queryFn: async () => {
-      const { data, error } = await supabase.from('orders').select('*');
+      let query = supabase.from('orders').select('*');
+      
+      if (selectedStoreId) {
+        // Specific store selected
+        query = query.eq('store_id', selectedStoreId);
+      } else if (!isAdmin && stores && stores.length > 0) {
+        // Regular user - only their stores
+        const storeIds = stores.map(s => s.id);
+        query = query.in('store_id', storeIds);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!user && (isAdmin || !!stores)
   });
 
   // Calculate dashboard statistics
@@ -55,12 +96,32 @@ const Index = () => {
 
   return (
     <Shell>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Overview of your store performance
-          </p>
+      <div className="space-y-6 sm:space-y-8">
+        {/* Header with Store Selector */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Dashboard {isAdmin && "- מנהל ראשי"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {selectedStoreId 
+                ? `סטטיסטיקות עבור: ${stores?.find(s => s.id === selectedStoreId)?.name}`
+                : isAdmin 
+                  ? "סטטיסטיקות כלליות לכל החנויות" 
+                  : "סקירה כללית של החנויות שלך"
+              }
+            </p>
+          </div>
+          
+          {/* Store Selector - only if multiple stores or admin */}
+          {stores && (isAdmin || stores.length > 1) && (
+            <StoreSelector
+              stores={stores}
+              selectedStoreId={selectedStoreId}
+              onStoreSelect={setSelectedStoreId}
+              isAdmin={isAdmin}
+            />
+          )}
         </div>
 
         <StatCards 
