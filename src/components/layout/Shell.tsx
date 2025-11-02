@@ -24,19 +24,17 @@ export function Shell({ children }: ShellProps) {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className={cn(
-          "flex flex-1 flex-col transition-all duration-300",
-          isRTL ? "lg:pr-72" : "lg:pl-72"
-        )}>
-          <TopBar />
-          {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
-          <div className="flex-1 px-3 py-16 sm:px-4 sm:py-20 lg:px-8">
-            {children}
-          </div>
-        </main>
-      </div>
+      <Sidebar />
+      <TopBar />
+      <main className={cn(
+        "flex flex-1 flex-col transition-all duration-300",
+        isRTL ? "lg:pr-72" : "lg:pl-72"
+      )}>
+        {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
+        <div className="flex-1 px-3 py-16 sm:px-4 sm:py-20 lg:px-8">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

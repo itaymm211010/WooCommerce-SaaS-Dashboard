@@ -37,7 +37,7 @@ export const TopBar = () => {
     <header className={cn(
       "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       "fixed w-full top-0 z-40 transition-all duration-300",
-      isRTL ? "lg:pr-72 lg:w-[calc(100%-288px)]" : "lg:pl-72 lg:w-[calc(100%-288px)]"
+      isRTL ? "lg:pr-72" : "lg:pl-72"
     )}>
       <div className="flex h-14 sm:h-16 items-center px-4 sm:px-6 gap-2 sm:gap-4">
         <div className="lg:hidden w-12" /> {/* Spacing for mobile menu button */}
