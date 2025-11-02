@@ -25,7 +25,7 @@ export function Shell({ children }: ShellProps) {
         <main className="flex flex-1 flex-col lg:pl-72">
           <TopBar />
           {/* Add proper spacing to prevent content from being hidden under the fixed TopBar */}
-          <div className="flex-1 px-4 py-20 sm:px-6 lg:px-8">
+          <div className="flex-1 px-3 py-16 sm:px-4 sm:py-20 lg:px-8">
             {children}
           </div>
         </main>

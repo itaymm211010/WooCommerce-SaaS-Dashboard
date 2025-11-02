@@ -10,6 +10,7 @@ import { formatCurrency } from "../../../utils/currencyUtils";
 import { Edit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { MobileProductCard } from "./MobileProductCard";
 
 interface ProductsTableProps {
   products: Product[];
@@ -41,79 +42,91 @@ export function ProductsTable({
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button asChild>
+        <Button asChild size="sm">
           <Link to={`/stores/${store?.id}/products/new/edit`} className="inline-flex items-center">
             <Plus className="mr-2 h-4 w-4" />
-            מוצר חדש
+            <span className="hidden sm:inline">מוצר חדש</span>
+            <span className="sm:hidden">חדש</span>
           </Link>
         </Button>
       </div>
-      <Table className="min-w-full border rounded-lg overflow-hidden">
-        <TableHeader className="bg-muted">
-          <TableRow>
-            <TableHead
-              className="cursor-pointer"
-              onClick={() => sortProducts("name")}
-            >
-              שם מוצר
-              {sortField === "name" && " 🔍"}
-            </TableHead>
-            <TableHead>סוג מוצר</TableHead>
-            <TableHead
-              className="cursor-pointer"
-              onClick={() => sortProducts("status")}
-            >
-              סטטוס
-              {sortField === "status" && " 🔍"}
-            </TableHead>
-            <TableHead
-              className="cursor-pointer text-right"
-              onClick={() => sortProducts("price")}
-            >
-              מחיר
-              {sortField === "price" && " 🔍"}
-            </TableHead>
-            <TableHead
-              className="cursor-pointer text-right"
-              onClick={() => sortProducts("stock_quantity")}
-            >
-              מלאי
-              {sortField === "stock_quantity" && " 🔍"}
-            </TableHead>
-            <TableHead className="text-center">פעולות</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell>{product.name}</TableCell>
-              <TableCell>
-                <Badge variant="secondary">
-                  {product.type === 'variable' ? 'משתנה' : product.type === 'simple' ? 'פשוט' : product.type}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={getStatusColor(product.status)}>
-                  {product.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(product.price || 0, store?.currency || "USD")}
-              </TableCell>
-              <TableCell className="text-right">
-                {product.stock_quantity !== null ? product.stock_quantity : "לא מנוהל"}
-              </TableCell>
-              <TableCell className="text-center">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to={`/stores/${store?.id}/products/${product.id}/edit`}>
-                    <Edit className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </TableCell>
+      
+      {/* Mobile View */}
+      <div className="space-y-4 md:hidden">
+        {products.map((product) => (
+          <MobileProductCard key={product.id} product={product} store={store} />
+        ))}
+      </div>
+      
+      {/* Desktop View */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table className="min-w-full border rounded-lg">
+          <TableHeader className="bg-muted">
+            <TableRow>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => sortProducts("name")}
+              >
+                שם מוצר
+                {sortField === "name" && " 🔍"}
+              </TableHead>
+              <TableHead>סוג מוצר</TableHead>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => sortProducts("status")}
+              >
+                סטטוס
+                {sortField === "status" && " 🔍"}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer text-right"
+                onClick={() => sortProducts("price")}
+              >
+                מחיר
+                {sortField === "price" && " 🔍"}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer text-right"
+                onClick={() => sortProducts("stock_quantity")}
+              >
+                מלאי
+                {sortField === "stock_quantity" && " 🔍"}
+              </TableHead>
+              <TableHead className="text-center">פעולות</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {products.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>{product.name}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">
+                    {product.type === 'variable' ? 'משתנה' : product.type === 'simple' ? 'פשוט' : product.type}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={getStatusColor(product.status)}>
+                    {product.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(product.price || 0, store?.currency || "USD")}
+                </TableCell>
+                <TableCell className="text-right">
+                  {product.stock_quantity !== null ? product.stock_quantity : "לא מנוהל"}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link to={`/stores/${store?.id}/products/${product.id}/edit`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </>
   );
 }

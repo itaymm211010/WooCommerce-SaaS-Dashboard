@@ -50,7 +50,7 @@ export default function StoreProductsPage() {
 
   return (
     <Shell>
-      <div className="space-y-6 w-full max-w-full">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full">
         <ProductsHeader
           store={store}
           isSyncing={isSyncing}
@@ -65,21 +65,19 @@ export default function StoreProductsPage() {
         <div className="relative w-full">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search products by name..."
+            placeholder="חיפוש מוצרים..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 w-full"
+            className="pl-8 w-full text-sm"
           />
         </div>
 
-        <div className="w-full overflow-x-auto">
-          <ProductsTable 
-            products={paginatedProducts}
-            sortField={sortField}
-            sortProducts={sortProducts}
-            store={store}
-          />
-        </div>
+        <ProductsTable 
+          products={paginatedProducts}
+          sortField={sortField}
+          sortProducts={sortProducts}
+          store={store}
+        />
 
         <ProductsPagination
           currentPage={currentPage}

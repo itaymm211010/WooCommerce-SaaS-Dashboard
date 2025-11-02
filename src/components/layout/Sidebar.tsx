@@ -138,9 +138,9 @@ export const Sidebar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden fixed left-4 top-4 z-50"
+            className="lg:hidden fixed left-2 top-2 z-50 h-10 w-10"
           >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">

@@ -16,31 +16,32 @@ export function OrdersHeader({
   onSyncOrders,
 }: OrdersHeaderProps) {
   return (
-    <div className="flex items-center gap-4">
-      <Link to="/stores">
-        <Button variant="ghost" size="icon">
-          <ArrowLeft className="h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <Link to="/stores">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight truncate">
+            {storeName ? `${storeName} - Orders` : 'Orders'}
+          </h1>
+          <p className="text-sm text-muted-foreground hidden sm:block">
+            Manage your store orders
+          </p>
+        </div>
+        <Button 
+          onClick={onSyncOrders}
+          size="sm"
+          className="gap-2"
+          disabled={isSyncing}
+        >
+          <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
+          <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Orders'}</span>
+          <span className="sm:hidden">Sync</span>
         </Button>
-      </Link>
-      <div className="flex-1">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {storeName ? `${storeName} - Orders` : 'Orders'}
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your store orders
-        </p>
       </div>
-      <Button 
-        onClick={onSyncOrders} 
-        className="gap-2"
-        disabled={isSyncing}
-      >
-        <RefreshCw className={cn(
-          "h-4 w-4",
-          isSyncing && "animate-spin"
-        )} />
-        {isSyncing ? 'Syncing...' : 'Sync Orders'}
-      </Button>
     </div>
   );
 }
