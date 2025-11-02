@@ -166,7 +166,6 @@ export const EditDeploymentDialog = ({
                 <SelectValue placeholder="בחר ספרינט" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">ללא ספרינט</SelectItem>
                 {sprints?.map((sprint) => (
                   <SelectItem key={sprint.id} value={sprint.id}>
                     {sprint.name}

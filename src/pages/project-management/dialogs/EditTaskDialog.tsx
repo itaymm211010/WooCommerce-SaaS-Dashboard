@@ -199,7 +199,6 @@ export const EditTaskDialog = ({ task }: EditTaskDialogProps) => {
                 <SelectValue placeholder="בחר ספרינט" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">ללא ספרינט</SelectItem>
                 {sprints?.map((sprint) => (
                   <SelectItem key={sprint.id} value={sprint.id}>
                     {sprint.name}
