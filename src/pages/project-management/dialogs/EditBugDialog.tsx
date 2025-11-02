@@ -114,10 +114,11 @@ export const EditBugDialog = ({ bug }: EditBugDialogProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">נמוכה</SelectItem>
-                  <SelectItem value="medium">בינונית</SelectItem>
-                  <SelectItem value="high">גבוהה</SelectItem>
-                  <SelectItem value="critical">קריטית</SelectItem>
+                  <SelectItem value="minor">קל</SelectItem>
+                  <SelectItem value="moderate">בינוני</SelectItem>
+                  <SelectItem value="major">משמעותי</SelectItem>
+                  <SelectItem value="critical">קריטי</SelectItem>
+                  <SelectItem value="blocker">חוסם</SelectItem>
                 </SelectContent>
               </Select>
             </div>
