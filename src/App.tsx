@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // Pages
 import Index from "./pages/Index";
@@ -44,6 +45,8 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 
 function HandleInvites() {
+  const { t } = useTranslation();
+  
   useEffect(() => {
     const handleMagicLink = async () => {
       const url = new URL(window.location.href);
@@ -74,24 +77,36 @@ function HandleInvites() {
                 
               if (storeUserError) throw storeUserError;
                 
-              toast.success("ברוך הבא! הצטרפת בהצלחה לחנות");
+              toast.success(t('common.success'));
               
               window.location.href = `/stores/${userData.invite_to_store}/orders`;
             } else {
-              toast.success("ברוך הבא! התחברת בהצלחה");
+              toast.success(t('common.success'));
               
               window.history.replaceState({}, document.title, window.location.pathname);
             }
           }
         } catch (error: any) {
           console.error("Error handling invitation:", error);
-          toast.error(`אירעה שגיאה בעת הכניסה: ${error.message}`);
+          toast.error(`${t('common.error')}: ${error.message}`);
         }
       }
     };
     
     handleMagicLink();
-  }, []);
+  }, [t]);
+  
+  return null;
+}
+
+function RTLProvider() {
+  const { i18n } = useTranslation();
+  
+  useEffect(() => {
+    const direction = i18n.language === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.dir = direction;
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
   
   return null;
 }
@@ -101,6 +116,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <RTLProvider />
           <HandleInvites />
           <Routes>
             <Route 

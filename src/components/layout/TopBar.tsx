@@ -6,11 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ThemeSelector } from "./ThemeSelector";
+import { LanguageSelector } from "./LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 export const TopBar = () => {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -19,10 +22,10 @@ export const TopBar = () => {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      toast.success("התנתקת בהצלחה");
+      toast.success(t('common.success'));
       navigate("/auth/signin");
     } catch (error) {
-      toast.error("שגיאה בהתנתקות");
+      toast.error(t('common.error'));
     }
   };
 
@@ -33,6 +36,7 @@ export const TopBar = () => {
         <div className="flex flex-1 items-center justify-between">
           <div />
           <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageSelector />
             <ThemeSelector />
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 sm:h-10 sm:w-10">
               {theme === "dark" ? (
@@ -53,7 +57,7 @@ export const TopBar = () => {
                 size="icon" 
                 onClick={handleLogout}
                 className="h-8 w-8 sm:h-10 sm:w-10"
-                title="התנתק"
+                title={t('common.logout')}
               >
                 <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>

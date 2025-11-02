@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 const themes = [
   { name: "Purple", value: "purple", class: "" },
@@ -56,6 +57,7 @@ function hexToHSL(hex: string): string {
 export function ThemeSelector() {
   const [currentTheme, setCurrentTheme] = useState("purple");
   const [customColor, setCustomColor] = useState("#8B5CF6");
+  const { t } = useTranslation();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("color-theme") || "purple";
@@ -157,7 +159,7 @@ export function ThemeSelector() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Palette className="h-5 w-5" />
-          <span className="sr-only">Select color theme</span>
+          <span className="sr-only">{t('common.selectTheme')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -176,7 +178,7 @@ export function ThemeSelector() {
         <DropdownMenuSeparator />
         <div className="px-2 py-3 space-y-2">
           <Label htmlFor="custom-color" className="text-sm font-medium">
-            Custom Color
+            {t('common.customColor')}
           </Label>
           <div className="flex items-center gap-2">
             <Input
@@ -191,7 +193,7 @@ export function ThemeSelector() {
               variant={currentTheme === "custom" ? "default" : "outline"}
               onClick={() => handleThemeChange("custom")}
             >
-              Apply
+              {t('common.apply')}
             </Button>
           </div>
         </div>
