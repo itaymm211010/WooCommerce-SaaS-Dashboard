@@ -9,9 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { CreateBugDialog } from "./dialogs/CreateBugDialog";
+import { EditBugDialog } from "./dialogs/EditBugDialog";
 
 export const BugReportsTab = () => {
   const { data: bugs, isLoading } = useQuery({
@@ -19,7 +21,10 @@ export const BugReportsTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bug_reports")
-        .select("*")
+        .select(`
+          *,
+          reporter:profiles!bug_reports_reporter_id_fkey(first_name, last_name, email)
+        `)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -72,41 +77,51 @@ export const BugReportsTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Severity</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Resolved</TableHead>
+              <TableHead>כותרת</TableHead>
+              <TableHead>חומרה</TableHead>
+              <TableHead>סטטוס</TableHead>
+              <TableHead>מדווח</TableHead>
+              <TableHead>תיאור</TableHead>
+              <TableHead>נוצר ב</TableHead>
+              <TableHead>נפתר ב</TableHead>
+              <TableHead>פעולות</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bugs?.map((bug) => (
-              <TableRow key={bug.id}>
-                <TableCell className="font-medium">{bug.title}</TableCell>
-                <TableCell>
-                  <Badge variant={getSeverityColor(bug.severity)}>
-                    {bug.severity}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusColor(bug.status)}>
-                    {bug.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="max-w-md truncate">
-                  {bug.description}
-                </TableCell>
-                <TableCell>
-                  {format(new Date(bug.created_at), "MMM d, yyyy")}
-                </TableCell>
-                <TableCell>
-                  {bug.resolved_at
-                    ? format(new Date(bug.resolved_at), "MMM d, yyyy")
-                    : "-"}
-                </TableCell>
-              </TableRow>
-            ))}
+              {bugs?.map((bug) => (
+                <TableRow key={bug.id}>
+                  <TableCell className="font-medium">{bug.title}</TableCell>
+                  <TableCell>
+                    <Badge variant={getSeverityColor(bug.severity)}>
+                      {bug.severity}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusColor(bug.status)}>
+                      {bug.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {bug.reporter 
+                      ? `${bug.reporter.first_name || ''} ${bug.reporter.last_name || ''}`.trim() || bug.reporter.email
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="max-w-md truncate">
+                    {bug.description}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(bug.created_at), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    {bug.resolved_at
+                      ? format(new Date(bug.resolved_at), "MMM d, yyyy")
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <EditBugDialog bug={bug} />
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </CardContent>

@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { GitCommit, Clock } from "lucide-react";
+import { GitCommit, Clock, User } from "lucide-react";
 import { CreateDeploymentDialog } from "./dialogs/CreateDeploymentDialog";
+import { EditDeploymentDialog } from "./dialogs/EditDeploymentDialog";
 
 export const DeploymentsTab = () => {
   const { data: deployments, isLoading } = useQuery({
@@ -12,7 +13,10 @@ export const DeploymentsTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deployments")
-        .select("*")
+        .select(`
+          *,
+          deployer:profiles!deployments_deployed_by_fkey(first_name, last_name, email)
+        `)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -68,6 +72,14 @@ export const DeploymentsTab = () => {
                 {format(new Date(deployment.created_at), "MMM d, yyyy HH:mm")}
               </span>
             </div>
+            {deployment.deployer && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>
+                  {`${deployment.deployer.first_name || ''} ${deployment.deployer.last_name || ''}`.trim() || deployment.deployer.email}
+                </span>
+              </div>
+            )}
             {deployment.notes && (
               <p className="text-sm text-muted-foreground">{deployment.notes}</p>
             )}
@@ -78,6 +90,9 @@ export const DeploymentsTab = () => {
                 </p>
               </div>
             )}
+            <div className="flex justify-end mt-2">
+              <EditDeploymentDialog deployment={deployment} />
+            </div>
           </CardContent>
         </Card>
       ))}

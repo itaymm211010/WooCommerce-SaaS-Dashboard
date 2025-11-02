@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,113 +20,117 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-export function CreateSprintDialog() {
+interface EditSprintDialogProps {
+  sprint: any;
+}
+
+export const EditSprintDialog = ({ sprint }: EditSprintDialogProps) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    start_date: "",
-    end_date: "",
-    status: "planned",
+    name: sprint.name,
+    description: sprint.description || "",
+    start_date: sprint.start_date.split('T')[0],
+    end_date: sprint.end_date.split('T')[0],
+    status: sprint.status,
   });
 
-  const createSprint = useMutation({
-    mutationFn: async (data: any) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("sprints").insert([{
-        ...data,
-        created_by: user?.id
-      }]);
+  const updateSprint = useMutation({
+    mutationFn: async (updatedSprint: typeof formData) => {
+      const { data, error } = await supabase
+        .from("sprints")
+        .update(updatedSprint)
+        .eq("id", sprint.id)
+        .select()
+        .single();
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sprints"] });
-      toast.success("הספרינט נוצר בהצלחה");
+      toast.success("הספרינט עודכן בהצלחה");
       setOpen(false);
-      setFormData({
-        name: "",
-        description: "",
-        start_date: "",
-        end_date: "",
-        status: "planned",
-      });
     },
     onError: (error) => {
-      toast.error("שגיאה ביצירת הספרינט");
-      console.error(error);
+      toast.error("שגיאה בעדכון הספרינט: " + error.message);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createSprint.mutate(formData);
+    updateSprint.mutate(formData);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          ספרינט חדש
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-4 w-4 ml-2" />
+          ערוך
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>יצירת ספרינט חדש</DialogTitle>
+          <DialogTitle>עריכת ספרינט</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="name">שם הספרינט</Label>
             <Input
               id="name"
-              required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
             />
           </div>
-
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="description">תיאור</Label>
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="start_date">תאריך התחלה</Label>
               <Input
                 id="start_date"
                 type="date"
-                required
                 value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, start_date: e.target.value })
+                }
+                required
               />
             </div>
-
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="end_date">תאריך סיום</Label>
               <Input
                 id="end_date"
                 type="date"
-                required
                 value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, end_date: e.target.value })
+                }
+                required
               />
             </div>
           </div>
-
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="status">סטטוס</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, status: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -138,17 +142,20 @@ export function CreateSprintDialog() {
               </SelectContent>
             </Select>
           </div>
-
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               ביטול
             </Button>
-            <Button type="submit" disabled={createSprint.isPending}>
-              {createSprint.isPending ? "יוצר..." : "צור ספרינט"}
+            <Button type="submit" disabled={updateSprint.isPending}>
+              {updateSprint.isPending ? "שומר..." : "שמור"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};

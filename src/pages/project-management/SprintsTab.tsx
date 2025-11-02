@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Calendar } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import { CreateSprintDialog } from "./dialogs/CreateSprintDialog";
+import { EditSprintDialog } from "./dialogs/EditSprintDialog";
 
 export const SprintsTab = () => {
   const { data: sprints, isLoading } = useQuery({
@@ -12,7 +13,10 @@ export const SprintsTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprints")
-        .select("*")
+        .select(`
+          *,
+          creator:profiles!sprints_created_by_fkey(first_name, last_name, email)
+        `)
         .order("start_date", { ascending: false });
       if (error) throw error;
       return data;
@@ -64,6 +68,17 @@ export const SprintsTab = () => {
                 {format(new Date(sprint.start_date), "MMM d")} -{" "}
                 {format(new Date(sprint.end_date), "MMM d, yyyy")}
               </span>
+            </div>
+            {sprint.creator && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>
+                  {`${sprint.creator.first_name || ''} ${sprint.creator.last_name || ''}`.trim() || sprint.creator.email}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-end mt-2">
+              <EditSprintDialog sprint={sprint} />
             </div>
           </CardContent>
         </Card>
