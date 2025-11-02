@@ -44,13 +44,14 @@ export function useCreateTaxonomy(storeId: string) {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Invalidate and refetch queries to refresh data immediately
-      await queryClient.invalidateQueries({
-        queryKey: [`store-${type === 'category' ? 'categories' : type === 'tag' ? 'tags' : 'brands'}`, storeId],
-      });
+      const queryKey = type === 'category' 
+        ? ['store-categories', storeId]
+        : type === 'tag'
+        ? ['store-tags', storeId]
+        : ['store-brands', storeId];
       
-      await queryClient.refetchQueries({
-        queryKey: [`store-${type === 'category' ? 'categories' : type === 'tag' ? 'tags' : 'brands'}`, storeId],
-      });
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.refetchQueries({ queryKey });
 
       toast.success(`${type === 'category' ? 'קטגוריה' : type === 'tag' ? 'תג' : 'מותג'} נוצר בהצלחה`);
 
