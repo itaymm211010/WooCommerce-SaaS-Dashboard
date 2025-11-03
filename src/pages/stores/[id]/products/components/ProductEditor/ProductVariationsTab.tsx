@@ -80,11 +80,24 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
     if (!variation.attributes || !Array.isArray(variation.attributes)) {
       return 'ללא תכונות';
     }
-    
+
     const attrs = variation.attributes as any[];
     if (attrs.length === 0) return 'ללא תכונות';
-    
-    return attrs.map((attr: any) => attr.option || attr.value).filter(Boolean).join(' / ');
+
+    // Try to get the readable name from the attributes
+    // WooCommerce variation attributes have: name (attribute name) and option (value)
+    return attrs
+      .map((attr: any) => {
+        // Decode URL-encoded strings (like %d7%9c%d7%91%d7%9f)
+        const value = attr.option || attr.value || '';
+        try {
+          return decodeURIComponent(value);
+        } catch {
+          return value;
+        }
+      })
+      .filter(Boolean)
+      .join(' / ');
   };
 
   const handleAddVariation = () => {
