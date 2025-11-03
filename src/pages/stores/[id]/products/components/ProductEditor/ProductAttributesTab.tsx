@@ -56,17 +56,25 @@ export function ProductAttributesTab({
 
   const fetchGlobalAttributes = async () => {
     try {
+      console.log('Fetching global attributes for store:', storeId);
       const { data, error } = await supabase
         .from('store_attributes')
         .select('*')
         .eq('store_id', storeId)
         .order('name', { ascending: true });
 
-      if (error) throw error;
-      console.log('Fetched global attributes:', data);
+      if (error) {
+        console.error('❌ Error fetching global attributes:', error);
+        toast.error(`שגיאה בטעינת תכונות גלובליות: ${error.message}`);
+        return;
+      }
+
+      console.log('✅ Fetched global attributes:', data);
+      console.log('📊 Count:', data?.length || 0);
       setGlobalAttributes(data || []);
-    } catch (error) {
-      console.error('Error fetching global attributes:', error);
+    } catch (error: any) {
+      console.error('❌ Exception fetching global attributes:', error);
+      toast.error(`שגיאה: ${error.message}`);
     }
   };
 
