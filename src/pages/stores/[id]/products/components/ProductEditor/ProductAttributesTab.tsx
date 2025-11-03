@@ -5,9 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash2, Save, X } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, X, RefreshCw } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface GlobalAttribute {
+  id: string;
+  woo_id: number;
+  name: string;
+  slug: string;
+}
+
 interface Attribute {
   id: string;
   name: string;
@@ -16,6 +31,8 @@ interface Attribute {
   visible: boolean;
   position: number;
   woo_id?: number;
+  global_attribute_id?: string;
+  isGlobal?: boolean;
 }
 interface ProductAttributesTabProps {
   storeId: string;
@@ -26,12 +43,54 @@ export function ProductAttributesTab({
   productId
 }: ProductAttributesTabProps) {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [globalAttributes, setGlobalAttributes] = useState<GlobalAttribute[]>([]);
   const [newOptions, setNewOptions] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   useEffect(() => {
     fetchAttributes();
+    fetchGlobalAttributes();
   }, [storeId, productId]);
+
+  const fetchGlobalAttributes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('store_attributes')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setGlobalAttributes(data || []);
+    } catch (error) {
+      console.error('Error fetching global attributes:', error);
+    }
+  };
+
+  const syncGlobalAttributes = async () => {
+    try {
+      setIsSyncing(true);
+      toast.loading('מסנכרן תכונות גלובליות מ-WooCommerce...', { id: 'sync-attrs' });
+
+      const { data, error } = await supabase.functions.invoke('sync-global-attributes', {
+        body: { store_id: storeId }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`סונכרנו ${data.stats.total} תכונות גלובליות`, { id: 'sync-attrs' });
+        await fetchGlobalAttributes();
+      }
+    } catch (error: any) {
+      console.error('Error syncing global attributes:', error);
+      toast.error(`שגיאה בסנכרון: ${error.message}`, { id: 'sync-attrs' });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   const fetchAttributes = async () => {
     try {
       setIsLoading(true);
@@ -59,16 +118,32 @@ export function ProductAttributesTab({
       setIsLoading(false);
     }
   };
-  const handleAddAttribute = () => {
+  const handleAddAttribute = (type: 'global' | 'custom' = 'custom') => {
     const newAttribute: Attribute = {
       id: `temp-${Date.now()}`,
       name: '',
       options: [],
       variation: true,
       visible: true,
-      position: attributes.length
+      position: attributes.length,
+      isGlobal: type === 'global'
     };
     setAttributes([...attributes, newAttribute]);
+  };
+
+  const handleSelectGlobalAttribute = (index: number, globalAttrId: string) => {
+    const globalAttr = globalAttributes.find(ga => ga.id === globalAttrId);
+    if (!globalAttr) return;
+
+    const updatedAttributes = [...attributes];
+    updatedAttributes[index] = {
+      ...updatedAttributes[index],
+      name: globalAttr.name,
+      global_attribute_id: globalAttr.id,
+      woo_id: globalAttr.woo_id,
+      isGlobal: true
+    };
+    setAttributes(updatedAttributes);
   };
   const handleUpdateAttribute = (index: number, field: keyof Attribute, value: any) => {
     const updatedAttributes = [...attributes];
@@ -127,7 +202,9 @@ export function ProductAttributesTab({
             options: attribute.options,
             variation: attribute.variation,
             visible: attribute.visible,
-            position: attribute.position
+            position: attribute.position,
+            global_attribute_id: attribute.global_attribute_id || null,
+            woo_id: attribute.woo_id || 0
           });
           if (error) throw error;
         } else {
@@ -138,7 +215,9 @@ export function ProductAttributesTab({
             options: attribute.options,
             variation: attribute.variation,
             visible: attribute.visible,
-            position: attribute.position
+            position: attribute.position,
+            global_attribute_id: attribute.global_attribute_id || null,
+            woo_id: attribute.woo_id || 0
           }).eq('id', attribute.id);
           if (error) throw error;
         }
@@ -194,9 +273,13 @@ export function ProductAttributesTab({
           </p>
         </div>
         <div className="space-x-2 space-x-reverse">
-          <Button onClick={handleAddAttribute} variant="outline" size="sm">
+          <Button onClick={syncGlobalAttributes} variant="outline" size="sm" disabled={isSyncing}>
+            {isSyncing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+            סנכרן תכונות
+          </Button>
+          <Button onClick={() => handleAddAttribute('custom')} variant="outline" size="sm">
             <Plus className="h-4 w-4 ml-2" />
-            הוסף תכונה
+            תכונה מותאמת
           </Button>
           <Button onClick={handleSaveAttributes} disabled={isSaving} size="sm">
             {isSaving ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Save className="h-4 w-4 ml-2" />}
@@ -206,8 +289,20 @@ export function ProductAttributesTab({
       </div>
 
       {attributes.length === 0 ? <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            אין תכונות למוצר זה. לחץ על "הוסף תכונה" כדי להתחיל.
+          <CardContent className="py-8 text-center">
+            <p className="text-muted-foreground mb-4">
+              אין תכונות למוצר זה.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => handleAddAttribute('global')} variant="outline" size="sm">
+                <Plus className="h-4 w-4 ml-2" />
+                בחר תכונה גלובלית
+              </Button>
+              <Button onClick={() => handleAddAttribute('custom')} variant="outline" size="sm">
+                <Plus className="h-4 w-4 ml-2" />
+                צור תכונה מותאמת
+              </Button>
+            </div>
           </CardContent>
         </Card> : <div className="space-y-4">
           {attributes.map((attribute, index) => <Card key={attribute.id} className={index % 2 === 0 ? "bg-[#f3f3f3]" : "bg-[#fbf9ed]"}>
@@ -220,10 +315,38 @@ export function ProductAttributesTab({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-900 dark:text-slate-100">שם התכונה (למשל: צבע, גודל)</Label>
-                  <Input value={attribute.name} onChange={e => handleUpdateAttribute(index, 'name', e.target.value)} placeholder="שם התכונה" />
-                </div>
+                {attribute.isGlobal && !attribute.global_attribute_id ? (
+                  <div className="space-y-2">
+                    <Label className="text-slate-900 dark:text-slate-100">בחר תכונה גלובלית</Label>
+                    <Select onValueChange={(value) => handleSelectGlobalAttribute(index, value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר תכונה קיימת..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {globalAttributes.map((ga) => (
+                          <SelectItem key={ga.id} value={ga.id}>
+                            {ga.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {globalAttributes.length === 0 ? 'אין תכונות גלובליות. לחץ על "סנכרן תכונות" כדי לייבא מ-WooCommerce.' : 'בחר תכונה שמוגדרת ב-WooCommerce'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label className="text-slate-900 dark:text-slate-100">
+                      שם התכונה {attribute.global_attribute_id && <Badge variant="secondary" className="mr-2">גלובלית</Badge>}
+                    </Label>
+                    <Input
+                      value={attribute.name}
+                      onChange={e => handleUpdateAttribute(index, 'name', e.target.value)}
+                      placeholder="שם התכונה"
+                      disabled={!!attribute.global_attribute_id}
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label className="text-slate-900 dark:text-slate-100">אפשרויות</Label>

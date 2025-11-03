@@ -367,14 +367,23 @@ export async function transformProductForWooCommerce(product: any, store: any) {
 
   // Add attributes if available (for variable products)
   if (product.attributes && Array.isArray(product.attributes)) {
-    wooProduct.attributes = product.attributes.map((attr: any) => ({
-      id: attr.woo_id || 0,
-      name: attr.name,
-      options: attr.options || [],
-      visible: attr.visible !== false,
-      variation: attr.variation !== false,
-      position: attr.position || 0
-    }));
+    wooProduct.attributes = product.attributes.map((attr: any) => {
+      const wooAttr: any = {
+        id: attr.woo_id || 0,
+        options: attr.options || [],
+        visible: attr.visible !== false,
+        variation: attr.variation !== false,
+        position: attr.position || 0
+      };
+
+      // Only add 'name' for custom attributes (id = 0)
+      // Global attributes (id > 0) should NOT have 'name' field
+      if (!attr.woo_id || attr.woo_id === 0) {
+        wooAttr.name = attr.name;
+      }
+
+      return wooAttr;
+    });
     console.log('Adding attributes:', JSON.stringify(wooProduct.attributes));
   }
 
