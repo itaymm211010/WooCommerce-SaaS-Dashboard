@@ -32,21 +32,55 @@ export async function fetchWooCommerceVariations(store: any, productWooId: numbe
 
 // Sync WooCommerce variations to our database
 export async function syncVariationsFromWooCommerce(
-  supabase: any, 
-  storeId: string, 
-  productId: string, 
-  productWooId: number, 
+  supabase: any,
+  storeId: string,
+  productId: string,
+  productWooId: number,
   store: any
 ) {
   console.log(`🔄 Syncing variations from WooCommerce for product ${productWooId}...`)
-  
+
   const wooVariations = await fetchWooCommerceVariations(store, productWooId)
-  
+
+  // Get all existing variations from our DB for this product
+  const { data: existingVariations } = await supabase
+    .from('product_variations')
+    .select('id, woo_id')
+    .eq('product_id', productId)
+    .eq('store_id', storeId)
+
   if (wooVariations.length === 0) {
     console.log('No variations found in WooCommerce')
+
+    // Delete all variations from DB if WooCommerce has none
+    if (existingVariations && existingVariations.length > 0) {
+      console.log(`🗑️ Deleting ${existingVariations.length} variations from DB (removed from WooCommerce)`)
+      await supabase
+        .from('product_variations')
+        .delete()
+        .eq('product_id', productId)
+        .eq('store_id', storeId)
+    }
+
     return
   }
-  
+
+  // Create a set of WooCommerce variation IDs
+  const wooVariationIds = new Set(wooVariations.map(v => v.id))
+
+  // Delete variations that exist in DB but not in WooCommerce
+  if (existingVariations && existingVariations.length > 0) {
+    for (const dbVar of existingVariations) {
+      if (dbVar.woo_id && !wooVariationIds.has(dbVar.woo_id)) {
+        console.log(`🗑️ Deleting variation ${dbVar.woo_id} (removed from WooCommerce)`)
+        await supabase
+          .from('product_variations')
+          .delete()
+          .eq('id', dbVar.id)
+      }
+    }
+  }
+
   let variationsSynced = 0
   
   for (const wooVar of wooVariations) {
