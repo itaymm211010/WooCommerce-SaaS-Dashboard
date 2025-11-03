@@ -213,19 +213,72 @@ export function ProductAttributesTab({
     setAttributes([...attributes, newAttribute]);
   };
 
-  const handleSelectGlobalAttribute = (index: number, globalAttrId: string) => {
+  const handleSelectGlobalAttribute = async (index: number, globalAttrId: string) => {
     const globalAttr = globalAttributes.find(ga => ga.id === globalAttrId);
     if (!globalAttr) return;
 
-    const updatedAttributes = [...attributes];
-    updatedAttributes[index] = {
-      ...updatedAttributes[index],
-      name: globalAttr.name,
-      global_attribute_id: globalAttr.id,
-      woo_id: globalAttr.woo_id,
-      isGlobal: true
-    };
-    setAttributes(updatedAttributes);
+    try {
+      toast.loading(`טוען ערכים עבור ${globalAttr.name}...`, { id: 'fetch-terms' });
+
+      // Get store details to fetch terms
+      const { data: store } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
+
+      if (!store) {
+        throw new Error('Store not found');
+      }
+
+      // Format base URL
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
+      // Fetch terms for this attribute
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/products/attributes/${globalAttr.woo_id}/terms?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch terms: ${response.status}`);
+      }
+
+      const terms = await response.json();
+      console.log(`Found ${terms.length} terms for ${globalAttr.name}:`, terms);
+
+      // Extract term names
+      const options = terms.map((term: any) => term.name);
+
+      const updatedAttributes = [...attributes];
+      updatedAttributes[index] = {
+        ...updatedAttributes[index],
+        name: globalAttr.name,
+        global_attribute_id: globalAttr.id,
+        woo_id: globalAttr.woo_id,
+        isGlobal: true,
+        options: options
+      };
+      setAttributes(updatedAttributes);
+
+      toast.success(`נטענו ${terms.length} ערכים עבור ${globalAttr.name}`, { id: 'fetch-terms' });
+    } catch (error: any) {
+      console.error('Error fetching attribute terms:', error);
+      toast.error(`שגיאה בטעינת ערכים: ${error.message}`, { id: 'fetch-terms' });
+
+      // Still set the attribute even if terms fail
+      const updatedAttributes = [...attributes];
+      updatedAttributes[index] = {
+        ...updatedAttributes[index],
+        name: globalAttr.name,
+        global_attribute_id: globalAttr.id,
+        woo_id: globalAttr.woo_id,
+        isGlobal: true
+      };
+      setAttributes(updatedAttributes);
+    }
   };
   const handleUpdateAttribute = (index: number, field: keyof Attribute, value: any) => {
     const updatedAttributes = [...attributes];
