@@ -93,8 +93,8 @@ export async function syncVariationsFromWooCommerce(
       .maybeSingle()
     
     if (existingByWooId) {
-      console.log(`✓ Variation ${wooVar.id} already exists in DB, updating price`)
-      // Update price from WooCommerce
+      console.log(`✓ Variation ${wooVar.id} already exists in DB, updating from WooCommerce`)
+      // Update variation with all data from WooCommerce
       await supabase
         .from('product_variations')
         .update({
@@ -102,7 +102,9 @@ export async function syncVariationsFromWooCommerce(
           regular_price: parseFloat(wooVar.regular_price || '0'),
           sale_price: wooVar.sale_price ? parseFloat(wooVar.sale_price) : null,
           stock_quantity: wooVar.stock_quantity,
-          stock_status: wooVar.stock_status || 'instock'
+          stock_status: wooVar.stock_status || 'instock',
+          sku: wooVar.sku || '',
+          attributes: wooVar.attributes || []
         })
         .eq('id', existingByWooId.id)
       variationsSynced++
