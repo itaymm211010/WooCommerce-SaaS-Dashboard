@@ -98,10 +98,54 @@ serve(async (req) => {
           throw new Error(`Failed to update product: ${updateError.message}`)
         }
         console.log('Successfully updated product')
+
+        // Sync attributes for variable products
+        if (product.type === 'variable' && product.attributes && Array.isArray(product.attributes)) {
+          console.log(`Syncing ${product.attributes.length} attributes from WooCommerce`)
+
+          for (const wooAttr of product.attributes) {
+            // Check if attribute already exists
+            const { data: existingAttr } = await supabase
+              .from('product_attributes')
+              .select('id')
+              .eq('product_id', existingProduct.id)
+              .eq('name', wooAttr.name)
+              .maybeSingle()
+
+            if (existingAttr) {
+              // Update existing attribute
+              await supabase
+                .from('product_attributes')
+                .update({
+                  options: wooAttr.options || [],
+                  visible: wooAttr.visible !== false,
+                  variation: wooAttr.variation !== false,
+                  position: wooAttr.position || 0,
+                  woo_id: wooAttr.id || 0
+                })
+                .eq('id', existingAttr.id)
+            } else {
+              // Insert new attribute
+              await supabase
+                .from('product_attributes')
+                .insert({
+                  store_id: store_id,
+                  product_id: existingProduct.id,
+                  name: wooAttr.name,
+                  options: wooAttr.options || [],
+                  visible: wooAttr.visible !== false,
+                  variation: wooAttr.variation !== false,
+                  position: wooAttr.position || 0,
+                  woo_id: wooAttr.id || 0
+                })
+            }
+          }
+          console.log('Successfully synced attributes from WooCommerce')
+        }
       } else {
         // הכנס מוצר חדש
         console.log('Inserting new product')
-        const { error: insertError } = await supabase
+        const { data: newProduct, error: insertError } = await supabase
           .from('products')
           .insert({
             store_id: store_id,
@@ -117,11 +161,34 @@ serve(async (req) => {
             manage_stock: product.manage_stock,
             stock_status: product.stock_status
           })
+          .select()
+          .single()
 
         if (insertError) {
           throw new Error(`Failed to insert product: ${insertError.message}`)
         }
         console.log('Successfully inserted new product')
+
+        // Sync attributes for variable products
+        if (product.type === 'variable' && product.attributes && Array.isArray(product.attributes) && newProduct) {
+          console.log(`Syncing ${product.attributes.length} attributes from WooCommerce for new product`)
+
+          for (const wooAttr of product.attributes) {
+            await supabase
+              .from('product_attributes')
+              .insert({
+                store_id: store_id,
+                product_id: newProduct.id,
+                name: wooAttr.name,
+                options: wooAttr.options || [],
+                visible: wooAttr.visible !== false,
+                variation: wooAttr.variation !== false,
+                position: wooAttr.position || 0,
+                woo_id: wooAttr.id || 0
+              })
+          }
+          console.log('Successfully synced attributes from WooCommerce for new product')
+        }
       }
 
       return new Response(JSON.stringify({ success: true }), {
