@@ -190,7 +190,9 @@ export function ProductAttributesTab({
         variation: attr.variation,
         visible: attr.visible,
         position: attr.position,
-        woo_id: attr.woo_id || undefined
+        woo_id: attr.woo_id || undefined,
+        global_attribute_id: attr.global_attribute_id || undefined,
+        isGlobal: !!attr.global_attribute_id
       }));
       setAttributes(formattedAttributes);
     } catch (error) {
