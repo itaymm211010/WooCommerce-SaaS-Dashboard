@@ -74,16 +74,74 @@ export function ProductAttributesTab({
       setIsSyncing(true);
       toast.loading('מסנכרן תכונות גלובליות מ-WooCommerce...', { id: 'sync-attrs' });
 
-      const { data, error } = await supabase.functions.invoke('sync-global-attributes', {
-        body: { store_id: storeId }
-      });
+      // Get store details first
+      const { data: store, error: storeError } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
 
-      if (error) throw error;
+      if (storeError) throw storeError;
 
-      if (data?.success) {
-        toast.success(`סונכרנו ${data.stats.total} תכונות גלובליות`, { id: 'sync-attrs' });
-        await fetchGlobalAttributes();
+      // Format base URL
+      let baseUrl = store.url.replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
       }
+
+      // Fetch global attributes from WooCommerce directly
+      const response = await fetch(
+        `${baseUrl}/wp-json/wc/v3/products/attributes?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
+      );
+
+      if (!response.ok) {
+        throw new Error(`WooCommerce API error: ${response.status}`);
+      }
+
+      const attributes = await response.json();
+      console.log(`Found ${attributes.length} global attributes`);
+
+      let synced = 0;
+      let created = 0;
+      let updated = 0;
+
+      // Sync each attribute
+      for (const attr of attributes) {
+        const { data: existing } = await supabase
+          .from('store_attributes')
+          .select('id')
+          .eq('store_id', storeId)
+          .eq('woo_id', attr.id)
+          .maybeSingle();
+
+        const attributeData = {
+          store_id: storeId,
+          woo_id: attr.id,
+          name: attr.name,
+          slug: attr.slug,
+          type: attr.type || 'select',
+          order_by: attr.order_by || 'menu_order',
+          has_archives: attr.has_archives || false,
+          updated_at: new Date().toISOString()
+        };
+
+        if (existing) {
+          await supabase
+            .from('store_attributes')
+            .update(attributeData)
+            .eq('id', existing.id);
+          updated++;
+        } else {
+          await supabase
+            .from('store_attributes')
+            .insert(attributeData);
+          created++;
+        }
+        synced++;
+      }
+
+      toast.success(`סונכרנו ${synced} תכונות (${created} חדשות, ${updated} עודכנו)`, { id: 'sync-attrs' });
+      await fetchGlobalAttributes();
     } catch (error: any) {
       console.error('Error syncing global attributes:', error);
       toast.error(`שגיאה בסנכרון: ${error.message}`, { id: 'sync-attrs' });
