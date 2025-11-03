@@ -59,19 +59,7 @@ export async function syncVariationsFromWooCommerce(
       .maybeSingle()
     
     if (existingByWooId) {
-      console.log(`✓ Variation ${wooVar.id} already exists in DB, updating price`)
-      // Update price from WooCommerce
-      await supabase
-        .from('product_variations')
-        .update({
-          price: parseFloat(wooVar.price || '0'),
-          regular_price: parseFloat(wooVar.regular_price || '0'),
-          sale_price: wooVar.sale_price ? parseFloat(wooVar.sale_price) : null,
-          stock_quantity: wooVar.stock_quantity,
-          stock_status: wooVar.stock_status || 'instock'
-        })
-        .eq('id', existingByWooId.id)
-      variationsSynced++
+      console.log(`✓ Variation ${wooVar.id} already exists in DB`)
       continue
     }
     
@@ -462,6 +450,7 @@ export async function updateWooCommerceVariation(store: any, productWooId: numbe
   
   const wooVariation = {
     sku: variation.sku || "",
+    price: variation.price ? variation.price.toString() : "0",
     regular_price: variation.regular_price ? variation.regular_price.toString() : "0",
     sale_price: variation.sale_price ? variation.sale_price.toString() : "",
     manage_stock: variation.stock_quantity !== null,
@@ -497,6 +486,7 @@ export async function createWooCommerceVariation(store: any, productWooId: numbe
   
   const wooVariation = {
     sku: variation.sku || "",
+    price: variation.price ? variation.price.toString() : "0",
     regular_price: variation.regular_price ? variation.regular_price.toString() : "0",
     sale_price: variation.sale_price ? variation.sale_price.toString() : "",
     manage_stock: variation.stock_quantity !== null,
@@ -548,19 +538,6 @@ export async function updateVariationWooId(supabase: any, variationId: string, w
 
   if (updateError) {
     console.error('Error updating variation with new WooCommerce ID:', updateError)
-    throw updateError
-  }
-}
-
-// Update variation in database with price from WooCommerce
-export async function updateVariationPrice(supabase: any, variationId: string, price: number) {
-  const { error: updateError } = await supabase
-    .from('product_variations')
-    .update({ price })
-    .eq('id', variationId)
-
-  if (updateError) {
-    console.error('Error updating variation price:', updateError)
     throw updateError
   }
 }
