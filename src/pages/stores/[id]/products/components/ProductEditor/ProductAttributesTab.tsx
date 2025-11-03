@@ -108,12 +108,17 @@ export function ProductAttributesTab({
 
       // Sync each attribute
       for (const attr of attributes) {
-        const { data: existing } = await supabase
+        const { data: existing, error: selectError } = await supabase
           .from('store_attributes')
           .select('id')
           .eq('store_id', storeId)
           .eq('woo_id', attr.id)
           .maybeSingle();
+
+        if (selectError) {
+          console.error('Error checking existing attribute:', selectError);
+          continue;
+        }
 
         const attributeData = {
           store_id: storeId,
@@ -127,15 +132,25 @@ export function ProductAttributesTab({
         };
 
         if (existing) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('store_attributes')
             .update(attributeData)
             .eq('id', existing.id);
+
+          if (updateError) {
+            console.error('Error updating attribute:', updateError);
+            continue;
+          }
           updated++;
         } else {
-          await supabase
+          const { error: insertError } = await supabase
             .from('store_attributes')
             .insert(attributeData);
+
+          if (insertError) {
+            console.error('Error inserting attribute:', attr.name, insertError);
+            continue;
+          }
           created++;
         }
         synced++;
