@@ -138,6 +138,16 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
     try {
       setIsSaving(true);
 
+      // Validate all variations before saving
+      for (const variation of variations) {
+        if (variation.sale_price && variation.regular_price &&
+            variation.sale_price >= variation.regular_price) {
+          toast.error('מחיר מבצע חייב להיות נמוך ממחיר רגיל בכל הוריאציות');
+          setIsSaving(false);
+          return;
+        }
+      }
+
       for (const variation of variations) {
         if (variation.id.startsWith('temp-')) {
           // Insert new variation
@@ -351,7 +361,19 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
                         )
                       }
                       placeholder="מחיר מבצע (אופציונלי)"
+                      className={
+                        variation.sale_price && variation.regular_price &&
+                        variation.sale_price >= variation.regular_price
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : ""
+                      }
                     />
+                    {variation.sale_price && variation.regular_price &&
+                     variation.sale_price >= variation.regular_price && (
+                      <p className="text-xs text-destructive">
+                        ⚠️ מחיר מבצע צריך להיות נמוך ממחיר רגיל
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>מחיר מוצג (אוטומטי)</Label>
