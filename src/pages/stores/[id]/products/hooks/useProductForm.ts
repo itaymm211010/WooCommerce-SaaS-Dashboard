@@ -112,22 +112,25 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
   const syncToWooCommerce = async (product: Partial<Product>) => {
     try {
       setSyncingToWoo(true);
-      
+
       console.log('מסנכרן מוצר ל-WooCommerce:', product.id);
-      
+
+      // Show syncing notification
+      toast.loading("מסנכרן עם WooCommerce...", { id: 'woo-sync' });
+
       const { data, error } = await supabase.functions.invoke('update-woo-product', {
-        body: { 
-          product, 
-          store_id: storeId 
+        body: {
+          product,
+          store_id: storeId
         }
       });
 
       if (error) {
         throw error;
       }
-      
+
       if (data?.success) {
-        toast.success("המוצר סונכרן בהצלחה עם WooCommerce");
+        toast.success("המוצר סונכרן בהצלחה עם WooCommerce", { id: 'woo-sync' });
         
         // If this was a new product, update the woo_id in our database
         if (product.woo_id === 0 && data.woo_id) {
@@ -146,7 +149,7 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
       }
     } catch (error: any) {
       console.error("Error syncing to WooCommerce:", error);
-      toast.error(`שגיאה בסנכרון ל-WooCommerce: ${error.message}`);
+      toast.error(`שגיאה בסנכרון ל-WooCommerce: ${error.message}`, { id: 'woo-sync' });
     } finally {
       setSyncingToWoo(false);
     }

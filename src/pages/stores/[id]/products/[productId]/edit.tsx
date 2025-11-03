@@ -13,7 +13,6 @@ import { ProductInventoryTab } from "../components/ProductEditor/ProductInventor
 import { ProductVariationsTab } from "../components/ProductEditor/ProductVariationsTab";
 import { ProductCategoriesTab } from "../components/ProductEditor/ProductCategoriesTab";
 import { ProductAttributesTab } from "../components/ProductEditor/ProductAttributesTab";
-import { SyncToWooButton } from "../components/ProductEditor/SyncToWooButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -57,15 +56,9 @@ export default function ProductEditorPage() {
             <p className="text-sm text-muted-foreground mt-1">
               {isNewProduct
                 ? "יצירת מוצר חדש בחנות"
-                : "עריכת פרטי המוצר וסנכרון עם ווקומרס"}
+                : "עריכת פרטי המוצר - השינויים יסונכרנו אוטומטית עם WooCommerce"}
             </p>
           </div>
-          {!isNewProduct && (
-            <SyncToWooButton 
-              storeId={storeId || ""} 
-              productId={productId || ""}
-            />
-          )}
         </div>
 
         <Card className="w-full max-w-full">
@@ -146,23 +139,25 @@ export default function ProductEditorPage() {
                           .from('products')
                           .update({ categories: categories as any })
                           .eq('id', productId);
-                        
+
                         toast.success("קטגוריות עודכנו בהצלחה");
-                        
+
                         // Sync to WooCommerce
+                        toast.loading("מסנכרן קטגוריות עם WooCommerce...", { id: 'woo-categories-sync' });
+
                         const { error } = await supabase.functions.invoke('update-woo-product', {
-                          body: { 
-                            product: { ...product, categories, id: productId }, 
-                            store_id: storeId 
+                          body: {
+                            product: { ...product, categories, id: productId },
+                            store_id: storeId
                           }
                         });
-                        
+
                         if (error) {
-                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                          toast.error("שגיאה בסנכרון ל-WooCommerce", { id: 'woo-categories-sync' });
                         } else {
-                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                          toast.success("סונכרן ל-WooCommerce בהצלחה", { id: 'woo-categories-sync' });
                         }
-                        
+
                         refetch();
                       } catch (error) {
                         toast.error("שגיאה בעדכון קטגוריות");
@@ -174,23 +169,25 @@ export default function ProductEditorPage() {
                           .from('products')
                           .update({ tags: tags as any })
                           .eq('id', productId);
-                        
+
                         toast.success("תגים עודכנו בהצלחה");
-                        
+
                         // Sync to WooCommerce
+                        toast.loading("מסנכרן תגים עם WooCommerce...", { id: 'woo-tags-sync' });
+
                         const { error } = await supabase.functions.invoke('update-woo-product', {
-                          body: { 
-                            product: { ...product, tags, id: productId }, 
-                            store_id: storeId 
+                          body: {
+                            product: { ...product, tags, id: productId },
+                            store_id: storeId
                           }
                         });
-                        
+
                         if (error) {
-                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                          toast.error("שגיאה בסנכרון ל-WooCommerce", { id: 'woo-tags-sync' });
                         } else {
-                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                          toast.success("סונכרן ל-WooCommerce בהצלחה", { id: 'woo-tags-sync' });
                         }
-                        
+
                         refetch();
                       } catch (error) {
                         toast.error("שגיאה בעדכון תגים");
@@ -202,23 +199,25 @@ export default function ProductEditorPage() {
                           .from('products')
                           .update({ brands: brands as any })
                           .eq('id', productId);
-                        
+
                         toast.success("מותגים עודכנו בהצלחה");
-                        
+
                         // Sync to WooCommerce
+                        toast.loading("מסנכרן מותגים עם WooCommerce...", { id: 'woo-brands-sync' });
+
                         const { error } = await supabase.functions.invoke('update-woo-product', {
-                          body: { 
-                            product: { ...product, brands, id: productId }, 
-                            store_id: storeId 
+                          body: {
+                            product: { ...product, brands, id: productId },
+                            store_id: storeId
                           }
                         });
-                        
+
                         if (error) {
-                          toast.error("שגיאה בסנכרון ל-WooCommerce");
+                          toast.error("שגיאה בסנכרון ל-WooCommerce", { id: 'woo-brands-sync' });
                         } else {
-                          toast.success("סונכרן ל-WooCommerce בהצלחה");
+                          toast.success("סונכרן ל-WooCommerce בהצלחה", { id: 'woo-brands-sync' });
                         }
-                        
+
                         refetch();
                       } catch (error) {
                         toast.error("שגיאה בעדכון מותגים");

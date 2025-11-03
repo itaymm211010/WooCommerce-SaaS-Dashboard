@@ -77,30 +77,34 @@ export function useInventoryForm({ initialData, storeId, productId }: UseInvento
       // If product doesn't have a WooCommerce ID, we can't update it
       if (!product.woo_id || product.woo_id === 0) {
         console.log('מוצר זה עדיין לא קיים ב-WooCommerce, יש לשמור תחילה את פרטי המוצר הבסיסיים');
+        toast.info('המוצר יסונכרן כשיתווסף ל-WooCommerce');
         return;
       }
-      
+
       setSyncingToWoo(true);
-      
+
       console.log('מסנכרן פרטי מלאי ל-WooCommerce:', product.id);
-      
+
+      // Show syncing notification
+      toast.loading("מסנכרן מלאי עם WooCommerce...", { id: 'woo-inventory-sync' });
+
       const { data, error } = await supabase.functions.invoke('update-woo-product', {
-        body: { 
-          product, 
-          store_id: storeId 
+        body: {
+          product,
+          store_id: storeId
         }
       });
 
       if (error) {
         throw error;
       }
-      
+
       if (data?.success) {
-        toast.success("פרטי המלאי סונכרנו בהצלחה עם WooCommerce");
+        toast.success("פרטי המלאי סונכרנו בהצלחה עם WooCommerce", { id: 'woo-inventory-sync' });
       }
     } catch (error: any) {
       console.error("Error syncing inventory to WooCommerce:", error);
-      toast.error(`שגיאה בסנכרון פרטי המלאי ל-WooCommerce: ${error.message}`);
+      toast.error(`שגיאה בסנכרון פרטי המלאי ל-WooCommerce: ${error.message}`, { id: 'woo-inventory-sync' });
     } finally {
       setSyncingToWoo(false);
     }
