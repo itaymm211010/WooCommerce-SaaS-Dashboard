@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Trash2, Save, Layers } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type Variation = Database['public']['Tables']['product_variations']['Row'];
@@ -27,7 +27,6 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
@@ -71,11 +70,7 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
       setAttributes(formattedAttributes);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו לטעון את הנתונים',
-        variant: 'destructive',
-      });
+      toast.error('לא הצלחנו לטעון את הנתונים');
     } finally {
       setIsLoading(false);
     }
@@ -126,17 +121,10 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
           .eq('id', variation.id);
 
         if (error) throw error;
-        toast({
-          title: 'הצלחה',
-          description: 'הוריאציה נמחקה בהצלחה',
-        });
+        toast.success('הוריאציה נמחקה בהצלחה');
       } catch (error) {
         console.error('Error deleting variation:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'לא הצלחנו למחוק את הוריאציה',
-          variant: 'destructive',
-        });
+        toast.error('לא הצלחנו למחוק את הוריאציה');
         return;
       }
     }
@@ -187,40 +175,41 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
         }
       }
 
-      toast({
-        title: 'הצלחה',
-        description: 'הוריאציות נשמרו בהצלחה',
-      });
+      toast.success('הוריאציות נשמרו בהצלחה');
 
       // Refresh data
       await fetchData();
 
       // Sync to WooCommerce
-      const { data: product } = await supabase
+      toast.loading("מסנכרן וריאציות עם WooCommerce...", { id: 'woo-variations-sync' });
+
+      const { data: product, error: productError } = await supabase
         .from('products')
         .select('*')
         .eq('id', productId)
         .single();
 
+      if (productError) throw productError;
+
       if (product && product.woo_id) {
-        await supabase.functions.invoke('update-woo-product', {
+        const { error } = await supabase.functions.invoke('update-woo-product', {
           body: {
             product,
             store_id: storeId,
           },
         });
-        toast({
-          title: 'הצלחה',
-          description: 'הוריאציות סונכרנו לווקומרס',
-        });
+
+        if (error) {
+          toast.error("שגיאה בסנכרון ל-WooCommerce", { id: 'woo-variations-sync' });
+        } else {
+          toast.success("הוריאציות סונכרנו בהצלחה ל-WooCommerce", { id: 'woo-variations-sync' });
+        }
+      } else {
+        toast.info("הוריאציות יסונכרנו כשהמוצר יתווסף ל-WooCommerce", { id: 'woo-variations-sync' });
       }
     } catch (error) {
       console.error('Error saving variations:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו לשמור את הוריאציות',
-        variant: 'destructive',
-      });
+      toast.error('לא הצלחנו לשמור את הוריאציות');
     } finally {
       setIsSaving(false);
     }

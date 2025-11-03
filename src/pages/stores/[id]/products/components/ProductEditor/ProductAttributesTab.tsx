@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Trash2, Save, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 interface Attribute {
   id: string;
   name: string;
@@ -29,9 +29,6 @@ export function ProductAttributesTab({
   const [newOptions, setNewOptions] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const {
-    toast
-  } = useToast();
   useEffect(() => {
     fetchAttributes();
   }, [storeId, productId]);
@@ -57,11 +54,7 @@ export function ProductAttributesTab({
       setAttributes(formattedAttributes);
     } catch (error) {
       console.error('Error fetching attributes:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו לטעון את התכונות',
-        variant: 'destructive'
-      });
+      toast.error('לא הצלחנו לטעון את התכונות');
     } finally {
       setIsLoading(false);
     }
@@ -105,17 +98,10 @@ export function ProductAttributesTab({
           error
         } = await supabase.from('product_attributes').delete().eq('id', attribute.id);
         if (error) throw error;
-        toast({
-          title: 'הצלחה',
-          description: 'התכונה נמחקה בהצלחה'
-        });
+        toast.success('התכונה נמחקה בהצלחה');
       } catch (error) {
         console.error('Error deleting attribute:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'לא הצלחנו למחוק את התכונה',
-          variant: 'destructive'
-        });
+        toast.error('לא הצלחנו למחוק את התכונה');
         return;
       }
     }
@@ -127,11 +113,8 @@ export function ProductAttributesTab({
       setIsSaving(true);
       for (const attribute of attributes) {
         if (!attribute.name.trim()) {
-          toast({
-            title: 'שגיאה',
-            description: 'כל התכונות חייבות לכלול שם',
-            variant: 'destructive'
-          });
+          toast.error('כל התכונות חייבות לכלול שם');
+          setIsSaving(false);
           return;
         }
         if (attribute.id.startsWith('temp-')) {
@@ -160,18 +143,39 @@ export function ProductAttributesTab({
           if (error) throw error;
         }
       }
-      toast({
-        title: 'הצלחה',
-        description: 'התכונות נשמרו בהצלחה'
-      });
+      toast.success('התכונות נשמרו בהצלחה');
       await fetchAttributes();
+
+      // Sync to WooCommerce
+      toast.loading("מסנכרן תכונות עם WooCommerce...", { id: 'woo-attributes-sync' });
+
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (productError) throw productError;
+
+      if (product && product.woo_id) {
+        const { error } = await supabase.functions.invoke('update-woo-product', {
+          body: {
+            product,
+            store_id: storeId
+          }
+        });
+
+        if (error) {
+          toast.error("שגיאה בסנכרון ל-WooCommerce", { id: 'woo-attributes-sync' });
+        } else {
+          toast.success("התכונות סונכרנו בהצלחה ל-WooCommerce", { id: 'woo-attributes-sync' });
+        }
+      } else {
+        toast.info("התכונות יסונכרנו כשהמוצר יתווסף ל-WooCommerce", { id: 'woo-attributes-sync' });
+      }
     } catch (error) {
       console.error('Error saving attributes:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו לשמור את התכונות',
-        variant: 'destructive'
-      });
+      toast.error('לא הצלחנו לשמור את התכונות');
     } finally {
       setIsSaving(false);
     }
