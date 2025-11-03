@@ -1,13 +1,14 @@
 
 import { createResponse, createSupabaseClient } from "./utils.ts"
 import { getStoreDetails } from "./store.ts"
-import { 
-  createWooCommerceProduct, 
-  updateWooCommerceProduct, 
+import {
+  createWooCommerceProduct,
+  updateWooCommerceProduct,
   updateProductWooId,
   createWooCommerceVariation,
   updateWooCommerceVariation,
   updateVariationWooId,
+  updateVariationPrice,
   syncVariationsFromWooCommerce
 } from "./product.ts"
 
@@ -99,22 +100,34 @@ export async function handleRequest(req: Request) {
 
       if (variations && variations.length > 0) {
         console.log(`🔄 Step 2: Syncing ${variations.length} variations to WooCommerce`)
-        
+
         for (const variation of variations) {
           if (!variation.woo_id || variation.woo_id === 0) {
             // Create new variation in WooCommerce
             console.log(`➕ Creating new variation in WooCommerce`)
             const newWooVariation = await createWooCommerceVariation(store, wooId, variation)
             await updateVariationWooId(supabase, variation.id, newWooVariation.id)
-            console.log(`✅ Created variation with WooCommerce ID: ${newWooVariation.id}`)
+
+            // Update price from WooCommerce response
+            if (newWooVariation.price) {
+              await updateVariationPrice(supabase, variation.id, parseFloat(newWooVariation.price))
+            }
+
+            console.log(`✅ Created variation with WooCommerce ID: ${newWooVariation.id}, price: ${newWooVariation.price}`)
           } else {
             // Update existing variation
             console.log(`🔄 Updating existing variation ${variation.woo_id}`)
-            await updateWooCommerceVariation(store, wooId, variation)
-            console.log(`✅ Updated variation ${variation.woo_id}`)
+            const updatedWooVariation = await updateWooCommerceVariation(store, wooId, variation)
+
+            // Update price from WooCommerce response
+            if (updatedWooVariation.price) {
+              await updateVariationPrice(supabase, variation.id, parseFloat(updatedWooVariation.price))
+            }
+
+            console.log(`✅ Updated variation ${variation.woo_id}, price: ${updatedWooVariation.price}`)
           }
         }
-        
+
         console.log(`✅ All variations synced successfully`)
       }
     }
