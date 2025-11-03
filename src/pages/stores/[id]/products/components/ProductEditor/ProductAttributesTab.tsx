@@ -63,6 +63,7 @@ export function ProductAttributesTab({
         .order('name', { ascending: true });
 
       if (error) throw error;
+      console.log('Fetched global attributes:', data);
       setGlobalAttributes(data || []);
     } catch (error) {
       console.error('Error fetching global attributes:', error);
@@ -375,21 +376,29 @@ export function ProductAttributesTab({
               <CardContent className="space-y-4">
                 {attribute.isGlobal && !attribute.global_attribute_id ? (
                   <div className="space-y-2">
-                    <Label className="text-slate-900 dark:text-slate-100">בחר תכונה גלובלית</Label>
+                    <Label className="text-slate-900 dark:text-slate-100">
+                      בחר תכונה גלובלית ({globalAttributes.length} זמינות)
+                    </Label>
                     <Select onValueChange={(value) => handleSelectGlobalAttribute(index, value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="בחר תכונה קיימת..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {globalAttributes.map((ga) => (
-                          <SelectItem key={ga.id} value={ga.id}>
-                            {ga.name}
+                        {globalAttributes.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            אין תכונות זמינות
                           </SelectItem>
-                        ))}
+                        ) : (
+                          globalAttributes.map((ga) => (
+                            <SelectItem key={ga.id} value={ga.id}>
+                              {ga.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      {globalAttributes.length === 0 ? 'אין תכונות גלובליות. לחץ על "סנכרן תכונות" כדי לייבא מ-WooCommerce.' : 'בחר תכונה שמוגדרת ב-WooCommerce'}
+                      {globalAttributes.length === 0 ? 'אין תכונות גלובליות. לחץ על "סנכרן תכונות" כדי לייבא מ-WooCommerce.' : `${globalAttributes.length} תכונות גלובליות זמינות`}
                     </p>
                   </div>
                 ) : (
