@@ -238,6 +238,7 @@ export type Database = {
       product_attributes: {
         Row: {
           created_at: string
+          global_attribute_id: string | null
           id: string
           name: string
           options: Json
@@ -251,6 +252,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          global_attribute_id?: string | null
           id?: string
           name: string
           options?: Json
@@ -264,6 +266,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          global_attribute_id?: string | null
           id?: string
           name?: string
           options?: Json
@@ -275,7 +278,15 @@ export type Database = {
           visible?: boolean
           woo_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "product_attributes_global_attribute_id_fkey"
+            columns: ["global_attribute_id"]
+            isOneToOne: false
+            referencedRelation: "store_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_images: {
         Row: {
@@ -617,6 +628,53 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_attributes: {
+        Row: {
+          created_at: string
+          has_archives: boolean | null
+          id: string
+          name: string
+          order_by: string | null
+          slug: string
+          store_id: string
+          type: string | null
+          updated_at: string
+          woo_id: number
+        }
+        Insert: {
+          created_at?: string
+          has_archives?: boolean | null
+          id?: string
+          name: string
+          order_by?: string | null
+          slug: string
+          store_id: string
+          type?: string | null
+          updated_at?: string
+          woo_id: number
+        }
+        Update: {
+          created_at?: string
+          has_archives?: boolean | null
+          id?: string
+          name?: string
+          order_by?: string | null
+          slug?: string
+          store_id?: string
+          type?: string | null
+          updated_at?: string
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_attributes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
