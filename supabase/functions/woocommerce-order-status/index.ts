@@ -39,10 +39,10 @@ serve(async (req) => {
     console.log('Received webhook payload:', rawBody)
     const body = JSON.parse(rawBody)
 
-    // בדיקה האם זה וובהוק של מוצר חדש
-    if (body.topic === 'product.created') {
-      console.log('Processing new product webhook')
-      
+    // בדיקה האם זה וובהוק של מוצר חדש או מעודכן
+    if (body.topic === 'product.created' || body.topic === 'product.updated') {
+      console.log(`Processing ${body.topic} webhook`)
+
       // השג את פרטי המוצר מווקומרס
       let baseUrl = store.url.replace(/\/+$/, '')
       if (!baseUrl.startsWith('http')) {
@@ -65,24 +65,65 @@ serve(async (req) => {
       const product = await productResponse.json()
       console.log('Fetched product details:', product)
 
-      // הכנס את המוצר לבסיס הנתונים
-      const { error: insertError } = await supabase
+      // בדוק אם המוצר כבר קיים
+      const { data: existingProduct } = await supabase
         .from('products')
-        .insert({
-          store_id: store_id,
-          woo_id: product.id,
-          name: product.name,
-          price: product.regular_price || product.price,
-          stock_quantity: product.stock_quantity,
-          status: product.status,
-          type: product.type
-        })
+        .select('id')
+        .eq('store_id', store_id)
+        .eq('woo_id', product.id)
+        .single()
 
-      if (insertError) {
-        throw new Error(`Failed to insert product: ${insertError.message}`)
+      if (existingProduct) {
+        // עדכן מוצר קיים
+        console.log('Updating existing product')
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({
+            name: product.name,
+            price: product.regular_price || product.price,
+            stock_quantity: product.stock_quantity,
+            status: product.status,
+            type: product.type,
+            description: product.description,
+            short_description: product.short_description,
+            sku: product.sku,
+            manage_stock: product.manage_stock,
+            stock_status: product.stock_status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('store_id', store_id)
+          .eq('woo_id', product.id)
+
+        if (updateError) {
+          throw new Error(`Failed to update product: ${updateError.message}`)
+        }
+        console.log('Successfully updated product')
+      } else {
+        // הכנס מוצר חדש
+        console.log('Inserting new product')
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert({
+            store_id: store_id,
+            woo_id: product.id,
+            name: product.name,
+            price: product.regular_price || product.price,
+            stock_quantity: product.stock_quantity,
+            status: product.status,
+            type: product.type,
+            description: product.description,
+            short_description: product.short_description,
+            sku: product.sku,
+            manage_stock: product.manage_stock,
+            stock_status: product.stock_status
+          })
+
+        if (insertError) {
+          throw new Error(`Failed to insert product: ${insertError.message}`)
+        }
+        console.log('Successfully inserted new product')
       }
 
-      console.log('Successfully inserted new product')
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
