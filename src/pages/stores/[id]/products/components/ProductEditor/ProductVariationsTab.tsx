@@ -354,18 +354,18 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>מחיר מוצג</Label>
+                    <Label>מחיר מוצג (אוטומטי)</Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={variation.price}
-                      onChange={(e) =>
-                        handleUpdateVariation(index, 'price', parseFloat(e.target.value) || 0)
-                      }
-                      placeholder="מחיר מוצג"
+                      readOnly
+                      disabled
+                      placeholder="מחיר מוצג (מחושב אוטומטית)"
+                      className="bg-muted cursor-not-allowed"
                     />
                     <p className="text-xs text-muted-foreground">
-                      המחיר שיוצג ללקוח (בדרך כלל זהה למחיר מבצע אם קיים, אחרת למחיר רגיל)
+                      מחיר זה מחושב אוטומטית ע"י WooCommerce (מחיר מבצע אם קיים, אחרת מחיר רגיל)
                     </p>
                   </div>
                 </div>
