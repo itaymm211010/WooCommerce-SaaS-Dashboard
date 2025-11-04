@@ -26,7 +26,8 @@ interface GlobalAttribute {
 interface Attribute {
   id: string;
   name: string;
-  options: string[];
+  options: string[]; // Selected terms for this product
+  availableOptions?: string[]; // All available terms (for global attributes)
   variation: boolean;
   visible: boolean;
   position: number;
@@ -222,37 +223,58 @@ export function ProductAttributesTab({
     try {
       toast.loading(`טוען ערכים עבור ${globalAttr.name}...`, { id: 'fetch-terms' });
 
-      // Get store details to fetch terms
-      const { data: store } = await supabase
-        .from('stores')
+      // First, try to get terms from database
+      const { data: dbTerms } = await supabase
+        .from('store_attribute_terms')
         .select('*')
-        .eq('id', storeId)
-        .single();
+        .eq('attribute_id', globalAttr.id)
+        .order('name', { ascending: true });
 
-      if (!store) {
-        throw new Error('Store not found');
+      let availableTerms: string[] = [];
+
+      if (dbTerms && dbTerms.length > 0) {
+        // Use terms from database
+        console.log(`Found ${dbTerms.length} terms in database for ${globalAttr.name}`);
+        availableTerms = dbTerms.map(t => t.name);
+      } else {
+        // Fetch from WooCommerce and save to database
+        console.log('No terms in database, fetching from WooCommerce...');
+
+        const { data: store } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('id', storeId)
+          .single();
+
+        if (!store) throw new Error('Store not found');
+
+        let baseUrl = store.url.replace(/\/+$/, '');
+        if (!baseUrl.startsWith('http')) baseUrl = `https://${baseUrl}`;
+
+        const response = await fetch(
+          `${baseUrl}/wp-json/wc/v3/products/attributes/${globalAttr.woo_id}/terms?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
+        );
+
+        if (!response.ok) throw new Error(`Failed to fetch terms: ${response.status}`);
+
+        const terms = await response.json();
+        console.log(`Found ${terms.length} terms from WooCommerce:`, terms);
+
+        // Save terms to database
+        for (const term of terms) {
+          await supabase.from('store_attribute_terms').upsert({
+            store_id: storeId,
+            attribute_id: globalAttr.id,
+            woo_id: term.id,
+            name: term.name,
+            slug: term.slug,
+            description: term.description || '',
+            count: term.count || 0
+          }, { onConflict: 'attribute_id,woo_id' });
+        }
+
+        availableTerms = terms.map((term: any) => term.name);
       }
-
-      // Format base URL
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
-
-      // Fetch terms for this attribute
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/products/attributes/${globalAttr.woo_id}/terms?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch terms: ${response.status}`);
-      }
-
-      const terms = await response.json();
-      console.log(`Found ${terms.length} terms for ${globalAttr.name}:`, terms);
-
-      // Extract term names
-      const options = terms.map((term: any) => term.name);
 
       const updatedAttributes = [...attributes];
       updatedAttributes[index] = {
@@ -261,25 +283,15 @@ export function ProductAttributesTab({
         global_attribute_id: globalAttr.id,
         woo_id: globalAttr.woo_id,
         isGlobal: true,
-        options: options
+        options: [], // Start with empty selection
+        availableOptions: availableTerms // All available terms
       };
       setAttributes(updatedAttributes);
 
-      toast.success(`נטענו ${terms.length} ערכים עבור ${globalAttr.name}`, { id: 'fetch-terms' });
+      toast.success(`נטענו ${availableTerms.length} ערכים זמינים`, { id: 'fetch-terms' });
     } catch (error: any) {
       console.error('Error fetching attribute terms:', error);
-      toast.error(`שגיאה בטעינת ערכים: ${error.message}`, { id: 'fetch-terms' });
-
-      // Still set the attribute even if terms fail
-      const updatedAttributes = [...attributes];
-      updatedAttributes[index] = {
-        ...updatedAttributes[index],
-        name: globalAttr.name,
-        global_attribute_id: globalAttr.id,
-        woo_id: globalAttr.woo_id,
-        isGlobal: true
-      };
-      setAttributes(updatedAttributes);
+      toast.error(`שגיאה: ${error.message}`, { id: 'fetch-terms' });
     }
   };
   const handleUpdateAttribute = (index: number, field: keyof Attribute, value: any) => {
@@ -494,39 +506,96 @@ export function ProductAttributesTab({
                 )}
 
                 <div className="space-y-2">
-                  <Label className="text-slate-900 dark:text-slate-100">אפשרויות</Label>
-                  <div className="flex gap-2">
-                    <Input value={newOptions[attribute.id] || ''} onChange={e => setNewOptions({
-                ...newOptions,
-                [attribute.id]: e.target.value
-              })} onKeyPress={e => {
-                if (e.key === 'Enter') {
-                  handleAddOption(index, newOptions[attribute.id] || '');
-                  setNewOptions({
-                    ...newOptions,
-                    [attribute.id]: ''
-                  });
-                }
-              }} placeholder="הוסף אפשרות (למשל: אדום)" />
-                    <Button type="button" size="sm" onClick={() => {
-                handleAddOption(index, newOptions[attribute.id] || '');
-                setNewOptions({
-                  ...newOptions,
-                  [attribute.id]: ''
-                });
-              }}>
-                      הוסף
-                    </Button>
-                  </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {attribute.options.map((option, optionIndex) => <Badge key={optionIndex} variant="outline" className="gap-1">
-                          {option}
-                          <button type="button" onClick={() => handleRemoveOption(index, optionIndex)} className="hover:text-destructive">
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>)}
+                  <Label className="text-slate-900 dark:text-slate-100">
+                    {attribute.global_attribute_id ? 'בחר ערכים (terms)' : 'אפשרויות'}
+                  </Label>
+
+                  {attribute.global_attribute_id && attribute.availableOptions ? (
+                    // Checkboxes for global attributes
+                    <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
+                      {attribute.availableOptions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">אין ערכים זמינים לתכונה זו</p>
+                      ) : (
+                        attribute.availableOptions.map((term) => (
+                          <div key={term} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`term-${attribute.id}-${term}`}
+                              checked={attribute.options.includes(term)}
+                              onCheckedChange={(checked) => {
+                                const updatedAttributes = [...attributes];
+                                if (checked) {
+                                  // Add term
+                                  updatedAttributes[index].options = [...attribute.options, term];
+                                } else {
+                                  // Remove term
+                                  updatedAttributes[index].options = attribute.options.filter(o => o !== term);
+                                }
+                                setAttributes(updatedAttributes);
+                              }}
+                            />
+                            <Label
+                              htmlFor={`term-${attribute.id}-${term}`}
+                              className="cursor-pointer text-sm font-normal"
+                            >
+                              {term}
+                            </Label>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    // Input for custom attributes
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newOptions[attribute.id] || ''}
+                          onChange={e => setNewOptions({
+                            ...newOptions,
+                            [attribute.id]: e.target.value
+                          })}
+                          onKeyPress={e => {
+                            if (e.key === 'Enter') {
+                              handleAddOption(index, newOptions[attribute.id] || '');
+                              setNewOptions({
+                                ...newOptions,
+                                [attribute.id]: ''
+                              });
+                            }
+                          }}
+                          placeholder="הוסף אפשרות (למשל: אדום)"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            handleAddOption(index, newOptions[attribute.id] || '');
+                            setNewOptions({
+                              ...newOptions,
+                              [attribute.id]: ''
+                            });
+                          }}
+                        >
+                          הוסף
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {attribute.options.map((option, optionIndex) => (
+                          <Badge key={optionIndex} variant="outline" className="gap-1">
+                            {option}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOption(index, optionIndex)}
+                              className="hover:text-destructive"
+                              aria-label={`הסר ${option}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
 
                   <div className="flex gap-4">
                     <div className="flex items-center gap-2">
