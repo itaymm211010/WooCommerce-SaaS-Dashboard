@@ -122,9 +122,49 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
     setVariations(updatedVariations);
   };
 
+  const handleGenerateVariations = () => {
+    // Filter attributes that are used for variations
+    const variationAttributes = attributes.filter(attr => attr.variation);
+
+    if (variationAttributes.length === 0) {
+      toast.error('אין תכונות שמסומנות כ"משמש לוריאציות"');
+      return;
+    }
+
+    // Generate cartesian product of all attribute options
+    const generateCombinations = (attrs: Attribute[]): any[][] => {
+      if (attrs.length === 0) return [[]];
+
+      const [first, ...rest] = attrs;
+      const restCombinations = generateCombinations(rest);
+
+      return first.options.flatMap(option =>
+        restCombinations.map(combo => [
+          { name: first.name, option },
+          ...combo
+        ])
+      );
+    };
+
+    const combinations = generateCombinations(variationAttributes);
+
+    const newVariations = combinations.map((combo, idx) => ({
+      id: `temp-${Date.now()}-${idx}`,
+      sku: '',
+      price: 0,
+      regular_price: 0,
+      stock_quantity: 0,
+      stock_status: 'instock',
+      attributes: combo,
+    }));
+
+    setVariations(newVariations);
+    toast.success(`נוצרו ${newVariations.length} וריאציות מכל הצירופים האפשריים!`);
+  };
+
   const handleRemoveVariation = async (index: number) => {
     const variation = variations[index];
-    
+
     // If it's a persisted variation, delete from database
     if (!variation.id.startsWith('temp-')) {
       try {
@@ -264,18 +304,29 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
           </div>
         </div>
         <div className="space-x-2 space-x-reverse">
-          <Button 
-            onClick={handleAddVariation} 
-            variant="outline" 
+          {attributes.some(a => a.variation) && (
+            <Button
+              onClick={handleGenerateVariations}
+              variant="default"
+              size="sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              <Layers className="h-4 w-4 ml-2" />
+              צור וריאציות מכל התכונות
+            </Button>
+          )}
+          <Button
+            onClick={handleAddVariation}
+            variant="outline"
             size="sm"
             className="border-primary text-primary hover:bg-primary hover:text-white"
           >
             <Plus className="h-4 w-4 ml-2" />
-            הוסף וריאציה
+            הוסף וריאציה ידנית
           </Button>
-          <Button 
-            onClick={handleSaveVariations} 
-            disabled={isSaving} 
+          <Button
+            onClick={handleSaveVariations}
+            disabled={isSaving}
             size="sm"
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
           >
