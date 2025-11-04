@@ -238,6 +238,19 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
         }
       }
 
+      // If we have variations, ensure product type is 'variable'
+      if (variations.length > 0) {
+        const { error: typeError } = await supabase
+          .from('products')
+          .update({ type: 'variable' })
+          .eq('id', productId)
+          .eq('store_id', storeId);
+
+        if (typeError) {
+          console.error('Failed to update product type:', typeError);
+        }
+      }
+
       toast.success('הוריאציות נשמרו בהצלחה');
 
       // Refresh data
