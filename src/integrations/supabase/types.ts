@@ -632,6 +632,63 @@ export type Database = {
           },
         ]
       }
+      store_attribute_terms: {
+        Row: {
+          attribute_id: string
+          count: number | null
+          created_at: string
+          description: string | null
+          id: string
+          menu_order: number | null
+          name: string
+          slug: string
+          store_id: string
+          updated_at: string
+          woo_id: number
+        }
+        Insert: {
+          attribute_id: string
+          count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          menu_order?: number | null
+          name: string
+          slug: string
+          store_id: string
+          updated_at?: string
+          woo_id: number
+        }
+        Update: {
+          attribute_id?: string
+          count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          menu_order?: number | null
+          name?: string
+          slug?: string
+          store_id?: string
+          updated_at?: string
+          woo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_attribute_terms_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "store_attributes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_attribute_terms_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_attributes: {
         Row: {
           created_at: string
