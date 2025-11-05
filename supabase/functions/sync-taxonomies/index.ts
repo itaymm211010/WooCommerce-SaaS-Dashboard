@@ -4,18 +4,30 @@ import { getStoreDetails } from "./store.ts"
 import { syncCategories } from "./sync-categories.ts"
 import { syncTags } from "./sync-tags.ts"
 import { syncBrands } from "./sync-brands.ts"
+import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
 
-serve(async (req) => {
-  // CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+serve(withAuth(async (req, auth) => {
   try {
     const { storeId } = await req.json()
-    
+
     if (!storeId) {
-      throw new Error('No storeId provided')
+      return new Response(JSON.stringify({
+        error: 'Missing required parameter: storeId'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
+    // Verify user has access to this store
+    const accessCheck = await verifyStoreAccess(auth.userId, storeId)
+    if (!accessCheck.success) {
+      return new Response(JSON.stringify({
+        error: accessCheck.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
     }
 
     console.log(`🚀 Starting taxonomy sync for store: ${storeId}`)
@@ -120,4 +132,4 @@ serve(async (req) => {
       stack: error.stack
     }, 500)
   }
-})
+}))

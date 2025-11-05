@@ -104,7 +104,9 @@ export async function syncVariationsFromWooCommerce(
           stock_quantity: wooVar.stock_quantity,
           stock_status: wooVar.stock_status || 'instock',
           sku: wooVar.sku || '',
-          attributes: wooVar.attributes || []
+          attributes: wooVar.attributes || [],
+          source: 'woo',
+          synced_at: new Date().toISOString()
         })
         .eq('id', existingByWooId.id)
       variationsSynced++
@@ -125,7 +127,11 @@ export async function syncVariationsFromWooCommerce(
         console.log(`✓ Found variation by SKU (${wooVar.sku}), updating woo_id to ${wooVar.id}`)
         await supabase
           .from('product_variations')
-          .update({ woo_id: wooVar.id })
+          .update({
+            woo_id: wooVar.id,
+            source: 'woo',
+            synced_at: new Date().toISOString()
+          })
           .eq('id', existingBySku.id)
         variationsSynced++
         continue
@@ -146,7 +152,9 @@ export async function syncVariationsFromWooCommerce(
         sale_price: wooVar.sale_price ? parseFloat(wooVar.sale_price) : null,
         stock_quantity: wooVar.stock_quantity,
         stock_status: wooVar.stock_status || 'instock',
-        attributes: wooVar.attributes || []
+        attributes: wooVar.attributes || [],
+        source: 'woo',
+        synced_at: new Date().toISOString()
       })
     
     if (insertError) {
@@ -575,9 +583,13 @@ export async function createWooCommerceVariation(store: any, productWooId: numbe
 export async function updateProductWooId(supabase: any, productId: string, wooId: number) {
   const { error: updateError } = await supabase
     .from('products')
-    .update({ woo_id: wooId })
+    .update({
+      woo_id: wooId,
+      source: 'local',
+      synced_at: new Date().toISOString()
+    })
     .eq('id', productId)
-  
+
   if (updateError) {
     console.error('Error updating product with new WooCommerce ID:', updateError)
     throw updateError
@@ -588,7 +600,11 @@ export async function updateProductWooId(supabase: any, productId: string, wooId
 export async function updateVariationWooId(supabase: any, variationId: string, wooId: number) {
   const { error: updateError } = await supabase
     .from('product_variations')
-    .update({ woo_id: wooId })
+    .update({
+      woo_id: wooId,
+      source: 'local',
+      synced_at: new Date().toISOString()
+    })
     .eq('id', variationId)
 
   if (updateError) {

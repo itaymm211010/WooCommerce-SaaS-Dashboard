@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getStoreDetails } from "../_shared/store-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,16 +31,8 @@ serve(async (req) => {
 
     const { storeId, type, action, data } = await req.json() as ManageTaxonomyRequest;
 
-    // Fetch store
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('id', storeId)
-      .single();
-
-    if (storeError || !store) {
-      throw new Error('Store not found');
-    }
+    // Get store details with credentials
+    const store = await getStoreDetails(storeId);
 
     let baseUrl = store.url.replace(/\/+$/, '');
     if (!baseUrl.startsWith('http')) {

@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkAndUpdateStoreCurrency } from "../utils/currencyUtils";
 import { getWebhookEndpoint, createWebhook } from "../utils/webhookUtils";
 import { WebhooksTable } from "./WebhooksTable";
+import { WebhookSecretManager } from "./WebhookSecretManager";
+import { WebhookLogsViewer } from "./WebhookLogsViewer";
 
 interface WebhooksManagerProps {
   store: Store;
@@ -63,7 +65,9 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <WebhookSecretManager store={store} />
+
       <div className="space-y-2">
         <Label>Add New Webhook</Label>
         <div className="space-y-4">
@@ -121,6 +125,10 @@ export function WebhooksManager({ store }: WebhooksManagerProps) {
             onWebhookUpdated={refetchWebhooks}
           />
         </div>
+      </div>
+
+      <div className="mt-8">
+        <WebhookLogsViewer store={store} />
       </div>
     </div>
   );

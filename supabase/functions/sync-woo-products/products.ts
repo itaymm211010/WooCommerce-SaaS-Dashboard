@@ -1,59 +1,53 @@
 
 import { createSupabaseClient, formatBaseUrl } from "./utils.ts"
 import { checkAndUpdateCurrency } from "./store.ts"
+import { fetchAllPaged } from "../_shared/woocommerce-utils.ts"
 
-// Fetch products from WooCommerce API
+// Fetch products from WooCommerce API with pagination
 export async function fetchProducts(store: any) {
   const baseUrl = formatBaseUrl(store.url)
-  
+
   console.log(`Fetching products from ${baseUrl}/wp-json/wc/v3/products`)
-  
+
   // First check and update currency if needed
   await checkAndUpdateCurrency(store, baseUrl)
-  
-  // Make request to WooCommerce API
-  const wooResponse = await fetch(
-    `${baseUrl}/wp-json/wc/v3/products?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-    {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }
-  )
 
-  if (!wooResponse.ok) {
-    const errorText = await wooResponse.text()
-    throw new Error(`WooCommerce API Error: ${wooResponse.status} ${wooResponse.statusText} - ${errorText}`)
-  }
+  // Use the reusable pagination utility
+  const allProducts = await fetchAllPaged({
+    baseUrl,
+    endpoint: '/wp-json/wc/v3/products',
+    auth: {
+      consumer_key: store.api_key,
+      consumer_secret: store.api_secret
+    },
+    perPage: 100
+  })
 
-  const products = await wooResponse.json()
-  console.log(`Fetched ${products.length} products from WooCommerce`)
-  
-  return products
+  console.log(`✅ Fetched total of ${allProducts.length} products from WooCommerce`)
+
+  return allProducts
 }
 
-// Fetch variations for variable products
+// Fetch variations for variable products with pagination
 export async function fetchProductsWithVariations(products: any[], store: any) {
   const baseUrl = formatBaseUrl(store.url)
-  
+
   return Promise.all(products.map(async (product) => {
     if (product.type === 'variable') {
       try {
-        const variationsResponse = await fetch(
-          `${baseUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-          {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          }
-        )
-        
-        if (variationsResponse.ok) {
-          const variations = await variationsResponse.json()
-          return { ...product, variations }
-        }
+        // Use the reusable pagination utility for variations
+        const allVariations = await fetchAllPaged({
+          baseUrl,
+          endpoint: `/wp-json/wc/v3/products/${product.id}/variations`,
+          auth: {
+            consumer_key: store.api_key,
+            consumer_secret: store.api_secret
+          },
+          perPage: 100
+        })
+
+        console.log(`Fetched ${allVariations.length} variations for product ${product.id}`)
+        return { ...product, variations: allVariations }
       } catch (error) {
         console.error(`Failed to fetch variations for product ${product.id}:`, error)
       }
@@ -103,7 +97,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         id: b.id,
         name: b.name,
         slug: b.slug
-      })) : []
+      })) : [],
+      source: 'woo' as const,
+      synced_at: new Date().toISOString()
     }
     
     let insertedProduct: any
@@ -139,9 +135,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
       productsCreated++
     }
 
-    // Insert product images
+    // Upsert product images (idempotent - won't create duplicates)
     if (product.images && product.images.length > 0) {
-      const imagesToInsert = product.images.map((image: any, index: number) => ({
+      const imagesToUpsert = product.images.map((image: any, index: number) => ({
         store_id: storeId,
         product_id: insertedProduct.id,
         original_url: image.src,
@@ -150,24 +146,29 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         type: index === 0 ? 'featured' : 'gallery',
         alt_text: image.alt || '',
         description: '',
-        display_order: index
+        display_order: index,
+        source: 'woo' as const,
+        synced_at: new Date().toISOString()
       }))
 
-      const { data: insertedImages, error: imageError } = await supabase
+      const { data: upsertedImages, error: imageError } = await supabase
         .from('product_images')
-        .insert(imagesToInsert)
+        .upsert(imagesToUpsert, {
+          onConflict: 'product_id,original_url',
+          ignoreDuplicates: false
+        })
         .select()
 
       if (imageError) {
-        console.error('Error inserting product images:', imageError)
+        console.error('Error upserting product images:', imageError)
         continue
       }
 
       // Update product with featured image if available
-      if (insertedImages && insertedImages[0]) {
+      if (upsertedImages && upsertedImages[0]) {
         const { error: updateError } = await supabase
           .from('products')
-          .update({ featured_image_id: insertedImages[0].id })
+          .update({ featured_image_id: upsertedImages[0].id })
           .eq('id', insertedProduct.id)
 
         if (updateError) {
@@ -199,7 +200,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
           sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
           stock_quantity: variation.stock_quantity,
           stock_status: variation.stock_status || 'instock',
-          attributes: variation.attributes || []
+          attributes: variation.attributes || [],
+          source: 'woo' as const,
+          synced_at: new Date().toISOString()
         }
         
         let insertedVariation: any
@@ -233,11 +236,11 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
           insertedVariation = data
         }
 
-        // Insert variation image if exists
+        // Upsert variation image if exists
         if (variation.image && variation.image.src) {
           const { data: variationImage, error: variationImageError } = await supabase
             .from('product_images')
-            .insert({
+            .upsert({
               store_id: storeId,
               product_id: insertedProduct.id,
               original_url: variation.image.src,
@@ -246,7 +249,12 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
               type: 'variation',
               alt_text: variation.image.alt || '',
               description: '',
-              display_order: 0
+              display_order: 0,
+              source: 'woo' as const,
+              synced_at: new Date().toISOString()
+            }, {
+              onConflict: 'product_id,original_url',
+              ignoreDuplicates: false
             })
             .select()
             .single()

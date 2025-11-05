@@ -1,21 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
+import { getStoreDetails } from "../_shared/store-utils.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+serve(withAuth(async (req, auth) => {
   try {
     const { store_id } = await req.json()
 
     if (!store_id) {
-      throw new Error('Missing store_id parameter')
+      return new Response(JSON.stringify({
+        error: 'Missing required parameter: store_id'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
+    // Verify user has access to this store
+    const accessCheck = await verifyStoreAccess(auth.userId, store_id)
+    if (!accessCheck.success) {
+      return new Response(JSON.stringify({
+        error: accessCheck.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
     }
 
     const supabase = createClient(
@@ -23,16 +37,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get store details
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('id', store_id)
-      .single()
-
-    if (storeError || !store) {
-      throw new Error(`Store not found: ${storeError?.message}`)
-    }
+    // Get store details with credentials
+    const store = await getStoreDetails(store_id)
 
     // Format base URL
     let baseUrl = store.url.replace(/\/+$/, '')
@@ -142,4 +148,4 @@ serve(async (req) => {
       }
     )
   }
-})
+}))

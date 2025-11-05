@@ -1,43 +1,25 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withWebhookAuth, logWebhookActivity } from "../_shared/webhook-middleware.ts"
+import { getStoreDetails } from "../_shared/store-utils.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-wc-webhook-signature',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+serve(withWebhookAuth(async (req, store_id, body) => {
   try {
-    const { store_id } = await req.clone().json()
-    if (!store_id) {
-      throw new Error('No store_id provided')
-    }
+    console.log(`Processing webhook for store: ${store_id}, topic: ${body.topic}`)
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get store details
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('id', store_id)
-      .single()
-
-    if (storeError || !store) {
-      throw new Error(`Store not found: ${storeError?.message}`)
-    }
-
-    const rawBody = await req.text()
-    console.log('Received webhook payload:', rawBody)
-    const body = JSON.parse(rawBody)
+    // Get store details with credentials (webhook already verified by middleware)
+    const store = await getStoreDetails(store_id)
 
     // בדיקה האם זה וובהוק של מוצר חדש או מעודכן
     if (body.topic === 'product.created' || body.topic === 'product.updated') {
@@ -223,7 +205,11 @@ serve(async (req) => {
       }
 
       console.log('Successfully updated order status')
+      await logWebhookActivity(store_id, body.topic, 'success')
     }
+
+    // Log successful webhook processing
+    await logWebhookActivity(store_id, body.topic, 'success')
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -232,9 +218,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing webhook:', error)
+    await logWebhookActivity(store_id, body.topic || 'unknown', 'failed', error.message)
+
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
   }
-})
+}))
