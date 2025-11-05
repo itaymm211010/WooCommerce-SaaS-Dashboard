@@ -148,14 +148,22 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
 
     const combinations = generateCombinations(variationAttributes);
 
+    const now = new Date().toISOString();
     const newVariations = combinations.map((combo, idx) => ({
       id: `temp-${Date.now()}-${idx}`,
+      product_id: productId,
+      store_id: storeId,
       sku: '',
       price: 0,
       regular_price: 0,
+      sale_price: null,
       stock_quantity: 0,
       stock_status: 'instock',
+      image_id: null,
+      woo_id: null,
       attributes: combo,
+      created_at: now,
+      updated_at: now,
     }));
 
     setVariations(newVariations);
