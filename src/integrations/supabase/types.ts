@@ -244,7 +244,9 @@ export type Database = {
           options: Json
           position: number
           product_id: string
+          source: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at: string | null
           updated_at: string
           variation: boolean
           visible: boolean
@@ -258,7 +260,9 @@ export type Database = {
           options?: Json
           position?: number
           product_id: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at?: string | null
           updated_at?: string
           variation?: boolean
           visible?: boolean
@@ -272,7 +276,9 @@ export type Database = {
           options?: Json
           position?: number
           product_id?: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id?: string
+          synced_at?: string | null
           updated_at?: string
           variation?: boolean
           visible?: boolean
@@ -297,9 +303,11 @@ export type Database = {
           id: string
           original_url: string
           product_id: string | null
+          source: Database["public"]["Enums"]["data_source"] | null
           storage_source: string
           storage_url: string | null
           store_id: string
+          synced_at: string | null
           type: string
           updated_at: string
           versions: Json | null
@@ -312,9 +320,11 @@ export type Database = {
           id?: string
           original_url: string
           product_id?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           storage_source?: string
           storage_url?: string | null
           store_id: string
+          synced_at?: string | null
           type?: string
           updated_at?: string
           versions?: Json | null
@@ -327,9 +337,11 @@ export type Database = {
           id?: string
           original_url?: string
           product_id?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           storage_source?: string
           storage_url?: string | null
           store_id?: string
+          synced_at?: string | null
           type?: string
           updated_at?: string
           versions?: Json | null
@@ -362,9 +374,11 @@ export type Database = {
           regular_price: number | null
           sale_price: number | null
           sku: string | null
+          source: Database["public"]["Enums"]["data_source"] | null
           stock_quantity: number | null
           stock_status: string | null
           store_id: string
+          synced_at: string | null
           updated_at: string
           woo_id: number | null
         }
@@ -378,9 +392,11 @@ export type Database = {
           regular_price?: number | null
           sale_price?: number | null
           sku?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           stock_quantity?: number | null
           stock_status?: string | null
           store_id: string
+          synced_at?: string | null
           updated_at?: string
           woo_id?: number | null
         }
@@ -394,9 +410,11 @@ export type Database = {
           regular_price?: number | null
           sale_price?: number | null
           sku?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           stock_quantity?: number | null
           stock_status?: string | null
           store_id?: string
+          synced_at?: string | null
           updated_at?: string
           woo_id?: number | null
         }
@@ -439,9 +457,11 @@ export type Database = {
           sale_price: number | null
           short_description: string | null
           sku: string | null
+          source: Database["public"]["Enums"]["data_source"] | null
           status: string
           stock_quantity: number | null
           store_id: string
+          synced_at: string | null
           tags: Json | null
           type: string
           updated_at: string
@@ -463,9 +483,11 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           status?: string
           stock_quantity?: number | null
           store_id: string
+          synced_at?: string | null
           tags?: Json | null
           type?: string
           updated_at?: string
@@ -487,9 +509,11 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          source?: Database["public"]["Enums"]["data_source"] | null
           status?: string
           stock_quantity?: number | null
           store_id?: string
+          synced_at?: string | null
           tags?: Json | null
           type?: string
           updated_at?: string
@@ -642,7 +666,9 @@ export type Database = {
           menu_order: number | null
           name: string
           slug: string
+          source: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at: string | null
           updated_at: string
           woo_id: number
         }
@@ -655,7 +681,9 @@ export type Database = {
           menu_order?: number | null
           name: string
           slug: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at?: string | null
           updated_at?: string
           woo_id: number
         }
@@ -668,7 +696,9 @@ export type Database = {
           menu_order?: number | null
           name?: string
           slug?: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id?: string
+          synced_at?: string | null
           updated_at?: string
           woo_id?: number
         }
@@ -697,7 +727,9 @@ export type Database = {
           name: string
           order_by: string | null
           slug: string
+          source: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at: string | null
           type: string | null
           updated_at: string
           woo_id: number
@@ -709,7 +741,9 @@ export type Database = {
           name: string
           order_by?: string | null
           slug: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id: string
+          synced_at?: string | null
           type?: string | null
           updated_at?: string
           woo_id: number
@@ -721,7 +755,9 @@ export type Database = {
           name?: string
           order_by?: string | null
           slug?: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id?: string
+          synced_at?: string | null
           type?: string | null
           updated_at?: string
           woo_id?: number
@@ -806,9 +842,11 @@ export type Database = {
           parent_id: string | null
           parent_woo_id: number | null
           slug: string
+          source: Database["public"]["Enums"]["data_source"] | null
           store_id: string
           sync_error: string | null
           sync_status: string | null
+          synced_at: string | null
           updated_at: string | null
           woo_id: number
         }
@@ -825,9 +863,11 @@ export type Database = {
           parent_id?: string | null
           parent_woo_id?: number | null
           slug: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id: string
           sync_error?: string | null
           sync_status?: string | null
+          synced_at?: string | null
           updated_at?: string | null
           woo_id: number
         }
@@ -844,9 +884,11 @@ export type Database = {
           parent_id?: string | null
           parent_woo_id?: number | null
           slug?: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id?: string
           sync_error?: string | null
           sync_status?: string | null
+          synced_at?: string | null
           updated_at?: string | null
           woo_id?: number
         }
@@ -876,9 +918,11 @@ export type Database = {
           last_synced_at: string | null
           name: string
           slug: string
+          source: Database["public"]["Enums"]["data_source"] | null
           store_id: string
           sync_error: string | null
           sync_status: string | null
+          synced_at: string | null
           updated_at: string | null
           woo_id: number
         }
@@ -890,9 +934,11 @@ export type Database = {
           last_synced_at?: string | null
           name: string
           slug: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id: string
           sync_error?: string | null
           sync_status?: string | null
+          synced_at?: string | null
           updated_at?: string | null
           woo_id: number
         }
@@ -904,9 +950,11 @@ export type Database = {
           last_synced_at?: string | null
           name?: string
           slug?: string
+          source?: Database["public"]["Enums"]["data_source"] | null
           store_id?: string
           sync_error?: string | null
           sync_status?: string | null
+          synced_at?: string | null
           updated_at?: string | null
           woo_id?: number
         }
@@ -1315,6 +1363,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      data_source: "woo" | "local"
       store_role: "owner" | "manager" | "viewer"
     }
     CompositeTypes: {
@@ -1444,6 +1493,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      data_source: ["woo", "local"],
       store_role: ["owner", "manager", "viewer"],
     },
   },

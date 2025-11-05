@@ -162,6 +162,8 @@ export function ProductVariationsTab({ storeId, productId }: ProductVariationsTa
       image_id: null,
       woo_id: null,
       attributes: combo,
+      source: 'local' as const,
+      synced_at: null,
       created_at: now,
       updated_at: now,
     }));
