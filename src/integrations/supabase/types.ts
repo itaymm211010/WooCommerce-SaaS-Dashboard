@@ -1014,6 +1014,7 @@ export type Database = {
           updated_at: string
           url: string
           user_id: string
+          webhook_secret: string | null
         }
         Insert: {
           api_key: string
@@ -1025,6 +1026,7 @@ export type Database = {
           updated_at?: string
           url: string
           user_id: string
+          webhook_secret?: string | null
         }
         Update: {
           api_key?: string
@@ -1036,6 +1038,7 @@ export type Database = {
           updated_at?: string
           url?: string
           user_id?: string
+          webhook_secret?: string | null
         }
         Relationships: []
       }
@@ -1263,6 +1266,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          received_at: string
+          status: string
+          store_id: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          received_at?: string
+          status: string
+          store_id: string
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          received_at?: string
+          status?: string
+          store_id?: string
+          topic?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhooks: {
         Row: {
