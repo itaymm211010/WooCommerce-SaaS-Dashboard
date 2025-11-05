@@ -186,6 +186,13 @@ export type Database = {
             foreignKeyName: "order_status_logs_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_status_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -226,6 +233,13 @@ export type Database = {
           woo_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_store_id_fkey"
             columns: ["store_id"]
@@ -358,6 +372,13 @@ export type Database = {
             foreignKeyName: "product_images_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -431,6 +452,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
             referencedColumns: ["id"]
           },
           {
@@ -522,6 +550,13 @@ export type Database = {
           woo_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_store_id_fkey"
             columns: ["store_id"]
@@ -714,6 +749,13 @@ export type Database = {
             foreignKeyName: "store_attribute_terms_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_attribute_terms_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -763,6 +805,13 @@ export type Database = {
           woo_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "store_attributes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "store_attributes_store_id_fkey"
             columns: ["store_id"]
@@ -819,6 +868,13 @@ export type Database = {
           woo_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "store_brands_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "store_brands_store_id_fkey"
             columns: ["store_id"]
@@ -904,6 +960,13 @@ export type Database = {
             foreignKeyName: "store_categories_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -963,6 +1026,13 @@ export type Database = {
             foreignKeyName: "store_tags_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_tags_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -994,6 +1064,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "store_users_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "store_users_store_id_fkey"
             columns: ["store_id"]
@@ -1241,6 +1318,13 @@ export type Database = {
             foreignKeyName: "taxonomy_sync_log_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxonomy_sync_log_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -1300,6 +1384,13 @@ export type Database = {
             foreignKeyName: "webhook_logs_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -1337,6 +1428,13 @@ export type Database = {
           woo_webhook_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "webhooks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "webhooks_store_id_fkey"
             columns: ["store_id"]
@@ -1386,7 +1484,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      store_basic_info: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          id: string | null
+          name: string | null
+          updated_at: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_old_taxonomy_sync_logs: { Args: never; Returns: undefined }
