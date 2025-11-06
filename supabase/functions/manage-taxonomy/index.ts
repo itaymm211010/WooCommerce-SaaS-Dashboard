@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getStoreDetails } from "../_shared/store-utils.ts";
+import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,18 +19,25 @@ interface ManageTaxonomyRequest {
   };
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+serve(withAuth(async (req, auth) => {
   try {
+    const body = await req.json() as ManageTaxonomyRequest;
+    const { storeId, type, action, data } = body;
+
+    // Verify user has access to this store
+    const accessCheck = await verifyStoreAccess(auth.userId, storeId);
+    if (!accessCheck.success) {
+      return new Response(JSON.stringify({
+        error: accessCheck.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    const { storeId, type, action, data } = await req.json() as ManageTaxonomyRequest;
 
     // Get store details with credentials
     const store = await getStoreDetails(storeId);
@@ -53,7 +61,7 @@ serve(async (req) => {
 
     const endpoint = endpointMap[type];
     const table = tableMap[type];
-    const auth = btoa(`${store.api_key}:${store.api_secret}`);
+    const basicAuth = btoa(`${store.api_key}:${store.api_secret}`);
 
     let result;
 
@@ -65,7 +73,7 @@ serve(async (req) => {
         const response = await fetch(`${baseUrl}${endpoint}`, {
           method: 'POST',
           headers: {
-            'Authorization': `Basic ${auth}`,
+            'Authorization': `Basic ${basicAuth}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -89,7 +97,7 @@ serve(async (req) => {
               const fetchResponse = await fetch(`${baseUrl}${endpoint}/${errorJson.data.resource_id}`, {
                 method: 'GET',
                 headers: {
-                  'Authorization': `Basic ${auth}`,
+                  'Authorization': `Basic ${basicAuth}`,
                   'Content-Type': 'application/json'
                 }
               });
@@ -218,7 +226,7 @@ serve(async (req) => {
         const response = await fetch(`${baseUrl}${endpoint}/${data.id}`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Basic ${auth}`,
+            'Authorization': `Basic ${basicAuth}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -275,7 +283,7 @@ serve(async (req) => {
         const response = await fetch(`${baseUrl}${endpoint}/${data.id}?force=true`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Basic ${auth}`,
+            'Authorization': `Basic ${basicAuth}`,
             'Content-Type': 'application/json'
           }
         });
