@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 type Store = Tables<"stores">;
 
@@ -16,26 +17,21 @@ export const useOrderNotes = (storeId: string, orderId: string, store?: Store) =
     queryKey: ['order-notes', storeId, orderId],
     queryFn: async () => {
       if (!store) throw new Error('Store not found');
-      
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
 
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/orders/${orderId}/notes?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          }
+      // Fetch via secure proxy
+      const { data, error } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: store.id,
+          endpoint: `/wp-json/wc/v3/orders/${orderId}/notes`,
+          method: 'GET'
         }
-      );
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch order notes from WooCommerce');
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to fetch order notes from WooCommerce');
       }
 
-      const notes: OrderNote[] = await response.json();
+      const notes: OrderNote[] = Array.isArray(data) ? data : [];
       
       // Sort by date, newest first
       return notes.sort(

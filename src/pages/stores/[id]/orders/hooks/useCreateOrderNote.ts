@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type Store = Tables<"stores">;
 
@@ -19,33 +20,26 @@ export const useCreateOrderNote = (
   return useMutation({
     mutationFn: async ({ note, customer_note }: CreateOrderNoteParams) => {
       if (!store) throw new Error('Store not found');
-      
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
 
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/orders/${orderId}/notes?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-        {
+      // Create note via secure proxy
+      const { data, error } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: store.id,
+          endpoint: `/wp-json/wc/v3/orders/${orderId}/notes`,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             note,
             customer_note,
             added_by_user: true
-          })
+          }
         }
-      );
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to create order note');
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to create order note');
       }
 
-      return await response.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-notes', storeId, orderId] });

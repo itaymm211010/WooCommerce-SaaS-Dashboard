@@ -94,32 +94,24 @@ export default function StoreOrdersPage() {
   const syncOrders = async () => {
     try {
       setIsSyncing(true);
-      
-      if (!store?.url || !store?.api_key || !store?.api_secret) {
+
+      if (!store?.id) {
         toast.error('Missing store configuration');
         return;
       }
 
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
-
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/orders?per_page=100&consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          }
+      // Fetch orders via secure proxy
+      const { data: wooOrders, error } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: store.id,
+          endpoint: '/wp-json/wc/v3/orders?per_page=100',
+          method: 'GET'
         }
-      );
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders from WooCommerce');
+      if (error || !wooOrders) {
+        throw new Error(error?.message || 'Failed to fetch orders from WooCommerce');
       }
-
-      const wooOrders = await response.json();
       
       const ordersToInsert = wooOrders.map((order: any) => ({
         store_id: id,

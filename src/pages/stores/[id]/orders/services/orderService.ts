@@ -20,25 +20,18 @@ export async function updateOrderStatus({
   oldStatus: OrderStatus;
   userEmail: string;
 }) {
-  let baseUrl = store.url.replace(/\/+$/, '');
-  if (!baseUrl.startsWith('http')) {
-    baseUrl = `https://${baseUrl}`;
-  }
-
-  const response = await fetch(
-    `${baseUrl}/wp-json/wc/v3/orders/${orderId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-    {
+  // Update via secure proxy
+  const { data, error } = await supabase.functions.invoke('woo-proxy', {
+    body: {
+      storeId: store.id,
+      endpoint: `/wp-json/wc/v3/orders/${orderId}`,
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ status: newStatus })
+      body: { status: newStatus }
     }
-  );
+  });
 
-  if (!response.ok) {
-    throw new Error('Failed to update order status in WooCommerce');
+  if (error || !data) {
+    throw new Error(error?.message || 'Failed to update order status in WooCommerce');
   }
 
   const { error: updateError } = await supabase
