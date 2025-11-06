@@ -132,3 +132,4 @@ CREATE TRIGGER update_agent_insights_updated_at
 COMMENT ON TABLE agent_insights IS 'Stores analysis results from AI agents';
 COMMENT ON TABLE agent_alerts IS 'High-priority notifications from AI agents';
 COMMENT ON TABLE agent_execution_log IS 'Tracks when AI agents execute and their results';
+# Migration trigger
