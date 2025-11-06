@@ -1256,6 +1256,126 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_errors: {
+        Row: {
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          error_code: string | null
+          error_message: string
+          id: string
+          last_retry_at: string | null
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          retry_count: number | null
+          stack_trace: string | null
+          store_id: string
+          woo_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          error_code?: string | null
+          error_message: string
+          id?: string
+          last_retry_at?: string | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          retry_count?: number | null
+          stack_trace?: string | null
+          store_id: string
+          woo_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          error_code?: string | null
+          error_message?: string
+          id?: string
+          last_retry_at?: string | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          retry_count?: number | null
+          stack_trace?: string | null
+          store_id?: string
+          woo_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_errors_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_errors_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          duration_ms: number | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          status: string
+          store_id: string
+          woo_id: number | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          store_id: string
+          woo_id?: number | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          store_id?: string
+          woo_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           comment: string
@@ -1653,6 +1773,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_sync_logs: { Args: never; Returns: undefined }
       cleanup_old_taxonomy_sync_logs: { Args: never; Returns: undefined }
       has_role: {
         Args: {
