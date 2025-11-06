@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { MessageSquare } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 type Store = Tables<"stores">;
 type Order = Tables<"orders">;
@@ -30,28 +31,22 @@ export const RecentOrderNotes = ({ store, orders }: RecentOrderNotesProps) => {
     queryKey: ['recent-order-notes', store?.id, recentOrders.map(o => o.woo_id)],
     queryFn: async () => {
       if (!store || recentOrders.length === 0) return [];
-      
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
 
       const allNotes: OrderNote[] = [];
-      
-      // Fetch notes for recent orders
+
+      // Fetch notes for recent orders via secure proxy
       for (const order of recentOrders) {
         try {
-          const response = await fetch(
-            `${baseUrl}/wp-json/wc/v3/orders/${order.woo_id}/notes?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-            {
-              headers: {
-                'Accept': 'application/json',
-              }
+          const { data, error } = await supabase.functions.invoke('woo-proxy', {
+            body: {
+              storeId: store.id,
+              endpoint: `/wp-json/wc/v3/orders/${order.woo_id}/notes`,
+              method: 'GET'
             }
-          );
+          });
 
-          if (response.ok) {
-            const orderNotes: OrderNote[] = await response.json();
+          if (!error && data) {
+            const orderNotes: OrderNote[] = Array.isArray(data) ? data : [];
             allNotes.push(...orderNotes.map(note => ({ ...note, order_id: order.woo_id })));
           }
         } catch (error) {
