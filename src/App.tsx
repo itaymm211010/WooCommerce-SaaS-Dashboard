@@ -17,6 +17,7 @@ import SignUp from "./pages/auth/SignUp";
 import ImageManagementDemo from "./pages/demo/ImageManagementDemo";
 import AIChat from "./pages/AIChat";
 import AgentDashboard from "./pages/agents/AgentDashboard";
+import SyncMonitoring from "./pages/sync-monitoring/Index";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -161,6 +162,14 @@ function App() {
               element={
                 <RequireAuth>
                   <AgentDashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/sync-monitoring"
+              element={
+                <RequireAuth>
+                  <SyncMonitoring />
                 </RequireAuth>
               }
             />

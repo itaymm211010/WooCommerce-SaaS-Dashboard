@@ -5,6 +5,8 @@ import { syncCategories } from "./sync-categories.ts"
 import { syncTags } from "./sync-tags.ts"
 import { syncBrands } from "./sync-brands.ts"
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
+import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 
 serve(withAuth(async (req, auth) => {
   try {
@@ -32,6 +34,29 @@ serve(withAuth(async (req, auth) => {
 
     console.log(`🚀 Starting taxonomy sync for store: ${storeId}`)
     const startTime = Date.now()
+
+    // Create service role client for logging
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
+    // Log start for each taxonomy type
+    const categoryLogId = await logSyncStart(supabaseAdmin, {
+      store_id: storeId,
+      entity_type: 'category',
+      action: 'sync_from_woo'
+    })
+    const tagLogId = await logSyncStart(supabaseAdmin, {
+      store_id: storeId,
+      entity_type: 'tag',
+      action: 'sync_from_woo'
+    })
+    const brandLogId = await logSyncStart(supabaseAdmin, {
+      store_id: storeId,
+      entity_type: 'brand',
+      action: 'sync_from_woo'
+    })
 
     // Get store details
     const store = await getStoreDetails(storeId)
@@ -72,6 +97,55 @@ serve(withAuth(async (req, auth) => {
         }
     
     const duration = Date.now() - startTime
+
+    // Log results for each taxonomy type
+    if (categoryLogId) {
+      if (categoriesResult.failed > 0) {
+        await logSyncError(supabaseAdmin, {
+          store_id: storeId,
+          entity_type: 'category',
+          error_message: categoriesResult.errors?.[0]?.error || 'Unknown error',
+          metadata: { created: categoriesResult.created, updated: categoriesResult.updated }
+        }, categoryLogId)
+      } else {
+        await logSyncSuccess(supabaseAdmin, categoryLogId, {
+          duration_ms: duration,
+          metadata: { created: categoriesResult.created, updated: categoriesResult.updated }
+        })
+      }
+    }
+
+    if (tagLogId) {
+      if (tagsResult.failed > 0) {
+        await logSyncError(supabaseAdmin, {
+          store_id: storeId,
+          entity_type: 'tag',
+          error_message: tagsResult.errors?.[0]?.error || 'Unknown error',
+          metadata: { created: tagsResult.created, updated: tagsResult.updated }
+        }, tagLogId)
+      } else {
+        await logSyncSuccess(supabaseAdmin, tagLogId, {
+          duration_ms: duration,
+          metadata: { created: tagsResult.created, updated: tagsResult.updated }
+        })
+      }
+    }
+
+    if (brandLogId) {
+      if (brandsResult.failed > 0) {
+        await logSyncError(supabaseAdmin, {
+          store_id: storeId,
+          entity_type: 'brand',
+          error_message: brandsResult.errors?.[0]?.error || 'Unknown error',
+          metadata: { created: brandsResult.created, updated: brandsResult.updated }
+        }, brandLogId)
+      } else {
+        await logSyncSuccess(supabaseAdmin, brandLogId, {
+          duration_ms: duration,
+          metadata: { created: brandsResult.created, updated: brandsResult.updated }
+        })
+      }
+    }
     
     const totalCreated = categoriesResult.created + tagsResult.created + brandsResult.created
     const totalUpdated = categoriesResult.updated + tagsResult.updated + brandsResult.updated

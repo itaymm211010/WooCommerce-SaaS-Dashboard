@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
+import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +38,13 @@ serve(withAuth(async (req, auth) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
+
+    const startTime = Date.now()
+    const logId = await logSyncStart(supabase, {
+      store_id,
+      entity_type: 'product',
+      action: 'bulk_sync_to_woo'
+    })
 
     // Fetch all products without woo_id for this store
     const { data: products, error: fetchError } = await supabase
@@ -90,6 +98,16 @@ serve(withAuth(async (req, auth) => {
             product_name: product.name,
             error: error.message || 'Unknown error'
           })
+          
+          // Log individual error
+          await logSyncError(supabase, {
+            store_id,
+            entity_type: 'product',
+            error_message: error.message || 'Unknown error',
+            entity_id: product.id,
+            woo_id: product.woo_id,
+            metadata: { product_name: product.name }
+          })
         } else {
           console.log(`Successfully synced product ${product.name}`)
           syncedCount++
@@ -102,10 +120,34 @@ serve(withAuth(async (req, auth) => {
           product_name: product.name,
           error: err instanceof Error ? err.message : 'Unknown error'
         })
+        
+        // Log individual error
+        await logSyncError(supabase, {
+          store_id,
+          entity_type: 'product',
+          error_message: err instanceof Error ? err.message : 'Unknown error',
+          stack_trace: err instanceof Error ? err.stack : undefined,
+          entity_id: product.id,
+          woo_id: product.woo_id,
+          metadata: { product_name: product.name }
+        })
       }
     }
 
     console.log(`Bulk sync complete: ${syncedCount} synced, ${failedCount} failed`)
+
+    const duration = Date.now() - startTime
+    
+    if (logId) {
+      await logSyncSuccess(supabase, logId, {
+        duration_ms: duration,
+        metadata: {
+          total_products: products.length,
+          synced_count: syncedCount,
+          failed_count: failedCount
+        }
+      })
+    }
 
     return new Response(JSON.stringify({ 
       success: true,
