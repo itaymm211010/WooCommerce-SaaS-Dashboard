@@ -19,7 +19,7 @@ export async function getStoreCredentials(
   storeId: string
 ): Promise<StoreCredentials | null> {
   try {
-    const { data, error } = await supabase.rpc('get_store_credentials', {
+    const { data, error } = await (supabase.rpc as any)('get_store_credentials', {
       store_uuid: storeId
     }).single();
 
@@ -47,7 +47,7 @@ export async function logCredentialAccess(storeId: string): Promise<void> {
     // Get client info for audit
     const userAgent = navigator.userAgent;
 
-    await supabase.rpc('log_credential_access', {
+    await (supabase.rpc as any)('log_credential_access', {
       store_uuid: storeId,
       ip: null, // IP is handled server-side
       agent: userAgent

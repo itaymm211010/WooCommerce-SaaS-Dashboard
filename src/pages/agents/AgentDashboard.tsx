@@ -10,11 +10,15 @@ interface AgentInsight {
   id: string;
   agent_type: string;
   analysis: string;
-  severity: "low" | "medium" | "high" | "critical";
+  severity: string;
   metadata: any;
   recommendations: any[];
   status: string;
   created_at: string;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
+  resolved_at?: string | null;
+  updated_at: string;
 }
 
 interface AgentAlert {
@@ -22,9 +26,13 @@ interface AgentAlert {
   agent_type: string;
   title: string;
   message: string;
-  severity: "low" | "medium" | "high" | "critical";
+  severity: string;
   is_read: boolean;
   created_at: string;
+  insight_id?: string | null;
+  metadata?: any;
+  read_at?: string | null;
+  read_by?: string | null;
 }
 
 interface AgentExecution {
@@ -36,6 +44,9 @@ interface AgentExecution {
   alerts_generated: number;
   started_at: string;
   completed_at: string;
+  execution_type?: string;
+  error_message?: string | null;
+  metadata?: any;
 }
 
 export default function AgentDashboard() {
@@ -72,9 +83,9 @@ export default function AgentDashboard() {
           .limit(10),
       ]);
 
-      if (insightsRes.data) setInsights(insightsRes.data);
-      if (alertsRes.data) setAlerts(alertsRes.data);
-      if (executionsRes.data) setExecutions(executionsRes.data);
+      if (insightsRes.data) setInsights(insightsRes.data as any);
+      if (alertsRes.data) setAlerts(alertsRes.data as any);
+      if (executionsRes.data) setExecutions(executionsRes.data as any);
     } catch (error) {
       console.error("Failed to load agent data:", error);
       toast({

@@ -133,7 +133,7 @@ export async function verifyWooWebhook(
     // Get webhook secret using secure RPC function
     const { data: credentials, error: credError } = await supabase
       .rpc('get_store_credentials', { store_uuid: storeId })
-      .single()
+      .single() as { data: { api_key: string; api_secret: string; webhook_secret: string | null } | null; error: any }
 
     if (credError || !credentials || !credentials.webhook_secret) {
       console.error('Failed to get webhook secret:', credError)
