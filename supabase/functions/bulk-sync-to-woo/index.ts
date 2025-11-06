@@ -8,7 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(withAuth(async (req, auth) => {
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  return withAuth(async (req, auth) => {
   try {
     const { store_id } = await req.json()
 
@@ -172,4 +178,5 @@ serve(withAuth(async (req, auth) => {
       status: 400,
     })
   }
-}))
+  })(req)
+})
