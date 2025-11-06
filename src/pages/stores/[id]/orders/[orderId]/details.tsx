@@ -35,27 +35,22 @@ export default function OrderDetailsPage() {
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', storeId, orderId],
     queryFn: async () => {
-      if (!storeId || !orderId) throw new Error('Missing required parameters');
-      
-      let baseUrl = store?.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
-      }
+      if (!storeId || !orderId || !store) throw new Error('Missing required parameters');
 
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/orders/${orderId}?consumer_key=${store?.api_key}&consumer_secret=${store?.api_secret}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          }
+      // Fetch via secure proxy
+      const { data, error } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: store.id,
+          endpoint: `/wp-json/wc/v3/orders/${orderId}`,
+          method: 'GET'
         }
-      );
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch order details from WooCommerce');
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to fetch order details from WooCommerce');
       }
 
-      return await response.json();
+      return data;
     },
     enabled: !!storeId && !!orderId && !!store
   });
