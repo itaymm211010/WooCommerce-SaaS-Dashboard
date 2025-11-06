@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Store = Tables<"stores">;
-import { Package, ShoppingCart, Users, Webhook } from "lucide-react";
+import { Package, ShoppingCart, Users, Webhook, Eye, EyeOff, Copy, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WebhooksManager } from "./WebhooksManager";
+import { toast } from "sonner";
 
 interface StoreDetailsProps {
   store: Store;
@@ -22,6 +23,26 @@ const currencyLabels: Record<string, string> = {
 
 export function StoreDetails({ store }: StoreDetailsProps) {
   const [currentTab, setCurrentTab] = useState<string>("details");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  const copyToClipboard = async (text: string, type: 'key' | 'secret') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'key') {
+        setCopiedKey(true);
+        setTimeout(() => setCopiedKey(false), 2000);
+      } else {
+        setCopiedSecret(true);
+        setTimeout(() => setCopiedSecret(false), 2000);
+      }
+      toast.success('הועתק ללוח');
+    } catch (err) {
+      toast.error('שגיאה בהעתקה');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -46,14 +67,50 @@ export function StoreDetails({ store }: StoreDetailsProps) {
           </div>
           <div className="space-y-2">
             <Label>מפתח API</Label>
-            <div className="rounded-md border p-2 font-mono text-sm">
-              {store.api_key}
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-md border p-2 font-mono text-sm">
+                {showApiKey ? store.api_key : '••••••••••••••••••••••••••••••••'}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowApiKey(!showApiKey)}
+                title={showApiKey ? 'הסתר' : 'הצג'}
+              >
+                {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(store.api_key, 'key')}
+                title="העתק"
+              >
+                {copiedKey ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
           <div className="space-y-2">
             <Label>סוד API</Label>
-            <div className="rounded-md border p-2 font-mono text-sm">
-              {store.api_secret}
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-md border p-2 font-mono text-sm">
+                {showApiSecret ? store.api_secret : '••••••••••••••••••••••••••••••••'}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowApiSecret(!showApiSecret)}
+                title={showApiSecret ? 'הסתר' : 'הצג'}
+              >
+                {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(store.api_secret, 'secret')}
+                title="העתק"
+              >
+                {copiedSecret ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
           <div className="space-y-2">
