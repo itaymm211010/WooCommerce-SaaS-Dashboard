@@ -4,13 +4,7 @@ import { handleRequest } from "./handlers.ts"
 import { corsHeaders } from "./utils.ts"
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  return withAuth(async (req, auth) => {
+serve(withAuth(async (req, auth) => {
   try {
     // Parse request body to get store_id
     const body = await req.json()
@@ -54,5 +48,4 @@ serve(async (req) => {
       status: 400,
     })
   }
-  })(req)
-})
+}))
