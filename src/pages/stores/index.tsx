@@ -143,7 +143,7 @@ export default function StoresPage() {
               <TableRow key={store.id}>
                 <TableCell className="font-medium">{store.name}</TableCell>
                 <TableCell>{store.url}</TableCell>
-                <TableCell>{store.api_key.slice(0, 8)}...</TableCell>
+                <TableCell>{store.api_key?.slice(0, 8) || 'N/A'}...</TableCell>
                 <TableCell>{new Date(store.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-end">
                   <div className="flex items-center justify-end gap-2">
