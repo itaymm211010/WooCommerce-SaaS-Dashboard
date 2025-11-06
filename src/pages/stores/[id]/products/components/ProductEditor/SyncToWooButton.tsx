@@ -29,11 +29,20 @@ export function SyncToWooButton({ storeId, productId, disabled }: SyncToWooButto
 
       console.log('מסנכרן מוצר ל-WooCommerce:', productId);
 
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       // Call the edge function to sync with WooCommerce
       const { data, error } = await supabase.functions.invoke('update-woo-product', {
         body: {
           product,
           store_id: storeId
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 

@@ -15,8 +15,17 @@ export const useBulkSync = (storeId: string | undefined) => {
     const loadingToast = toast.loading("מסנכרן מוצרים לווקומרס...");
 
     try {
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       const { data, error } = await supabase.functions.invoke('bulk-sync-to-woo', {
-        body: { store_id: storeId }
+        body: { store_id: storeId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;

@@ -36,8 +36,17 @@ export const useProductSync = (store: Store | undefined, storeId: string | undef
 
       console.log('Calling sync-woo-products function...');
       
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       const { data, error } = await supabase.functions.invoke('sync-woo-products', {
-        body: { store_id: storeId }
+        body: { store_id: storeId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) {
