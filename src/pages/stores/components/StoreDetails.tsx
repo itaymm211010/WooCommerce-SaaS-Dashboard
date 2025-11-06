@@ -75,7 +75,7 @@ export function StoreDetails({ store }: StoreDetailsProps) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex gap-4 pt-4">
+      <div className="grid grid-cols-2 gap-4 pt-4">
         <Link to={`/stores/${store.id}/products`} className="flex-1">
           <Button className="w-full" variant="outline">
             <Package className="h-4 w-4" />
@@ -92,6 +92,12 @@ export function StoreDetails({ store }: StoreDetailsProps) {
           <Button className="w-full" variant="outline">
             <Users className="h-4 w-4" />
             <span className="ms-2">משתמשים</span>
+          </Button>
+        </Link>
+        <Link to={`/stores/${store.id}/webhooks`} className="flex-1">
+          <Button className="w-full" variant="outline">
+            <Webhook className="h-4 w-4" />
+            <span className="ms-2">ווב-הוקים</span>
           </Button>
         </Link>
       </div>

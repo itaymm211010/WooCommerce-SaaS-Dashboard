@@ -16,6 +16,7 @@ import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ImageManagementDemo from "./pages/demo/ImageManagementDemo";
 import AIChat from "./pages/AIChat";
+import AgentDashboard from "./pages/agents/AgentDashboard";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -25,6 +26,7 @@ import ProductsPage from "./pages/stores/[id]/products";
 import ProductEditorPage from "./pages/stores/[id]/products/[productId]/edit";
 import StoreUsersPage from "./pages/stores/[id]/users";
 import StoreTaxonomiesPage from "./pages/stores/[id]/taxonomies";
+import StoreWebhooksPage from "./pages/stores/[id]/webhooks";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -155,6 +157,14 @@ function App() {
               }
             />
             <Route
+              path="/agents"
+              element={
+                <RequireAuth>
+                  <AgentDashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/stores"
               element={
                 <RequireAuth>
@@ -207,6 +217,14 @@ function App() {
               element={
                 <RequireAuth>
                   <StoreTaxonomiesPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stores/:id/webhooks"
+              element={
+                <RequireAuth>
+                  <StoreWebhooksPage />
                 </RequireAuth>
               }
             />

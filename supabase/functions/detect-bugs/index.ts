@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { withAuth } from "../_shared/auth-middleware.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,12 +25,9 @@ interface BugReport {
   steps_to_reproduce?: string;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+Deno.serve(withAuth(async (req, auth) => {
   try {
+    console.log(`Bug detection triggered by user: ${auth.userId}`)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -182,4 +180,4 @@ Deno.serve(async (req) => {
       }
     );
   }
-});
+}));

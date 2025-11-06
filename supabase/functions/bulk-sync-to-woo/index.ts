@@ -1,22 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
+import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+serve(withAuth(async (req, auth) => {
   try {
     const { store_id } = await req.json()
-    
+
     if (!store_id) {
-      throw new Error('No store_id provided')
+      return new Response(JSON.stringify({
+        error: 'Missing required parameter: store_id'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
+    // Verify user has access to this store
+    const accessCheck = await verifyStoreAccess(auth.userId, store_id)
+    if (!accessCheck.success) {
+      return new Response(JSON.stringify({
+        error: accessCheck.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
     }
 
     console.log(`Starting bulk sync for store: ${store_id}`)
@@ -118,4 +130,4 @@ serve(async (req) => {
       status: 400,
     })
   }
-})
+}))
