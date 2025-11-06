@@ -24,7 +24,7 @@ export async function handleRequest(req: Request) {
   const logId = await logSyncStart(supabaseAdmin, {
     store_id,
     entity_type: 'product',
-    action: 'sync_from_woo'
+    action: 'sync'
   })
 
   // Get store details

@@ -84,7 +84,7 @@ export async function handleRequest(req: Request) {
     const logId = await logSyncStart(supabaseAdmin, {
       store_id,
       entity_type: 'product',
-      action: 'create_in_woo',
+      action: 'create',
       entity_id: fullProduct.id
     })
 
@@ -125,7 +125,7 @@ export async function handleRequest(req: Request) {
     const logId = await logSyncStart(supabaseAdmin, {
       store_id,
       entity_type: 'product',
-      action: 'update_to_woo',
+      action: 'update',
       entity_id: fullProduct.id,
       woo_id: wooId
     })
