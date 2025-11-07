@@ -101,7 +101,7 @@ export default function StoreOrdersPage() {
       }
 
       // Fetch orders via secure proxy
-      const { data: wooOrders, error } = await supabase.functions.invoke('woo-proxy', {
+      const { data: wooOrders, error: wooError } = await supabase.functions.invoke('woo-proxy', {
         body: {
           storeId: store.id,
           endpoint: '/wp-json/wc/v3/orders?per_page=100',
@@ -109,8 +109,8 @@ export default function StoreOrdersPage() {
         }
       });
 
-      if (error || !wooOrders) {
-        throw new Error(error?.message || 'Failed to fetch orders from WooCommerce');
+      if (wooError || !wooOrders) {
+        throw new Error(wooError?.message || 'Failed to fetch orders from WooCommerce');
       }
       
       const ordersToInsert = wooOrders.map((order: any) => ({
@@ -122,11 +122,11 @@ export default function StoreOrdersPage() {
         customer_email: order.billing.email
       }));
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('orders')
         .upsert(ordersToInsert, { onConflict: 'store_id,woo_id' });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast.success(`Successfully synced ${ordersToInsert.length} orders`);
       refetch();
