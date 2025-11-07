@@ -36,40 +36,53 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
         baseUrl = `https://${baseUrl}`;
       }
 
-      // קבל את הגדרות החנות מווקומרס
-      const storeResponse = await fetch(
-        `${baseUrl}/wp-json/wc/v3/settings/general?consumer_key=${apiKey}&consumer_secret=${apiSecret}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          }
+      // הוסף את החנות לדאטהבייס תחילה (עם מטבע default)
+      const { data: newStore, error: insertError } = await supabase
+        .from('stores')
+        .insert({
+          name,
+          url: baseUrl,
+          api_key: apiKey,
+          api_secret: apiSecret,
+          currency: 'USD', // Default currency, will be updated next
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // קבל את הגדרות החנות מווקומרס דרך secure proxy
+      const { data: settings, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: newStore.id,
+          endpoint: '/wp-json/wc/v3/settings/general',
+          method: 'GET'
         }
-      );
-
-      if (!storeResponse.ok) {
-        throw new Error('Failed to fetch store settings. Please check your API credentials.');
-      }
-
-      const settings = await storeResponse.json();
-      console.log('Store settings:', settings);
-      
-      // מצא את הגדרת המטבע
-      const currencySetting = settings.find((setting: any) => setting.id === 'woocommerce_currency');
-      if (!currencySetting) {
-        throw new Error('Could not find currency setting in WooCommerce');
-      }
-
-      // הוסף את החנות לדאטהבייס עם המטבע שהתקבל מווקומרס
-      const { error } = await supabase.from('stores').insert({
-        name,
-        url: baseUrl,
-        api_key: apiKey,
-        api_secret: apiSecret,
-        currency: currencySetting.value,
-        user_id: user.id
       });
 
-      if (error) throw error;
+      if (fetchError || !settings) {
+        console.error('Failed to fetch store settings:', fetchError?.message || 'Unknown error');
+        // Don't fail the entire operation - store was created successfully
+        toast.warning('Store added, but could not fetch currency settings');
+      } else {
+        // מצא את הגדרת המטבע
+        const currencySetting = settings.find((setting: any) => setting.id === 'woocommerce_currency');
+
+        if (currencySetting) {
+          // עדכן את המטבע בדאטהבייס
+          const { error: updateError } = await supabase
+            .from('stores')
+            .update({ currency: currencySetting.value })
+            .eq('id', newStore.id);
+
+          if (updateError) {
+            console.error('Failed to update currency:', updateError);
+          } else {
+            console.log(`Currency set to ${currencySetting.value}`);
+          }
+        }
+      }
 
       toast.success("Store added successfully");
       onSuccess();

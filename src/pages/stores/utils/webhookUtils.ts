@@ -12,29 +12,22 @@ export const getWebhookEndpoint = (storeId: string) => {
 
 export async function deleteWebhook(webhookId: number, store: Store) {
   try {
-    let baseUrl = store.url.replace(/\/+$/, '');
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `https://${baseUrl}`;
-    }
-
     console.log('Deleting webhook from WooCommerce:', webhookId);
-    
-    const response = await fetch(
-      `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'deleted'
-        })
-      }
-    );
 
-    if (!response.ok) {
-      console.error('WooCommerce webhook delete response:', await response.text());
+    // Delete webhook via secure proxy
+    const { data, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+      body: {
+        storeId: store.id,
+        endpoint: `/wp-json/wc/v3/webhooks/${webhookId}`,
+        method: 'PUT',
+        body: {
+          status: 'deleted'
+        }
+      }
+    });
+
+    if (fetchError || !data) {
+      console.error('WooCommerce webhook delete error:', fetchError?.message || 'Unknown error');
       throw new Error('Failed to delete webhook from WooCommerce');
     }
 
@@ -60,28 +53,21 @@ export async function deleteWebhook(webhookId: number, store: Store) {
 
 export async function toggleWebhookStatus(webhookId: number, store: Store, currentStatus: string) {
   try {
-    let baseUrl = store.url.replace(/\/+$/, '');
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `https://${baseUrl}`;
-    }
-
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
 
-    const response = await fetch(
-      `${baseUrl}/wp-json/wc/v3/webhooks/${webhookId}?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-      {
+    // Update webhook status via secure proxy
+    const { data, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+      body: {
+        storeId: store.id,
+        endpoint: `/wp-json/wc/v3/webhooks/${webhookId}`,
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           status: newStatus
-        })
+        }
       }
-    );
+    });
 
-    if (!response.ok) {
+    if (fetchError || !data) {
       throw new Error('Failed to update webhook status');
     }
 
@@ -105,34 +91,25 @@ export async function toggleWebhookStatus(webhookId: number, store: Store, curre
 export async function createWebhook(store: Store, selectedWebhookType: string, selectedTypeLabel: string) {
   try {
     const endpoint = getWebhookEndpoint(store.id);
-    let baseUrl = store.url.replace(/\/+$/, '');
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `https://${baseUrl}`;
-    }
 
-    const response = await fetch(
-      `${baseUrl}/wp-json/wc/v3/webhooks?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-      {
+    // Create webhook via secure proxy
+    const { data: webhook, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+      body: {
+        storeId: store.id,
+        endpoint: '/wp-json/wc/v3/webhooks',
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           name: `Lovable - ${selectedTypeLabel}`,
           topic: selectedWebhookType,
           delivery_url: endpoint,
           status: 'active'
-        })
+        }
       }
-    );
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Failed to create webhook: ${errorData.message || 'Unknown error'}`);
+    if (fetchError || !webhook) {
+      throw new Error(`Failed to create webhook: ${fetchError?.message || 'Unknown error'}`);
     }
-
-    const webhook = await response.json();
 
     const { error } = await supabase
       .from('webhooks')

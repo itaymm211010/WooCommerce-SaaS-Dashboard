@@ -93,22 +93,19 @@ export function ProductAttributesTab({
 
       if (storeError) throw storeError;
 
-      // Format base URL
-      let baseUrl = store.url.replace(/\/+$/, '');
-      if (!baseUrl.startsWith('http')) {
-        baseUrl = `https://${baseUrl}`;
+      // Fetch global attributes from WooCommerce via secure proxy
+      const { data: attributes, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+        body: {
+          storeId: store.id,
+          endpoint: '/wp-json/wc/v3/products/attributes?per_page=100',
+          method: 'GET'
+        }
+      });
+
+      if (fetchError || !attributes) {
+        throw new Error(`WooCommerce API error: ${fetchError?.message || 'Unknown error'}`);
       }
 
-      // Fetch global attributes from WooCommerce directly
-      const response = await fetch(
-        `${baseUrl}/wp-json/wc/v3/products/attributes?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
-      );
-
-      if (!response.ok) {
-        throw new Error(`WooCommerce API error: ${response.status}`);
-      }
-
-      const attributes = await response.json();
       console.log(`Found ${attributes.length} global attributes`);
 
       let synced = 0;
@@ -248,16 +245,19 @@ export function ProductAttributesTab({
 
         if (!store) throw new Error('Store not found');
 
-        let baseUrl = store.url.replace(/\/+$/, '');
-        if (!baseUrl.startsWith('http')) baseUrl = `https://${baseUrl}`;
+        // Fetch terms from WooCommerce via secure proxy
+        const { data: terms, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+          body: {
+            storeId: store.id,
+            endpoint: `/wp-json/wc/v3/products/attributes/${globalAttr.woo_id}/terms?per_page=100`,
+            method: 'GET'
+          }
+        });
 
-        const response = await fetch(
-          `${baseUrl}/wp-json/wc/v3/products/attributes/${globalAttr.woo_id}/terms?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}&per_page=100`
-        );
+        if (fetchError || !terms) {
+          throw new Error(`Failed to fetch terms: ${fetchError?.message || 'Unknown error'}`);
+        }
 
-        if (!response.ok) throw new Error(`Failed to fetch terms: ${response.status}`);
-
-        const terms = await response.json();
         console.log(`Found ${terms.length} terms from WooCommerce:`, terms);
 
         // Save terms to database

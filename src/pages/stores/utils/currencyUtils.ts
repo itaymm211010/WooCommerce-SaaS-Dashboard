@@ -32,28 +32,22 @@ export function formatCurrency(price: number, currencyCode: string = 'USD') {
 
 export async function checkAndUpdateStoreCurrency(store: Store) {
   try {
-    let baseUrl = store.url.replace(/\/+$/, '');
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `https://${baseUrl}`;
-    }
-
-    const storeResponse = await fetch(
-      `${baseUrl}/wp-json/wc/v3/settings/general?consumer_key=${store.api_key}&consumer_secret=${store.api_secret}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        }
+    // Fetch store settings via secure proxy
+    const { data: settings, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
+      body: {
+        storeId: store.id,
+        endpoint: '/wp-json/wc/v3/settings/general',
+        method: 'GET'
       }
-    );
+    });
 
-    if (!storeResponse.ok) {
-      console.error('Failed to fetch store settings');
+    if (fetchError || !settings) {
+      console.error('Failed to fetch store settings:', fetchError?.message || 'Unknown error');
       return;
     }
 
-    const settings = await storeResponse.json();
     const currencySetting = settings.find((setting: any) => setting.id === 'woocommerce_currency');
-    
+
     if (currencySetting && currencySetting.value !== store.currency) {
       console.log(`Currency changed from ${store.currency} to ${currencySetting.value}`);
       const { error } = await supabase
