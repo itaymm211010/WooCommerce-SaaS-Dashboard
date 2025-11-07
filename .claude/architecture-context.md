@@ -65,8 +65,38 @@ RLS enforced for every table:
 - Policies verify access via `user_has_store_access(store_id)`.
 - Functions defined as `SECURITY DEFINER`.
 
-All Edge Functions must have `verify_jwt = true` except for public webhooks.  
+All Edge Functions must have `verify_jwt = true` except for public webhooks.
 JWT validation ensures tenant isolation and security.
+
+### Security Architecture for WooCommerce API Access
+**Problem**: Direct client-side WooCommerce API calls expose credentials in URLs and browser code.
+
+**Solution**: `woo-proxy` edge function as centralized security gateway:
+
+```typescript
+// Frontend → woo-proxy → WooCommerce
+const { data } = await supabase.functions.invoke('woo-proxy', {
+  body: {
+    storeId: uuid,           // Multi-tenant isolation
+    endpoint: '/wp-json/wc/v3/products',
+    method: 'GET',
+    body: { ... }           // Optional POST/PUT body
+  }
+});
+```
+
+**Security Flow**:
+1. ✅ **Authentication**: `withAuth` middleware validates JWT
+2. ✅ **Authorization**: `verifyStoreAccess` checks user → store access
+3. ✅ **Credential Retrieval**: `getStoreCredentials` fetches via RPC (audit logged)
+4. ✅ **Proxied Request**: Server-side authenticated call to WooCommerce
+5. ✅ **Response Forwarding**: Data returned to client (credentials never exposed)
+
+**Benefits**:
+- Zero credential exposure in client code
+- Centralized authentication/authorization
+- Audit trail for all WooCommerce API calls
+- Single point for rate limiting, caching, or monitoring
 
 ---
 
@@ -82,6 +112,8 @@ Idempotency rule: a sync can safely re‑run without duplicating data.
 ---
 
 ## 8. Example Sync Event
+
+### Push Sync (Supabase → Woo via Queue)
 ```mermaid
 sequenceDiagram
   participant UI
@@ -91,7 +123,7 @@ sequenceDiagram
 
   UI->>Supabase: Update product price (source='local')
   Supabase->>EdgeFn: Queue job → sync_queue
-  EdgeFn->>Woo: PUT /products/{id}
+  EdgeFn->>Woo: PUT /products/{id} (with credentials)
   Woo-->>EdgeFn: 200 OK (date_modified_gmt)
   EdgeFn->>Supabase: Update synced_at, source='local'
   Woo-->>Supabase: Webhook product.updated
@@ -99,15 +131,38 @@ sequenceDiagram
   Supabase->>sync_logs: Record success event
 ```
 
+### Direct API Call (Frontend → Woo via woo-proxy)
+```mermaid
+sequenceDiagram
+  participant UI as Frontend
+  participant Auth as withAuth
+  participant Proxy as woo-proxy
+  participant RPC as get_store_credentials
+  participant Woo as WooCommerce
+
+  UI->>Proxy: invoke('woo-proxy', {storeId, endpoint})
+  Proxy->>Auth: Validate JWT
+  Auth-->>Proxy: ✅ userId
+  Proxy->>Auth: verifyStoreAccess(userId, storeId)
+  Auth-->>Proxy: ✅ Access granted
+  Proxy->>RPC: getStoreCredentials(storeId)
+  RPC-->>Proxy: {api_key, api_secret}
+  Proxy->>Woo: Authenticated request
+  Woo-->>Proxy: Response data
+  Proxy-->>UI: Return data (NO credentials)
+```
+
 ---
 
 ## Integration Flow Summary
-| Flow | Trigger | Direction | Conflict Resolution | Tables |
-|------|----------|-----------|---------------------|---------|
-| sync‑woo‑products | Scheduled / Manual | Woo → Supabase | Keep newer (Woo) | products, product_variations |
-| update‑woo‑product | Manual Update | Supabase → Woo | Keep local | sync_queue, sync_logs |
-| sync‑taxonomies | Manual / Auto | Woo ↔ Supabase | Replace all | store_categories, store_tags |
-| sync‑global‑attributes | Manual | Woo ↔ Supabase | Merge / Union | store_attributes, store_attribute_terms |
+| Flow | Trigger | Direction | Security Layer | Conflict Resolution | Tables |
+|------|----------|-----------|----------------|---------------------|---------|
+| **woo-proxy** | Frontend API Call | Frontend ↔ Woo | ✅ withAuth + verifyStoreAccess | N/A | All WooCommerce endpoints |
+| sync‑woo‑products | Scheduled / Manual | Woo → Supabase | ✅ Edge Function (service role) | Keep newer (Woo) | products, product_variations |
+| update‑woo‑product | Manual Update | Supabase → Woo | ✅ Edge Function (service role) | Keep local | sync_queue, sync_logs |
+| sync‑taxonomies | Manual / Auto | Woo ↔ Supabase | ✅ Edge Function (service role) | Replace all | store_categories, store_tags |
+| sync‑global‑attributes | Manual | Woo ↔ Supabase | ✅ Edge Function (service role) | Merge / Union | store_attributes, store_attribute_terms |
+| manage-taxonomy | Manual | Supabase → Woo | ✅ withAuth + verifyStoreAccess | Keep local | store_categories, store_tags |
 
 ---
 
@@ -125,14 +180,31 @@ sequenceDiagram
 
 ## Guiding Principles
 1. **Consistency over speed** — prioritize correctness first.
-2. **Security by default** — JWT + HMAC for every integration point.
-3. **Idempotency always** — no duplication on retries or re‑syncs.
-4. **Extensibility** — same functions power both manual and bulk syncs.
-5. **Observability** — every event leaves a trace (logs + notifications).
-6. **Hierarchy first** — taxonomies and attributes must sync before products.
-7. **Minimal coupling** — Edge Functions remain stateless and composable.
+2. **Security by default** — JWT + HMAC for every integration point. **NEVER expose credentials in client code or URLs**.
+3. **Zero trust architecture** — All WooCommerce API calls go through `woo-proxy` with authentication + authorization.
+4. **Idempotency always** — no duplication on retries or re‑syncs.
+5. **Extensibility** — same functions power both manual and bulk syncs.
+6. **Observability** — every event leaves a trace (logs + notifications).
+7. **Hierarchy first** — taxonomies and attributes must sync before products.
+8. **Minimal coupling** — Edge Functions remain stateless and composable.
 
 ---
 
 ## End Goal
-Build a stable, fault‑tolerant synchronization engine that scales to hundreds of WooCommerce stores and thousands of products with real‑time consistency, RLS‑enforced multi‑tenancy, and auditable logs for every operation.
+Build a stable, fault‑tolerant synchronization engine that scales to hundreds of WooCommerce stores and thousands of products with real‑time consistency, RLS‑enforced multi‑tenancy, zero credential exposure, and auditable logs for every operation.
+
+---
+
+## Recent Architecture Updates
+
+### woo-proxy Security Layer (2025-11-06)
+Added centralized security gateway for all frontend → WooCommerce API calls:
+- **Problem**: Credentials exposed in client-side code and URL parameters
+- **Solution**: Server-side proxy with authentication + authorization
+- **Impact**: Zero credential exposure, centralized access control, audit trail
+- **Files Updated**: 7 critical order management files migrated to proxy pattern
+- **Remaining Work**: 4 less-critical files pending migration (see project-context.md)
+
+This architectural change fundamentally shifts the security model from **client-side credentials** to **server-side proxied access**, aligning with zero-trust principles and multi-tenant security requirements.
+
+**Last Updated**: 2025-11-07
