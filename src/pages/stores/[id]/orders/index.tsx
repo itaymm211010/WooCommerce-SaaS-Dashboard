@@ -101,7 +101,7 @@ export default function StoreOrdersPage() {
       }
 
       // Fetch orders via secure proxy
-      const { data: wooOrders, error: wooError } = await supabase.functions.invoke('woo-proxy', {
+      const { data: wooOrders, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
         body: {
           storeId: store.id,
           endpoint: '/wp-json/wc/v3/orders?per_page=100',
@@ -109,8 +109,8 @@ export default function StoreOrdersPage() {
         }
       });
 
-      if (wooError || !wooOrders) {
-        throw new Error(wooError?.message || 'Failed to fetch orders from WooCommerce');
+      if (fetchError || !wooOrders) {
+        throw new Error(fetchError?.message || 'Failed to fetch orders from WooCommerce');
       }
       
       const ordersToInsert = wooOrders.map((order: any) => ({
