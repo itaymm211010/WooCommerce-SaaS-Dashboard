@@ -144,11 +144,11 @@ if (woo_id && synced_at) {
    - StoreDetails.tsx showed api_key and api_secret in plain text
    - Fixed with masked display and show/hide toggles
 
-3. ~~**Credentials in URL Parameters**~~ - PARTIALLY FIXED (2025-11-06)
+3. ~~**Credentials in URL Parameters**~~ - FIXED (2025-11-07)
    - WooCommerce API calls passed consumer_key/consumer_secret in URLs
    - Created `woo-proxy` edge function for secure server-side proxy
-   - Updated 7 critical order-related files to use proxy
-   - **Remaining**: 4 less-critical files still need updates (see Security-Critical Files section)
+   - Updated all 11 files to use proxy pattern
+   - **100% migration completed** - zero credentials in URLs
 
 4. ~~**manage-taxonomy PUBLIC Edge Function**~~ - FIXED (2025-11-06)
    - CRITICAL: Function had no authentication, anyone could manipulate taxonomies
@@ -273,6 +273,9 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 - **`supabase/migrations/`** - Database schema changes
 
 ### Security-Critical Files (Updated to use woo-proxy)
+**All files completed - 100% migration** ✅
+
+**Order Management (7 files):**
 - ✅ `src/components/dashboard/RecentOrderNotes.tsx`
 - ✅ `src/pages/stores/[id]/orders/index.tsx`
 - ✅ `src/pages/stores/[id]/orders/[orderId]/details.tsx`
@@ -280,10 +283,12 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 - ✅ `src/pages/stores/[id]/orders/hooks/useCreateOrderNote.ts`
 - ✅ `src/pages/stores/[id]/orders/hooks/useUpdateOrderStatus.ts`
 - ✅ `src/pages/stores/[id]/orders/services/orderService.ts`
-- ⏳ `src/pages/stores/components/AddStoreForm.tsx` - TODO: Update to use woo-proxy
-- ⏳ `src/pages/stores/utils/currencyUtils.ts` - TODO: Update to use woo-proxy
-- ⏳ `src/pages/stores/utils/webhookUtils.ts` - TODO: Update to use woo-proxy
-- ⏳ `src/pages/products/components/ProductAttributesTab.tsx` - TODO: Update to use woo-proxy
+
+**Utils & Forms (4 files):**
+- ✅ `src/pages/stores/components/AddStoreForm.tsx`
+- ✅ `src/pages/stores/utils/currencyUtils.ts`
+- ✅ `src/pages/stores/utils/webhookUtils.ts`
+- ✅ `src/pages/stores/[id]/products/components/ProductEditor/ProductAttributesTab.tsx`
 
 ### Documentation
 - **`.claude/project-context.md`** - This file (practical guidelines & context)
@@ -335,18 +340,21 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 
 ---
 
-## 📝 Recent Security Improvements (2025-11-06)
+## 📝 Recent Security Improvements (2025-11-06 to 2025-11-07)
 
-### woo-proxy Implementation
+### woo-proxy Implementation - COMPLETED ✅
 - Created centralized secure proxy for all WooCommerce API calls
 - Prevents credential exposure in client-side code and URL parameters
 - Enforces authentication and multi-tenant access control
-- Updated 7 critical order management files to use proxy pattern
+- **100% migration completed** - all 11 frontend files now use secure proxy
 
 ### Files Updated (Chronological Order)
+**Phase 1 - Critical Security Fixes (2025-11-06):**
 1. `supabase/functions/manage-taxonomy/index.ts` - Added authentication (CRITICAL FIX)
 2. `src/pages/stores/components/StoreDetails.tsx` - Masked credentials in UI
 3. `supabase/functions/woo-proxy/index.ts` - Created secure proxy function
+
+**Phase 2 - Order Management (2025-11-06):**
 4. `src/components/dashboard/RecentOrderNotes.tsx` - Updated to use proxy
 5. `src/pages/stores/[id]/orders/index.tsx` - Updated to use proxy
 6. `src/pages/stores/[id]/orders/hooks/useOrderNotes.ts` - Updated to use proxy
@@ -355,12 +363,18 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 9. `src/pages/stores/[id]/orders/services/orderService.ts` - Updated to use proxy
 10. `src/pages/stores/[id]/orders/[orderId]/details.tsx` - Updated to use proxy
 
-### Next Steps
-Complete woo-proxy migration for remaining 4 files:
-- `AddStoreForm.tsx` (store creation validation)
-- `currencyUtils.ts` (currency updates)
-- `webhookUtils.ts` (webhook management)
-- `ProductAttributesTab.tsx` (attribute sync)
+**Phase 3 - Utils & Forms (2025-11-07):**
+11. `src/pages/stores/utils/currencyUtils.ts` - Updated to use proxy
+12. `src/pages/stores/components/AddStoreForm.tsx` - Updated to use proxy (two-step process)
+13. `src/pages/stores/utils/webhookUtils.ts` - Updated to use proxy (3 functions)
+14. `src/pages/stores/[id]/products/components/ProductEditor/ProductAttributesTab.tsx` - Updated to use proxy
+
+### Security Impact
+- **Zero credentials in client-side code** ✅
+- **Zero credentials in URLs** ✅
+- **100% WooCommerce API calls secured** ✅
+- **All calls authenticated and authorized** ✅
+- **Complete audit trail** ✅
 
 ---
 
