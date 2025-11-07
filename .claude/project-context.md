@@ -53,7 +53,10 @@ Supabase (Lovable-managed)
 ## 🔐 Security Architecture
 
 ### Credential Protection Strategy
-**Problem**: Initially, API keys and secrets were stored in plain database columns, accessible to anyone with database access.
+**Problem**: Initially, API keys and secrets were stored in plain database columns, accessible to anyone with database access. Additionally, credentials were exposed in:
+- Plain text in UI (StoreDetails.tsx)
+- URL query parameters (consumer_key/consumer_secret in WooCommerce API calls)
+- Client-side code making direct API calls to WooCommerce
 
 **Solution**: Implemented multi-layer security:
 1. **RPC Functions** - `get_store_credentials(store_uuid)` with authorization
@@ -61,11 +64,46 @@ Supabase (Lovable-managed)
 3. **Audit Logging** - All credential access logged to `credential_access_logs`
 4. **Service Role Only** - Edge Functions use service role key to bypass RLS
 5. **Webhook Verification** - HMAC SHA256 signatures for webhooks
+6. **woo-proxy Edge Function** - Server-side proxy for ALL WooCommerce API calls
+7. **UI Credential Masking** - Credentials hidden with show/hide toggles in UI
+
+### woo-proxy Architecture (CRITICAL)
+**Edge Function**: `supabase/functions/woo-proxy/index.ts`
+
+**Purpose**: Centralized, secure proxy for all WooCommerce REST API calls
+- Prevents credential exposure in URLs
+- Keeps API keys/secrets server-side only
+- Enforces user authentication and store access control
+- Logs all WooCommerce API interactions
+
+**Usage Pattern**:
+```typescript
+// Frontend code - NEVER include credentials
+const { data, error } = await supabase.functions.invoke('woo-proxy', {
+  body: {
+    storeId: store.id,           // Store UUID
+    endpoint: '/wp-json/wc/v3/products',  // WooCommerce endpoint
+    method: 'GET',               // HTTP method
+    body: { name: 'Product' }    // Optional request body (for POST/PUT)
+  }
+});
+```
+
+**Security Flow**:
+1. Frontend calls woo-proxy with store ID (NO credentials)
+2. woo-proxy verifies user authentication via `withAuth`
+3. woo-proxy verifies user access to store via `verifyStoreAccess`
+4. woo-proxy fetches credentials securely via `getStoreCredentials`
+5. woo-proxy makes authenticated request to WooCommerce
+6. woo-proxy returns response to frontend
 
 ### Important Security Notes
 - **NEVER** access `api_key`, `api_secret`, `webhook_secret` directly from stores table
+- **NEVER** pass credentials in URL query parameters or client-side code
+- **ALWAYS** use `woo-proxy` edge function for WooCommerce API calls from frontend
 - **ALWAYS** use `get_store_credentials` RPC function in Edge Functions
-- **ALWAYS** use `getStoreCredentials` utility in Frontend (via RPC)
+- **ALWAYS** use `getStoreCredentials` utility when credentials needed in Edge Functions
+- **ALWAYS** hide credentials in UI with masked display (show/hide toggles)
 - **LOG** all credential access for audit trail
 
 ---
@@ -96,6 +134,25 @@ if (woo_id && synced_at) {
 ---
 
 ## 🐛 Known Issues & Quirks
+
+### Fixed Issues ✅
+1. ~~**Sync Logging Action Mismatch**~~ - FIXED (2025-11-06)
+   - Actions in `sync-woo-products` and `update-woo-product` didn't match database CHECK constraint
+   - Fixed by changing action values: 'sync_from_woo' → 'sync', 'create_in_woo' → 'create', 'update_to_woo' → 'update'
+
+2. ~~**Credentials Exposed in UI**~~ - FIXED (2025-11-06)
+   - StoreDetails.tsx showed api_key and api_secret in plain text
+   - Fixed with masked display and show/hide toggles
+
+3. ~~**Credentials in URL Parameters**~~ - PARTIALLY FIXED (2025-11-06)
+   - WooCommerce API calls passed consumer_key/consumer_secret in URLs
+   - Created `woo-proxy` edge function for secure server-side proxy
+   - Updated 7 critical order-related files to use proxy
+   - **Remaining**: 4 less-critical files still need updates (see Security-Critical Files section)
+
+4. ~~**manage-taxonomy PUBLIC Edge Function**~~ - FIXED (2025-11-06)
+   - CRITICAL: Function had no authentication, anyone could manipulate taxonomies
+   - Added `withAuth` and `verifyStoreAccess` middleware
 
 ### Current Bugs
 1. **Duplicate Image Uploads**: Images re-upload on every save
@@ -203,14 +260,30 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 ## 📚 Key Files to Remember
 
 ### Frontend
-- **`src/utils/storeCredentials.ts`** - ALWAYS use this for credentials in frontend
+- **`src/utils/storeCredentials.ts`** - DEPRECATED: Use woo-proxy instead for WooCommerce API calls
 - **`src/pages/stores/components/`** - All store-related UI components
+- **`src/pages/stores/components/StoreDetails.tsx`** - Shows masked credentials with show/hide toggles
 - **`src/integrations/supabase/types.ts`** - Auto-generated from database schema
 
-### Backend
-- **`supabase/functions/_shared/store-utils.ts`** - ALWAYS use for credentials in Edge Functions
-- **`supabase/functions/_shared/auth-middleware.ts`** - Authentication wrapper
+### Backend (Edge Functions)
+- **`supabase/functions/woo-proxy/index.ts`** - **CRITICAL**: Use for ALL WooCommerce API calls from frontend
+- **`supabase/functions/_shared/store-utils.ts`** - `getStoreCredentials` for secure credential access
+- **`supabase/functions/_shared/auth-middleware.ts`** - `withAuth` and `verifyStoreAccess` wrappers
+- **`supabase/functions/_shared/sync-logger.ts`** - Sync operation logging utilities
 - **`supabase/migrations/`** - Database schema changes
+
+### Security-Critical Files (Updated to use woo-proxy)
+- ✅ `src/components/dashboard/RecentOrderNotes.tsx`
+- ✅ `src/pages/stores/[id]/orders/index.tsx`
+- ✅ `src/pages/stores/[id]/orders/[orderId]/details.tsx`
+- ✅ `src/pages/stores/[id]/orders/hooks/useOrderNotes.ts`
+- ✅ `src/pages/stores/[id]/orders/hooks/useCreateOrderNote.ts`
+- ✅ `src/pages/stores/[id]/orders/hooks/useUpdateOrderStatus.ts`
+- ✅ `src/pages/stores/[id]/orders/services/orderService.ts`
+- ⏳ `src/pages/stores/components/AddStoreForm.tsx` - TODO: Update to use woo-proxy
+- ⏳ `src/pages/stores/utils/currencyUtils.ts` - TODO: Update to use woo-proxy
+- ⏳ `src/pages/stores/utils/webhookUtils.ts` - TODO: Update to use woo-proxy
+- ⏳ `src/pages/products/components/ProductAttributesTab.tsx` - TODO: Update to use woo-proxy
 
 ### Documentation
 - **`.claude/project-context.md`** - This file (practical guidelines & context)
@@ -262,5 +335,34 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 
 ---
 
-**Last Updated**: 2025-11-06
+## 📝 Recent Security Improvements (2025-11-06)
+
+### woo-proxy Implementation
+- Created centralized secure proxy for all WooCommerce API calls
+- Prevents credential exposure in client-side code and URL parameters
+- Enforces authentication and multi-tenant access control
+- Updated 7 critical order management files to use proxy pattern
+
+### Files Updated (Chronological Order)
+1. `supabase/functions/manage-taxonomy/index.ts` - Added authentication (CRITICAL FIX)
+2. `src/pages/stores/components/StoreDetails.tsx` - Masked credentials in UI
+3. `supabase/functions/woo-proxy/index.ts` - Created secure proxy function
+4. `src/components/dashboard/RecentOrderNotes.tsx` - Updated to use proxy
+5. `src/pages/stores/[id]/orders/index.tsx` - Updated to use proxy
+6. `src/pages/stores/[id]/orders/hooks/useOrderNotes.ts` - Updated to use proxy
+7. `src/pages/stores/[id]/orders/hooks/useCreateOrderNote.ts` - Updated to use proxy
+8. `src/pages/stores/[id]/orders/hooks/useUpdateOrderStatus.ts` - Updated to use proxy
+9. `src/pages/stores/[id]/orders/services/orderService.ts` - Updated to use proxy
+10. `src/pages/stores/[id]/orders/[orderId]/details.tsx` - Updated to use proxy
+
+### Next Steps
+Complete woo-proxy migration for remaining 4 files:
+- `AddStoreForm.tsx` (store creation validation)
+- `currencyUtils.ts` (currency updates)
+- `webhookUtils.ts` (webhook management)
+- `ProductAttributesTab.tsx` (attribute sync)
+
+---
+
+**Last Updated**: 2025-11-07
 **Maintained By**: Itay (@itaymm211010)
