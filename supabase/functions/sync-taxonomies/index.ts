@@ -7,19 +7,32 @@ import { syncBrands } from "./sync-brands.ts"
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
 import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts"
+import { validateRequest, uuidSchema } from "../_shared/validation-schemas.ts"
+
+// Schema for sync-taxonomies (uses storeId not store_id)
+const syncTaxonomiesSchema = z.object({
+  storeId: uuidSchema,
+  taxonomy_type: z.enum(['categories', 'tags', 'brands']).optional(),
+  force_sync: z.boolean().optional(),
+})
 
 serve(withAuth(async (req, auth) => {
   try {
-    const { storeId } = await req.json()
+    const body = await req.json()
 
-    if (!storeId) {
+    // Validate request
+    const validation = validateRequest(syncTaxonomiesSchema, body)
+    if (!validation.success) {
       return new Response(JSON.stringify({
-        error: 'Missing required parameter: storeId'
+        error: validation.error
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
+
+    const { storeId } = validation.data
 
     // Verify user has access to this store
     const accessCheck = await verifyStoreAccess(auth.userId, storeId)
