@@ -13,7 +13,8 @@ import {
   FolderTree,
   ClipboardList,
   Bot,
-  Activity
+  Activity,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -34,6 +35,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "Products", href: "/stores", icon: Package, needsStore: true },
   { name: "AI Chat", href: "/ai-chat", icon: Bot },
   { name: "Sync Monitoring", href: "/sync-monitoring", icon: Activity },
+  { name: "Audit Logs", href: "/audit-logs", icon: Shield },
   { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Stores", href: "/stores", icon: Store },
   { name: "Project Management", href: "/project-management", icon: ClipboardList },

@@ -86,5 +86,26 @@
     "storeName": "Store Name",
     "storeUrl": "Store URL",
     "currency": "Currency"
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "timestamp": "Timestamp",
+    "table": "Table",
+    "action": "Action",
+    "user": "User",
+    "recordId": "Record ID",
+    "criticalChanges": "Critical Changes",
+    "filters": "Filters",
+    "export": "Export CSV",
+    "refresh": "Refresh",
+    "allTables": "All tables",
+    "allActions": "All actions",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "userEmail": "User Email",
+    "noLogs": "No audit logs found",
+    "totalLogs": "Total Logs",
+    "currentPage": "Current Page",
+    "results": "Results"
   }
 }

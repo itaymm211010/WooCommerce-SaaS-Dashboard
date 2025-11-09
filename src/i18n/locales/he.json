@@ -86,5 +86,26 @@
     "storeName": "שם חנות",
     "storeUrl": "כתובת חנות",
     "currency": "מטבע"
+  },
+  "auditLogs": {
+    "title": "יומני ביקורת",
+    "timestamp": "זמן",
+    "table": "טבלה",
+    "action": "פעולה",
+    "user": "משתמש",
+    "recordId": "מזהה רשומה",
+    "criticalChanges": "שינויים קריטיים",
+    "filters": "סינון",
+    "export": "ייצוא CSV",
+    "refresh": "רענן",
+    "allTables": "כל הטבלאות",
+    "allActions": "כל הפעולות",
+    "startDate": "תאריך התחלה",
+    "endDate": "תאריך סיום",
+    "userEmail": "אימייל משתמש",
+    "noLogs": "לא נמצאו יומני ביקורת",
+    "totalLogs": "סה״כ רשומות",
+    "currentPage": "עמוד נוכחי",
+    "results": "תוצאות"
   }
 }
