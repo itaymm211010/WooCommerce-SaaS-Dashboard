@@ -4,10 +4,10 @@
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
-import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
-import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
+import { withAuth, verifyStoreAccess } from "../shared/auth-middleware.ts"
+import { logSyncStart, logSyncSuccess, logSyncError } from "../shared/sync-logger.ts"
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts"
-import { validateRequest, uuidSchema } from "../_shared/validation-schemas.ts"
+import { validateRequest, uuidSchema } from "../shared/validation-schemas.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

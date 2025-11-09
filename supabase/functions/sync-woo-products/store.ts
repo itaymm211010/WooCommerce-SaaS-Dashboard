@@ -1,6 +1,6 @@
 
 import { createSupabaseClient, createResponse } from "./utils.ts"
-export { getStoreDetails } from "../_shared/store-utils.ts"
+export { getStoreDetails } from "../shared/store-utils.ts"
 
 // Update store currency if it changed in WooCommerce
 export async function checkAndUpdateCurrency(store: any, baseUrl: string) {

@@ -1,7 +1,7 @@
 import { createResponse } from "./utils.ts"
 import { getStoreDetails } from "./store.ts"
 import { fetchProducts, fetchProductsWithVariations, saveProducts } from "./products.ts"
-import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
+import { logSyncStart, logSyncSuccess, logSyncError } from "../shared/sync-logger.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 
 // Main request handler

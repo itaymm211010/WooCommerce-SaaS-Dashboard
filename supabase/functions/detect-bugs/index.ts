@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { withAuth } from "../_shared/auth-middleware.ts"
+import { withAuth } from "../shared/auth-middleware.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -5,8 +5,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { handleRequest } from "./handlers.ts"
 import { corsHeaders } from "./utils.ts"
-import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
-import { syncWooProductsRequestSchema, validateRequest } from "../_shared/validation-schemas.ts"
+import { withAuth, verifyStoreAccess } from "../shared/auth-middleware.ts"
+import { syncWooProductsRequestSchema, validateRequest } from "../shared/validation-schemas.ts"
 
 serve(withAuth(async (req, auth) => {
   try {

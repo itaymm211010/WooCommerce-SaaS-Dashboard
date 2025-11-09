@@ -1,1 +1,1 @@
-export { getStoreDetails } from "../_shared/store-utils.ts"
+export { getStoreDetails } from "../shared/store-utils.ts"

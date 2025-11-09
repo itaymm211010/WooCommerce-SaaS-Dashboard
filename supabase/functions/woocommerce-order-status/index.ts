@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { withWebhookAuth, logWebhookActivity } from "../_shared/webhook-middleware.ts"
-import { getStoreDetails } from "../_shared/store-utils.ts"
+import { withWebhookAuth, logWebhookActivity } from "../shared/webhook-middleware.ts"
+import { getStoreDetails } from "../shared/store-utils.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
