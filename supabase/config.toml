@@ -7,19 +7,22 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.sync-taxonomies]
-verify_jwt = true
+verify_jwt = false
 
 [functions.sync-woo-products]
-verify_jwt = true
+verify_jwt = false
 
 [functions.update-woo-product]
-verify_jwt = true
+verify_jwt = false
 
 [functions.woocommerce-order-status]
 verify_jwt = false
 
 [functions.manage-taxonomy]
-verify_jwt = true
+verify_jwt = false
 
 [functions.bulk-sync-to-woo]
-verify_jwt = true
+verify_jwt = false
+
+[functions.woo-proxy]
+verify_jwt = false
