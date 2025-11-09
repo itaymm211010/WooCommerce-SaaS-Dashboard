@@ -11,6 +11,7 @@ import { TimeSeriesChart } from "./components/TimeSeriesChart";
 import { UserActivityChart } from "./components/UserActivityChart";
 import { TableDistributionChart } from "./components/TableDistributionChart";
 import { AnomalyAlerts } from "./components/AnomalyAlerts";
+import { ResponseActionsTable } from "./components/ResponseActionsTable";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AuditAnalyticsPage() {
@@ -153,6 +154,9 @@ export default function AuditAnalyticsPage() {
         ) : stats?.userActivityData ? (
           <UserActivityChart data={stats.userActivityData} />
         ) : null}
+
+        {/* Response Actions Table */}
+        <ResponseActionsTable />
 
         {/* Insights */}
         {stats && (

@@ -151,6 +151,48 @@ export type Database = {
         }
         Relationships: []
       }
+      anomaly_response_actions: {
+        Row: {
+          action_type: string
+          anomaly_id: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          severity: string
+          status: string
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          anomaly_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          severity: string
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          anomaly_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string

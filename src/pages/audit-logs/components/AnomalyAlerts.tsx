@@ -2,6 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, AlertCircle, Info, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import type { Anomaly } from "../hooks/useAnomalyDetection";
 
 interface AnomalyAlertsProps {
@@ -46,6 +50,51 @@ const getSeverityColor = (severity: Anomaly['severity']) => {
 };
 
 export function AnomalyAlerts({ anomalies }: AnomalyAlertsProps) {
+  const { toast } = useToast();
+  const [processingAnomaly, setProcessingAnomaly] = useState<string | null>(null);
+
+  const handleTakeAction = async (anomaly: Anomaly) => {
+    setProcessingAnomaly(anomaly.id);
+
+    try {
+      // Determine actions based on severity and type
+      const actions: Array<'send_email' | 'suspend_user' | 'create_log'> = ['create_log'];
+      
+      if (anomaly.severity === 'high') {
+        actions.push('send_email');
+      }
+
+      if (anomaly.type === 'user_activity' && anomaly.severity === 'high') {
+        actions.push('suspend_user');
+      }
+
+      const { data, error } = await supabase.functions.invoke('handle-anomaly-response', {
+        body: {
+          anomaly,
+          actions,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Actions Executed",
+        description: `Successfully executed ${actions.length} automated response actions`,
+      });
+
+      console.log("Automated response results:", data);
+    } catch (error) {
+      console.error("Error executing automated response:", error);
+      toast({
+        title: "Action Failed",
+        description: error instanceof Error ? error.message : "Failed to execute automated response",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAnomaly(null);
+    }
+  };
+
   if (anomalies.length === 0) {
     return (
       <Card>
@@ -108,6 +157,18 @@ export function AnomalyAlerts({ anomalies }: AnomalyAlertsProps) {
                   {anomaly.metadata.ratio && (
                     <div>Ratio: <span className="font-semibold">{anomaly.metadata.ratio}x</span></div>
                   )}
+                </div>
+
+                {/* Action button */}
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    variant={anomaly.severity === 'high' ? 'destructive' : 'default'}
+                    onClick={() => handleTakeAction(anomaly)}
+                    disabled={processingAnomaly === anomaly.id}
+                  >
+                    {processingAnomaly === anomaly.id ? 'Processing...' : 'Take Automated Action'}
+                  </Button>
                 </div>
               </AlertDescription>
             </Alert>
