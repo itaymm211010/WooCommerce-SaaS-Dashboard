@@ -10,9 +10,17 @@ import { withAuth, verifyStoreAccess } from "../shared/auth-middleware.ts"
 import { updateWooProductRequestSchema, validateRequest } from "../shared/validation-schemas.ts"
 
 serve(withAuth(async (req, auth) => {
+  console.log('🔥 update-woo-product: Request received');
+  console.log('📧 Auth user:', auth.userId, auth.userEmail);
+  console.log('🔧 Request method:', req.method);
+  console.log('🌐 Request URL:', req.url);
+  
   try {
     // Parse and validate request body
     const body = await req.json()
+    console.log('📦 Request body keys:', Object.keys(body));
+    console.log('🏪 Store ID:', body.store_id);
+    console.log('📦 Product ID:', body.product?.id);
 
     const validation = validateRequest(updateWooProductRequestSchema, body)
     if (!validation.success) {

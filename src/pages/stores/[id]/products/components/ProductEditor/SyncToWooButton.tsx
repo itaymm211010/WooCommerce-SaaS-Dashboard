@@ -65,7 +65,25 @@ export function SyncToWooButton({ storeId, productId, disabled }: SyncToWooButto
       }
     } catch (error: any) {
       console.error("Error syncing to WooCommerce:", error);
-      toast.error(`שגיאה בסנכרון ל-WooCommerce: ${error.message}`);
+      console.error("Error details:", {
+        message: error.message,
+        name: error.name,
+        context: error.context,
+        status: error.status
+      });
+      
+      // Specific error messages based on error type
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        toast.error('שגיאת רשת: לא ניתן להתחבר לשרת. בדוק חיבור אינטרנט.');
+      } else if (error.message?.includes('JWT') || error.message?.includes('unauthorized') || error.message?.includes('401')) {
+        toast.error('שגיאת אימות: יש להתחבר מחדש למערכת.');
+      } else if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+        toast.error('שגיאת הרשאות: אין לך גישה לחנות זו.');
+      } else if (error.message?.includes('store') || error.message?.includes('credentials')) {
+        toast.error('שגיאה בהגדרות החנות: בדוק את ה-API credentials.');
+      } else {
+        toast.error(`שגיאה בסנכרון ל-WooCommerce: ${error.message || 'Unknown error'}`);
+      }
     } finally {
       setIsSyncing(false);
     }

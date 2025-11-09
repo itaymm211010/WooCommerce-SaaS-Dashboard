@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withAuth, verifyStoreAccess } from "../shared/auth-middleware.ts";
-import { getStoreCredentials } from "../shared/store-utils.ts";
+import { getStoreDetails } from "../shared/store-utils.ts";
 import { wooProxyRequestSchema, validateRequest } from "../shared/validation-schemas.ts";
 
 const corsHeaders = {
@@ -52,12 +52,7 @@ serve(withAuth(async (req, auth) => {
     }
 
     // Get store credentials securely
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const store = await getStoreCredentials(supabase, storeId);
+    const store = await getStoreDetails(storeId);
 
     // Build WooCommerce URL
     let baseUrl = store.url.replace(/\/+$/, "");
