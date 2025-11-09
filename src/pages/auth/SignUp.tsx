@@ -45,6 +45,7 @@ export default function SignUp() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             first_name: firstName,
             last_name: lastName
@@ -54,9 +55,17 @@ export default function SignUp() {
 
       if (error) throw error;
 
-      if (data.user) {
-        toast.success("נרשמת בהצלחה!");
-        navigate("/");
+      // בדיקה אם נדרש אימות מייל
+      // אם user קיים ו-session קיים, אימות מייל לא נדרש
+      if (data.user && data.session) {
+        toast.success("נרשמת בהצלחה! מעביר אותך לדף הבית...");
+        setTimeout(() => navigate("/"), 1500);
+      } else if (data.user && !data.session) {
+        // המשתמש נוצר אך נדרש אימות מייל
+        toast.info("נשלח אימייל אימות לכתובת שהזנת");
+        toast.info("אנא לחץ על הקישור באימייל כדי להשלים את ההרשמה", {
+          duration: 8000,
+        });
       } else {
         toast.info("נשלח אימייל אימות, אנא בדוק את תיבת הדואר שלך");
       }

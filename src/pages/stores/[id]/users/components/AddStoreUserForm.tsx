@@ -21,11 +21,9 @@ type Profile = Tables<"profiles">;
 
 // נגדיר משתנה לכתובת הבסיס של האתר
 // בסביבת פיתוח יש להשתמש בכתובת האתר האמיתית אם היא קיימת
-const APP_URL = 
+const APP_URL =
   import.meta.env.VITE_APP_URL || // אם יש משתנה סביבה מוגדר, משתמשים בו
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'https://your-production-domain.com' // כאן צריך להגדיר את כתובת האתר האמיתית
-    : window.location.origin);
+  window.location.origin; // משתמשים בכתובת המקור הנוכחית
 
 interface AddStoreUserFormProps {
   storeId: string;
