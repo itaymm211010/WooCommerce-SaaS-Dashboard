@@ -6,6 +6,7 @@ import { Shield, Download, RefreshCw } from "lucide-react";
 import { AuditFilters } from "./components/AuditFilters";
 import { AuditLogTable } from "./components/AuditLogTable";
 import { CriticalChangesCard } from "./components/CriticalChangesCard";
+import { RealtimeStatus } from "./components/RealtimeStatus";
 import { useAuditLogs } from "./hooks/useAuditLogs";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -206,6 +207,7 @@ export default function AuditLogsPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            <RealtimeStatus />
             <CriticalChangesCard />
           </div>
         </div>

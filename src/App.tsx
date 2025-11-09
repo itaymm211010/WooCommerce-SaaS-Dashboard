@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { RealtimeAlertsProvider } from "@/components/audit/RealtimeAlertsProvider";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -119,10 +120,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <RTLProvider />
-          <HandleInvites />
-          <Routes>
+        <RealtimeAlertsProvider>
+          <Router>
+            <RTLProvider />
+            <HandleInvites />
+            <Routes>
             <Route 
               path="/" 
               element={
@@ -250,6 +252,7 @@ function App() {
           </Routes>
         </Router>
         <Toaster />
+        </RealtimeAlertsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
