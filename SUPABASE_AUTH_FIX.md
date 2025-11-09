@@ -8,21 +8,31 @@
 ## 🎯 הסיבה
 הקישור במייל מנסה לעבור דרך Lovable auth bridge במקום ללכת **ישירות** לאפליקציה שלך.
 
-## ✅ הפתרון (2 שלבים)
+## ✅ הפתרון - Lovable Cloud Database
 
-### שלב 1: הגדרת Supabase Auth Settings
+### שלב 1: גישה לדשבורד Supabase (דרך Lovable)
 
-1. **עבור לדשבורד Supabase**:
+הדאטאבייס שלך מנוהל ע"י **Lovable Cloud**. כדי לגשת להגדרות Supabase:
+
+**אופציה א': דרך Lovable Dashboard**
+1. עבור לפרויקט ב-Lovable
+2. לחץ על **Settings** → **Database**
+3. חפש קישור ל-Supabase Dashboard או "Manage Database"
+4. זה יפתח את הדשבורד של Supabase עם הגישה הנכונה
+
+**אופציה ב': ישירות לדשבורד Supabase**
+1. עבור ל: `https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz`
+2. התחבר עם החשבון שמחובר ל-Lovable
+3. לחץ על **Authentication** → **URL Configuration**
+
+### שלב 2: הגדרת Auth URLs ב-Supabase
+
+1. **הגדר את Site URL**:
    ```
-   https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/auth/url-configuration
+   https://preview--smart-woo-dashboard.lovable.app
    ```
 
-2. **הגדר את ה-Site URL**:
-   - שנה את Site URL ל: `https://preview--smart-woo-dashboard.lovable.app`
-   - (זו כתובת האפליקציה שלך ב-Lovable Preview)
-
-3. **הוסף Redirect URLs**:
-   לחץ על "Add URL" והוסף את הכתובות הבאות:
+2. **הוסף Redirect URLs** (לחץ "Add URL" עבור כל אחד):
    ```
    https://preview--smart-woo-dashboard.lovable.app/**
    http://localhost:5173/**
@@ -30,13 +40,14 @@
    http://127.0.0.1:*/**
    ```
 
-4. **שמור את השינויים** (Save)
+3. **שמור את השינויים**
 
-### שלב 2: הגדרת משתני סביבה ב-Lovable
+**⚠️ חשוב**: אם אין לך גישה ישירה לדשבורד Supabase, פנה לתמיכה של Lovable
+
+### שלב 3: הגדרת משתני סביבה ב-Lovable (אופציונלי)
 
 1. **עבור להגדרות הפרויקט ב-Lovable**:
-   - לחץ על Settings בפרויקט
-   - חפש "Environment Variables"
+   - לחץ על **Settings** → **Environment Variables**
 
 2. **הוסף משתנה סביבה**:
    ```
@@ -44,7 +55,9 @@
    Value: https://preview--smart-woo-dashboard.lovable.app
    ```
 
-3. **שמור וטען מחדש** את האפליקציה
+3. **שמור ופרוס מחדש** (Re-deploy) את האפליקציה
+
+**📌 הערה**: הקוד כבר משתמש ב-`window.location.origin` כ-fallback, אז זה אופציונלי אבל מומלץ לבהירות
 
 ## 🧪 בדיקה
 
@@ -55,11 +68,12 @@
 3. לחיצה על "Log In" תוביל ישירות ל: `https://preview--smart-woo-dashboard.lovable.app`
 4. המשתמש יתחבר אוטומטית ויועבר לדף הבית
 
-## 📝 הערות חשובות
+## 📝 הערות חשובות - Lovable Cloud
 
-- אם יש לך דומיין production (לא preview), הוסף גם אותו ל-Redirect URLs
-- אם תשנה את שם הפרויקט ב-Lovable, תצטרך לעדכן את ה-URLs ב-Supabase
-- השינויים ב-Supabase Auth Settings תקפים מיידית, לא צריך לעשות deploy מחדש
+- **Production Domain**: אם יש לך דומיין מותאם אישית (לא preview), הוסף גם אותו ל-Redirect URLs
+- **שינוי שם פרויקט**: אם תשנה את שם הפרויקט ב-Lovable, תצטרך לעדכן את ה-URLs ב-Supabase
+- **השינויים תקפים מיידית**: שינויים ב-Supabase Auth Settings לא דורשים deploy מחדש
+- **גישה לדאטאבייס**: ב-Lovable Cloud, הדאטאבייס מנוהל אוטומטית - אין צורך בהגדרות נוספות
 
 ## 🔍 מה קרה?
 
@@ -79,14 +93,30 @@ App receives valid token →
 User logs in successfully ✅
 ```
 
-## 💡 Troubleshooting
+## 💡 Troubleshooting - Lovable Cloud
 
 אם עדיין יש בעיה:
 
 1. **בדוק את ה-URL במייל** - האם הוא מתחיל ב-`https://preview--smart-woo-dashboard.lovable.app`?
-2. **נקה cache** - נסה במצב incognito
-3. **בדוק Console** - פתח Developer Tools וחפש שגיאות
-4. **בדוק Supabase Logs** - עבור ל-Logs בדשבורד Supabase
+   - אם הוא מתחיל ב-`https://lovable.dev/login` → צריך לעדכן Site URL ב-Supabase
+
+2. **נקה cache** - נסה במצב incognito/private browsing
+
+3. **בדוק Browser Console**:
+   - לחץ F12 → Console
+   - חפש שגיאות אדומות הקשורות ל-auth או token
+
+4. **בדוק Supabase Auth Logs**:
+   - עבור ל-Supabase Dashboard → Logs → Auth Logs
+   - חפש שגיאות redirect או invalid token
+
+5. **אמת Redirect URLs**:
+   - וודא שב-Supabase Auth Settings יש `**` בסוף כל URL
+   - דוגמה נכונה: `https://preview--smart-woo-dashboard.lovable.app/**`
+
+6. **פנה לתמיכה של Lovable**:
+   - אם אין גישה לדשבורד Supabase
+   - אם השינויים לא נשמרים
 
 ---
 
