@@ -191,9 +191,13 @@ if (woo_id && synced_at) {
 ### Adding a New Migration
 1. Create SQL file in `supabase/migrations/`
 2. Name format: `YYYYMMDDHHMMSS_description.sql`
-3. Test locally if possible
-4. Commit and push
-5. Run via Lovable Cloud → Database → SQL Editor
+3. Commit and push to GitHub
+4. **Lovable auto-runs migrations** (usually within minutes after push)
+5. **If migration doesn't auto-run:**
+   - Check Lovable dashboard for pending migration approvals
+   - Destructive changes may require manual approval
+   - Contact project owner with Lovable Cloud access
+6. **Verify:** Check database schema in Lovable Cloud after deployment
 
 ### Debugging Edge Function Issues
 1. Check logs: Lovable Cloud → Edge Functions → Function Name → Logs
