@@ -342,4 +342,4 @@ serve(withAuth(async (req, auth) => {
       }
     );
   }
-});
+}));
