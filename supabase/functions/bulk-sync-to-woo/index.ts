@@ -1,6 +1,7 @@
 /**
  * Bulk Sync to WooCommerce Edge Function
- * Last deployment: 2025-11-09
+ * Force deployment with shared directory fix
+ * Last deployment: 2025-11-09 16:00
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'

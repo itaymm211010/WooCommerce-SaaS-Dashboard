@@ -1,6 +1,7 @@
 /**
  * Update WooCommerce Product Edge Function
- * Last deployment: 2025-11-09
+ * Force deployment with shared directory fix
+ * Last deployment: 2025-11-09 16:00
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { handleRequest } from "./handlers.ts"
