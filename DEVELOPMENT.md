@@ -345,15 +345,24 @@ CREATE INDEX idx_your_table_store_id ON your_table(store_id);
 COMMENT ON TABLE your_table IS 'Description of your table';
 EOF
 
-# 3. Test migration (if possible locally)
-# 4. Commit migration
+# 3. Commit migration
 git add supabase/migrations/
 git commit -m "migration: Add your_table for feature X"
 git push
 
-# 5. Run migration in Lovable Cloud
-# Navigate to: Lovable Cloud → Database → SQL Editor
-# Paste migration SQL and execute
+# 4. Lovable auto-runs migrations (usually)
+# ⚠️ IMPORTANT: Lovable SHOULD auto-apply migrations from GitHub
+# However, if migrations don't run automatically:
+
+# Option A: Check Lovable Dashboard
+# - Go to your Lovable project dashboard
+# - Check if there are pending migrations to approve
+# - Lovable may require manual approval for destructive changes
+
+# Option B: Manual migration (if auto-run fails)
+# - You'll need to ask the project owner with Lovable access
+# - They can run it via Lovable Cloud → Database → SQL Editor
+# - Or contact Lovable support if migrations are stuck
 ```
 
 ### RLS Policy Template

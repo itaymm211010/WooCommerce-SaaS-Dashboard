@@ -2,24 +2,37 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
 import { logSyncStart, logSyncSuccess, logSyncError } from "../_shared/sync-logger.ts"
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts"
+import { validateRequest, uuidSchema } from "../_shared/validation-schemas.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Schema for bulk-sync-to-woo
+const bulkSyncSchema = z.object({
+  store_id: uuidSchema,
+  product_ids: z.array(uuidSchema).optional(),
+  force_update: z.boolean().optional(),
+})
+
 serve(withAuth(async (req, auth) => {
   try {
-    const { store_id } = await req.json()
+    const body = await req.json()
 
-    if (!store_id) {
+    // Validate request
+    const validation = validateRequest(bulkSyncSchema, body)
+    if (!validation.success) {
       return new Response(JSON.stringify({
-        error: 'Missing required parameter: store_id'
+        error: validation.error
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
+
+    const { store_id } = validation.data
 
     // Verify user has access to this store
     const accessCheck = await verifyStoreAccess(auth.userId, store_id)

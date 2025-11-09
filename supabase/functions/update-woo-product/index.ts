@@ -3,21 +3,24 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { handleRequest } from "./handlers.ts"
 import { corsHeaders } from "./utils.ts"
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts"
+import { updateWooProductRequestSchema, validateRequest } from "../_shared/validation-schemas.ts"
 
 serve(withAuth(async (req, auth) => {
   try {
-    // Parse request body to get store_id
+    // Parse and validate request body
     const body = await req.json()
-    const { store_id } = body
 
-    if (!store_id) {
+    const validation = validateRequest(updateWooProductRequestSchema, body)
+    if (!validation.success) {
       return new Response(JSON.stringify({
-        error: 'Missing required parameter: store_id'
+        error: validation.error
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
+
+    const { store_id } = validation.data
 
     // Verify user has access to this store
     const accessCheck = await verifyStoreAccess(auth.userId, store_id)

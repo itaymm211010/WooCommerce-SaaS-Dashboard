@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getStoreDetails } from "../_shared/store-utils.ts";
 import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts";
+import { manageTaxonomyRequestSchema, validateRequest } from "../_shared/validation-schemas.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,8 +22,20 @@ interface ManageTaxonomyRequest {
 
 serve(withAuth(async (req, auth) => {
   try {
-    const body = await req.json() as ManageTaxonomyRequest;
-    const { storeId, type, action, data } = body;
+    const body = await req.json();
+
+    // Validate request body
+    const validation = validateRequest(manageTaxonomyRequestSchema, body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({
+        error: validation.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    const { storeId, type, action, data } = validation.data;
 
     // Verify user has access to this store
     const accessCheck = await verifyStoreAccess(auth.userId, storeId);

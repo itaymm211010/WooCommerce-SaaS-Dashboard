@@ -191,9 +191,13 @@ if (woo_id && synced_at) {
 ### Adding a New Migration
 1. Create SQL file in `supabase/migrations/`
 2. Name format: `YYYYMMDDHHMMSS_description.sql`
-3. Test locally if possible
-4. Commit and push
-5. Run via Lovable Cloud → Database → SQL Editor
+3. Commit and push to GitHub
+4. **Lovable auto-runs migrations** (usually within minutes after push)
+5. **If migration doesn't auto-run:**
+   - Check Lovable dashboard for pending migration approvals
+   - Destructive changes may require manual approval
+   - Contact project owner with Lovable Cloud access
+6. **Verify:** Check database schema in Lovable Cloud after deployment
 
 ### Debugging Edge Function Issues
 1. Check logs: Lovable Cloud → Edge Functions → Function Name → Logs
@@ -340,43 +344,88 @@ Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
 
 ---
 
-## 📝 Recent Security Improvements (2025-11-06 to 2025-11-07)
+## 📝 Recent Security Improvements
 
-### woo-proxy Implementation - COMPLETED ✅
+### Phase 1: woo-proxy Implementation (2025-11-06 to 2025-11-07) - COMPLETED ✅
 - Created centralized secure proxy for all WooCommerce API calls
 - Prevents credential exposure in client-side code and URL parameters
 - Enforces authentication and multi-tenant access control
 - **100% migration completed** - all 11 frontend files now use secure proxy
 
-### Files Updated (Chronological Order)
-**Phase 1 - Critical Security Fixes (2025-11-06):**
-1. `supabase/functions/manage-taxonomy/index.ts` - Added authentication (CRITICAL FIX)
-2. `src/pages/stores/components/StoreDetails.tsx` - Masked credentials in UI
-3. `supabase/functions/woo-proxy/index.ts` - Created secure proxy function
-
-**Phase 2 - Order Management (2025-11-06):**
-4. `src/components/dashboard/RecentOrderNotes.tsx` - Updated to use proxy
-5. `src/pages/stores/[id]/orders/index.tsx` - Updated to use proxy
-6. `src/pages/stores/[id]/orders/hooks/useOrderNotes.ts` - Updated to use proxy
-7. `src/pages/stores/[id]/orders/hooks/useCreateOrderNote.ts` - Updated to use proxy
-8. `src/pages/stores/[id]/orders/hooks/useUpdateOrderStatus.ts` - Updated to use proxy
-9. `src/pages/stores/[id]/orders/services/orderService.ts` - Updated to use proxy
-10. `src/pages/stores/[id]/orders/[orderId]/details.tsx` - Updated to use proxy
-
-**Phase 3 - Utils & Forms (2025-11-07):**
-11. `src/pages/stores/utils/currencyUtils.ts` - Updated to use proxy
-12. `src/pages/stores/components/AddStoreForm.tsx` - Updated to use proxy (two-step process)
-13. `src/pages/stores/utils/webhookUtils.ts` - Updated to use proxy (3 functions)
-14. `src/pages/stores/[id]/products/components/ProductEditor/ProductAttributesTab.tsx` - Updated to use proxy
-
-### Security Impact
+**Security Impact:**
 - **Zero credentials in client-side code** ✅
 - **Zero credentials in URLs** ✅
 - **100% WooCommerce API calls secured** ✅
 - **All calls authenticated and authorized** ✅
-- **Complete audit trail** ✅
+
+### Phase 2: Input Validation & Customer Data Protection (2025-11-08) - COMPLETED ✅
+
+#### 1. Zod Input Validation - Prevents Injection Attacks
+**Created:** `supabase/functions/_shared/validation-schemas.ts`
+- Comprehensive Zod schemas for all Edge Function inputs
+- Validates data types, formats, and ranges
+- Prevents SQL injection, XSS, and malformed data attacks
+- Validates UUIDs, endpoints, HTTP methods, product data, etc.
+
+**Edge Functions Updated with Zod Validation:**
+1. `supabase/functions/woo-proxy/index.ts` - Validates proxy requests
+2. `supabase/functions/manage-taxonomy/index.ts` - Validates taxonomy operations
+3. `supabase/functions/sync-woo-products/index.ts` - Validates sync requests
+4. `supabase/functions/update-woo-product/index.ts` - Validates product updates
+5. `supabase/functions/sync-taxonomies/index.ts` - Validates taxonomy sync
+6. `supabase/functions/bulk-sync-to-woo/index.ts` - Validates bulk operations
+7. `supabase/functions/generate-webhook-secret/index.ts` - Validates secret generation
+
+**Benefits:**
+- ✅ Prevents malformed requests from reaching database
+- ✅ Validates all input parameters before processing
+- ✅ Clear error messages for invalid data
+- ✅ Type-safe request handling
+- ✅ Protection against injection attacks
+
+#### 2. Customer Data Privacy - RLS Enhancement
+**Created:** `supabase/migrations/20251108235515_fix_customer_data_exposure.sql`
+
+**Problem Fixed:**
+- Viewers could see sensitive customer data (email, name) in orders table
+- Security risk: Personal information exposed to unauthorized users
+
+**Solution Implemented:**
+- **Managers & Owners:** Full access to all order data including customer details
+- **Viewers:** Restricted - cannot access orders table directly
+- **New View:** `orders_summary` provides masked data for viewers:
+  - Customer email: Shows only domain (e.g., `***@example.com`)
+  - Customer name: Shows only first letter (e.g., `J***`)
+- **Order Status Logs:** Also restricted to managers and owners only
+
+**RLS Policies Updated:**
+- `orders` table: SELECT/ALL restricted to managers and owners
+- `order_status_logs` table: SELECT/INSERT restricted to managers and owners
+- `orders_summary` view: Available to all store users with masked data
+
+**Security Impact:**
+- ✅ Customer PII protected from unauthorized access
+- ✅ Role-based access control enforced at database level
+- ✅ Viewers can still see order statistics without PII exposure
+- ✅ Compliant with privacy best practices (GDPR-ready)
+
+### Overall Security Status (as of 2025-11-08)
+
+**Lovable Security Audit - All Issues Resolved:**
+1. ✅ Public Taxonomy Management Endpoint - **FIXED** (withAuth + verifyStoreAccess)
+2. ✅ Missing Input Validation - **FIXED** (Zod validation on all Edge Functions)
+3. ✅ Customer PII Exposure - **FIXED** (RLS policies + masked view)
+4. ✅ Credentials in Client Code - **FIXED** (woo-proxy migration)
+
+**Security Layers Active:**
+1. **Authentication:** `withAuth` middleware on all Edge Functions
+2. **Authorization:** `verifyStoreAccess` for multi-tenant isolation
+3. **Input Validation:** Zod schemas prevent injection attacks
+4. **Data Privacy:** RLS policies restrict PII access by role
+5. **Credential Protection:** woo-proxy + getStoreCredentials pattern
+6. **Audit Logging:** credential_access_logs + sync_logs
 
 ---
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-11-08
 **Maintained By**: Itay (@itaymm211010)
