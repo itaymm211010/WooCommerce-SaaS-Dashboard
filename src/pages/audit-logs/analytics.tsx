@@ -5,15 +5,18 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Download, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuditStats } from "./hooks/useAuditStats";
+import { useAnomalyDetection } from "./hooks/useAnomalyDetection";
 import { StatsOverview } from "./components/StatsOverview";
 import { TimeSeriesChart } from "./components/TimeSeriesChart";
 import { UserActivityChart } from "./components/UserActivityChart";
 import { TableDistributionChart } from "./components/TableDistributionChart";
+import { AnomalyAlerts } from "./components/AnomalyAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AuditAnalyticsPage() {
   const [period, setPeriod] = useState<number>(30);
   const { data: stats, isLoading, refetch, isFetching } = useAuditStats(period);
+  const { anomalies } = useAnomalyDetection(stats, period);
 
   const handleExport = () => {
     if (!stats) return;
@@ -102,6 +105,9 @@ export default function AuditAnalyticsPage() {
             ))}
           </div>
         )}
+
+        {/* Anomaly Alerts */}
+        <AnomalyAlerts anomalies={anomalies} />
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
