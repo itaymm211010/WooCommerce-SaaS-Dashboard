@@ -1,7 +1,7 @@
 
 import { createSupabaseClient, formatBaseUrl } from "./utils.ts"
 import { checkAndUpdateCurrency } from "./store.ts"
-import { fetchAllPaged } from "../_shared/woocommerce-utils.ts"
+import { fetchAllPaged } from "../shared/woocommerce-utils.ts"
 
 // Fetch products from WooCommerce API with pagination
 export async function fetchProducts(store: any) {

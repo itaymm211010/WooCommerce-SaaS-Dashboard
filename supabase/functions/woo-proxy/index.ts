@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { withAuth, verifyStoreAccess } from "../_shared/auth-middleware.ts";
-import { getStoreCredentials } from "../_shared/store-utils.ts";
-import { wooProxyRequestSchema, validateRequest } from "../_shared/validation-schemas.ts";
+import { withAuth, verifyStoreAccess } from "../shared/auth-middleware.ts";
+import { getStoreCredentials } from "../shared/store-utils.ts";
+import { wooProxyRequestSchema, validateRequest } from "../shared/validation-schemas.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
