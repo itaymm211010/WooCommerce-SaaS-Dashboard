@@ -1741,6 +1741,57 @@ export type Database = {
       }
     }
     Views: {
+      orders_summary: {
+        Row: {
+          created_at: string | null
+          customer_email_masked: string | null
+          customer_name_masked: string | null
+          id: string | null
+          status: string | null
+          store_id: string | null
+          total: number | null
+          updated_at: string | null
+          woo_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_email_masked?: never
+          customer_name_masked?: never
+          id?: string | null
+          status?: string | null
+          store_id?: string | null
+          total?: number | null
+          updated_at?: string | null
+          woo_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_email_masked?: never
+          customer_name_masked?: never
+          id?: string | null
+          status?: string | null
+          store_id?: string | null
+          total?: number | null
+          updated_at?: string | null
+          woo_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_basic_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_basic_info: {
         Row: {
           created_at: string | null
