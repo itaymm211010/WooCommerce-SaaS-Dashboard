@@ -105,6 +105,9 @@ serve(withAuth(async (req, auth) => {
           body: {
             store_id: store_id,
             product: product
+          },
+          headers: {
+            Authorization: req.headers.get('Authorization') || ''
           }
         })
 
