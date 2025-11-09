@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Download, RefreshCw } from "lucide-react";
+import { Shield, Download, RefreshCw, BarChart3 } from "lucide-react";
 import { AuditFilters } from "./components/AuditFilters";
 import { AuditLogTable } from "./components/AuditLogTable";
 import { CriticalChangesCard } from "./components/CriticalChangesCard";
@@ -77,6 +77,13 @@ export default function AuditLogsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = '/audit-logs/analytics')}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
             <Button
               variant="outline"
               onClick={() => refetch()}

@@ -14,7 +14,8 @@ import {
   ClipboardList,
   Bot,
   Activity,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -36,6 +37,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "AI Chat", href: "/ai-chat", icon: Bot },
   { name: "Sync Monitoring", href: "/sync-monitoring", icon: Activity },
   { name: "Audit Logs", href: "/audit-logs", icon: Shield },
+  { name: "Audit Analytics", href: "/audit-logs/analytics", icon: BarChart3 },
   { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Stores", href: "/stores", icon: Store },
   { name: "Project Management", href: "/project-management", icon: ClipboardList },

@@ -20,6 +20,7 @@ import AIChat from "./pages/AIChat";
 import AgentDashboard from "./pages/agents/AgentDashboard";
 import SyncMonitoring from "./pages/sync-monitoring/Index";
 import AuditLogsPage from "./pages/audit-logs/index";
+import AuditAnalyticsPage from "./pages/audit-logs/analytics";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -181,6 +182,14 @@ function App() {
               element={
                 <RequireAuth>
                   <AuditLogsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/audit-logs/analytics"
+              element={
+                <RequireAuth>
+                  <AuditAnalyticsPage />
                 </RequireAuth>
               }
             />
