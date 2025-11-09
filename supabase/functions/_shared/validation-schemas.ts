@@ -81,38 +81,32 @@ export const syncWooProductsRequestSchema = z.object({
 
 export const updateWooProductRequestSchema = z.object({
   store_id: uuidSchema,
-  product_id: uuidSchema,
-  woo_id: z.number().int().positive().optional(),
-  data: z.object({
+  product: z.object({
+    id: uuidSchema,
+    store_id: uuidSchema.optional(),
+    woo_id: z.union([z.number().int(), z.null()]).optional(),
     name: z.string().min(1).max(200).optional(),
-    description: z.string().max(10000).optional(),
-    short_description: z.string().max(1000).optional(),
-    price: z.union([z.string(), z.number()]).optional(),
-    sale_price: z.union([z.string(), z.number()]).optional(),
-    regular_price: z.union([z.string(), z.number()]).optional(),
-    stock_quantity: z.number().int().nonnegative().optional(),
-    manage_stock: z.boolean().optional(),
-    stock_status: z.enum(['instock', 'outofstock', 'onbackorder']).optional(),
-    status: z.enum(['draft', 'pending', 'private', 'publish']).optional(),
-    type: z.enum(['simple', 'grouped', 'external', 'variable']).optional(),
-    sku: z.string().max(100).optional(),
-    weight: z.union([z.string(), z.number()]).optional(),
-    dimensions: z.object({
-      length: z.union([z.string(), z.number()]).optional(),
-      width: z.union([z.string(), z.number()]).optional(),
-      height: z.union([z.string(), z.number()]).optional(),
-    }).optional(),
-    categories: z.array(z.object({
-      id: z.number().int().positive(),
-      name: z.string().optional(),
-    })).optional(),
-    images: z.array(z.object({
-      id: z.number().int().positive().optional(),
-      src: z.string().url().optional(),
-      name: z.string().optional(),
-      alt: z.string().optional(),
-    })).optional(),
-  }).optional(),
+    description: z.string().max(10000).nullable().optional(),
+    short_description: z.string().max(1000).nullable().optional(),
+    price: z.union([z.string(), z.number(), z.null()]).optional(),
+    sale_price: z.union([z.string(), z.number(), z.null()]).optional(),
+    regular_price: z.union([z.string(), z.number(), z.null()]).optional(),
+    stock_quantity: z.union([z.number().int().nonnegative(), z.null()]).optional(),
+    manage_stock: z.boolean().nullable().optional(),
+    stock_status: z.enum(['instock', 'outofstock', 'onbackorder']).nullable().optional(),
+    status: z.string().optional(), // Allow any status string
+    type: z.string().optional(), // Allow any type string
+    sku: z.string().max(100).nullable().optional(),
+    weight: z.union([z.string(), z.number(), z.null()]).optional(),
+    length: z.union([z.string(), z.number(), z.null()]).optional(),
+    width: z.union([z.string(), z.number(), z.null()]).optional(),
+    height: z.union([z.string(), z.number(), z.null()]).optional(),
+    categories: z.any().optional(), // JSONB field
+    images: z.any().optional(), // Related table
+    featured_image_id: z.union([uuidSchema, z.null()]).optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+  }).passthrough(), // Allow additional fields from database
 });
 
 // ============================================================================
@@ -133,7 +127,7 @@ export const bulkSyncToWooRequestSchema = z.object({
   store_id: uuidSchema,
   product_ids: z.array(uuidSchema).min(1).max(100, {
     message: "Cannot sync more than 100 products at once"
-  }),
+  }).optional(), // Optional - if not provided, syncs all products
   force_update: z.boolean().optional(),
 });
 
