@@ -22,6 +22,7 @@ import SyncMonitoring from "./pages/sync-monitoring/Index";
 import AuditLogsPage from "./pages/audit-logs/index";
 import AuditAnalyticsPage from "./pages/audit-logs/analytics";
 import ResetPassword from "./pages/admin/ResetPassword";
+import UsersPage from "./pages/admin/Users";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -199,6 +200,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ResetPassword />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireAuth>
+                  <UsersPage />
                 </RequireAuth>
               }
             />
