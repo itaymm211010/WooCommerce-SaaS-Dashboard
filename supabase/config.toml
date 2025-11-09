@@ -13,7 +13,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-woo-product]
-verify_jwt = false
+verify_jwt = true
 
 [functions.woocommerce-order-status]
 verify_jwt = false
@@ -22,7 +22,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.bulk-sync-to-woo]
-verify_jwt = false
+verify_jwt = true
 
 [functions.woo-proxy]
-verify_jwt = false
+verify_jwt = true
