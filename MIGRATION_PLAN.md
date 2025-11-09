@@ -153,152 +153,45 @@ npm run build
 
 ### Database Schema (PostgreSQL)
 
-**Core Tables:**
+**📊 Full Schema Documentation:** See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)
 
-```sql
--- Multi-tenant stores
-stores (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users,
-  name TEXT,
-  url TEXT,
-  consumer_key TEXT (encrypted),
-  consumer_secret TEXT (encrypted),
-  created_at TIMESTAMPTZ
-)
+**Summary Statistics:**
+- **Tables:** 32
+- **Views:** 4
+- **Functions:** 13
+- **Triggers:** 29
+- **Indexes:** 108+
+- **RLS Policies:** 100+
+- **Enums:** 3
+- **Migration Files:** 48
 
--- Products
-products (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  woo_id INTEGER,
-  name TEXT,
-  sku TEXT,
-  price NUMERIC,
-  stock_quantity INTEGER,
-  source TEXT ('woo' | 'local'),
-  synced_at TIMESTAMPTZ,
-  UNIQUE(store_id, woo_id)
-)
+**Table Categories:**
 
--- Product Variations
-product_variations (
-  id UUID PRIMARY KEY,
-  product_id UUID REFERENCES products,
-  woo_id INTEGER,
-  sku TEXT,
-  price NUMERIC,
-  attributes JSONB,
-  synced_at TIMESTAMPTZ
-)
+1. **User Management (3):** profiles, user_roles, store_users
+2. **Store Management (1):** stores
+3. **Product Management (5):** products, product_images, product_variations, product_attributes, store_attributes
+4. **Taxonomy (4):** store_categories, store_tags, store_brands, store_attribute_terms
+5. **Orders (2):** orders, order_status_logs
+6. **Webhooks (2):** webhooks, webhook_logs
+7. **Sync (3):** taxonomy_sync_log, sync_logs, sync_errors
+8. **Project Management (8):** sprints, tasks, work_logs, task_comments, project_alerts, task_logs, bug_reports, deployments
+9. **AI Agents (3):** agent_insights, agent_alerts, agent_execution_log
+10. **Security (4):** credential_access_logs, webhook_log_rate_limit, audit_logs, anomaly_response_actions
 
--- Product Images
-product_images (
-  id UUID PRIMARY KEY,
-  product_id UUID REFERENCES products,
-  woo_id INTEGER,
-  src TEXT,
-  position INTEGER,
-  synced_at TIMESTAMPTZ
-)
-
--- Taxonomies (Categories, Tags, Brands)
-taxonomies (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  woo_id INTEGER,
-  name TEXT,
-  slug TEXT,
-  type TEXT ('category' | 'tag' | 'brand'),
-  parent_id UUID,
-  synced_at TIMESTAMPTZ
-)
-
--- Attributes (Color, Size, etc.)
-store_attributes (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  woo_id INTEGER,
-  name TEXT,
-  slug TEXT,
-  type TEXT,
-  synced_at TIMESTAMPTZ
-)
-
-store_attribute_terms (
-  id UUID PRIMARY KEY,
-  attribute_id UUID REFERENCES store_attributes,
-  woo_id INTEGER,
-  name TEXT,
-  slug TEXT,
-  synced_at TIMESTAMPTZ
-)
-
--- Orders
-orders (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  woo_id INTEGER,
-  status TEXT,
-  total NUMERIC,
-  customer_email TEXT,
-  customer_name TEXT,
-  billing_address JSONB,
-  shipping_address JSONB,
-  created_at TIMESTAMPTZ,
-  synced_at TIMESTAMPTZ
-)
-
--- Order Status Logs
-order_status_logs (
-  id UUID PRIMARY KEY,
-  order_id UUID REFERENCES orders,
-  old_status TEXT,
-  new_status TEXT,
-  changed_at TIMESTAMPTZ
-)
-
--- Audit Logs
-sync_logs (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  operation TEXT,
-  entity_type TEXT,
-  entity_id TEXT,
-  status TEXT,
-  details JSONB,
-  created_at TIMESTAMPTZ
-)
-
-webhook_logs (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  event TEXT,
-  payload JSONB,
-  verified BOOLEAN,
-  processed BOOLEAN,
-  created_at TIMESTAMPTZ
-)
-
-credential_access_logs (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores,
-  user_id UUID,
-  action TEXT,
-  ip_address TEXT,
-  created_at TIMESTAMPTZ
-)
-```
-
-**RLS Policies:**
-- ✅ Multi-tenant isolation per user
-- ✅ Manager vs Viewer roles
-- ✅ PII masking for viewers (orders_summary view)
+**Critical Security Features:**
+- ✅ **RLS enabled on all 32 tables**
+- ✅ **Multi-tenant isolation** (store-level access control)
+- ✅ **Role-based permissions** (admin, owner, manager, viewer)
+- ✅ **PII masking** for viewers (orders_summary view)
+- ✅ **Audit logging** (14 tables monitored)
+- ✅ **Webhook rate limiting** (1000/hour per store)
+- ✅ **Credential access logging**
+- ✅ **SQL injection prevention** (SET search_path = public)
 
 **Migrations:**
 - Location: `/supabase/migrations/*.sql`
-- Total: ~20 migration files
-- Must be imported to new Supabase
+- Total: **48 migration files** (chronological order required!)
+- Must be executed sequentially during import
 
 ---
 
