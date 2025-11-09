@@ -21,6 +21,7 @@ import AgentDashboard from "./pages/agents/AgentDashboard";
 import SyncMonitoring from "./pages/sync-monitoring/Index";
 import AuditLogsPage from "./pages/audit-logs/index";
 import AuditAnalyticsPage from "./pages/audit-logs/analytics";
+import ResetPassword from "./pages/admin/ResetPassword";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -190,6 +191,14 @@ function App() {
               element={
                 <RequireAuth>
                   <AuditAnalyticsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/reset-password"
+              element={
+                <RequireAuth>
+                  <ResetPassword />
                 </RequireAuth>
               }
             />
