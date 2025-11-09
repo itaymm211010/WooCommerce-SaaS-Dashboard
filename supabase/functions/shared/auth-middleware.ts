@@ -31,9 +31,11 @@ export interface AuthResult {
  * }
  */
 export async function verifyJWT(req: Request): Promise<AuthResult> {
+  console.log('Verifying JWT...')
   const authHeader = req.headers.get('Authorization')
 
   if (!authHeader) {
+    console.error('Missing Authorization header')
     return {
       success: false,
       error: 'Missing Authorization header',
@@ -45,6 +47,7 @@ export async function verifyJWT(req: Request): Promise<AuthResult> {
   const token = authHeader.replace('Bearer ', '').trim()
 
   if (!token) {
+    console.error('Invalid Authorization header format')
     return {
       success: false,
       error: 'Invalid Authorization header format',
@@ -55,7 +58,15 @@ export async function verifyJWT(req: Request): Promise<AuthResult> {
   try {
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    // Try multiple possible environment variable names for the anon key
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ||
+                            Deno.env.get('SUPABASE_KEY') ||
+                            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    console.log('Auth config:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey
+    })
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -77,6 +88,7 @@ export async function verifyJWT(req: Request): Promise<AuthResult> {
       }
     }
 
+    console.log('JWT verified successfully for user:', user.id)
     return {
       success: true,
       userId: user.id,
