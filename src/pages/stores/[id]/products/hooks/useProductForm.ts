@@ -118,10 +118,19 @@ export function useProductForm({ initialData, storeId, isNewProduct }: UseProduc
       // Show syncing notification
       toast.loading("מסנכרן עם WooCommerce...", { id: 'woo-sync' });
 
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       const { data, error } = await supabase.functions.invoke('update-woo-product', {
         body: {
           product,
           store_id: storeId
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
