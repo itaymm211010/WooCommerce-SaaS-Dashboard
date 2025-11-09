@@ -127,7 +127,7 @@ export const bulkSyncToWooRequestSchema = z.object({
   store_id: uuidSchema,
   product_ids: z.array(uuidSchema).min(1).max(100, {
     message: "Cannot sync more than 100 products at once"
-  }),
+  }).optional(), // Optional - if not provided, syncs all products
   force_update: z.boolean().optional(),
 });
 
