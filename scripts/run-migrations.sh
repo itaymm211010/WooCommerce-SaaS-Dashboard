@@ -56,7 +56,7 @@ echo -e "${GREEN}✅ Connection successful!${NC}"
 echo ""
 
 # Get migration files sorted by timestamp (chronological order)
-MIGRATION_DIR="./supabase/migrations"
+MIGRATION_DIR="/home/user/WooCommerce-SaaS-Dashboard/supabase/migrations"
 MIGRATIONS=($(ls -1 "$MIGRATION_DIR"/*.sql | sort))
 
 echo "Found ${#MIGRATIONS[@]} migration files"
@@ -165,10 +165,9 @@ if [ $FAILED_COUNT -eq 0 ]; then
   echo -e "${GREEN}✅ Migration completed successfully!${NC}"
   echo ""
   echo "Next steps:"
-  echo "1. Export tables from LOVABLE as CSV"
-  echo "2. Use scripts/import-csv.sh to import data"
-  echo "3. Deploy Edge Functions"
-  echo "4. Deploy Frontend"
+  echo "1. Import CSV data: ./scripts/import-csv.sh"
+  echo "2. Deploy Edge Functions"
+  echo "3. Deploy Frontend"
 else
   echo -e "${YELLOW}⚠️  Migration completed with errors.${NC}"
   echo "Please review the failed migrations above."
