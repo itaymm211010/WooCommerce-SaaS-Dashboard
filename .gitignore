@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# CSV exports (sensitive data - never commit!)
+csv-exports/
+*.csv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
