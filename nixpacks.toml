@@ -1,0 +1,14 @@
+# Nixpacks configuration for Vite + React
+# Force Node.js build instead of Deno
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npx serve -s dist -l 80"
