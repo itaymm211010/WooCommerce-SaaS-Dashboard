@@ -5,12 +5,10 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm ci --cache /tmp/empty-cache"]
+cmds = ["npm ci"]
 
 [phases.build]
-cmds = ["npm run build -- --force"]
+cmds = ["npm run build"]
 
 [start]
 cmd = "npx serve -s dist -l 80"
-
-# Force fresh build - no cache
