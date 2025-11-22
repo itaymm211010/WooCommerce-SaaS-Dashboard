@@ -23,6 +23,7 @@ import AuditLogsPage from "./pages/audit-logs/index";
 import AuditAnalyticsPage from "./pages/audit-logs/analytics";
 import ResetPassword from "./pages/admin/ResetPassword";
 import UsersPage from "./pages/admin/Users";
+import CoolifyTest from "./pages/CoolifyTest";
 
 // Store Pages
 import StoresPage from "./pages/stores";
@@ -208,6 +209,14 @@ function App() {
               element={
                 <RequireAuth>
                   <UsersPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/coolify-test"
+              element={
+                <RequireAuth>
+                  <CoolifyTest />
                 </RequireAuth>
               }
             />
