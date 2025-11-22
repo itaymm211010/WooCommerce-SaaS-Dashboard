@@ -5,12 +5,12 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --cache /tmp/empty-cache"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npm run build -- --force"]
 
 [start]
 cmd = "npx serve -s dist -l 80"
 
-# Coolify configuration
+# Force fresh build - no cache
