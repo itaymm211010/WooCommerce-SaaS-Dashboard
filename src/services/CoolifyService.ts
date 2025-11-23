@@ -87,15 +87,15 @@ class CoolifyService {
     }
 
     try {
-      // Use Supabase Edge Function proxy to avoid Mixed Content issues
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const proxyUrl = `${supabaseUrl}/functions/v1/coolify-proxy?path=${encodeURIComponent(endpoint)}`;
+      // Use nginx reverse proxy to avoid Mixed Content issues (HTTPS -> HTTP)
+      const proxyUrl = `/api/coolify-proxy${endpoint}`;
 
-      logger.debug(`Coolify API Request via proxy: ${options.method || 'GET'} ${endpoint}`);
+      logger.debug(`Coolify API Request via nginx proxy: ${options.method || 'GET'} ${endpoint}`);
 
       const response = await fetch(proxyUrl, {
         ...options,
         headers: {
+          'Authorization': `Bearer ${this.config!.token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           ...options.headers,
@@ -232,11 +232,14 @@ class CoolifyService {
     }
 
     try {
-      // Use Supabase Edge Function proxy
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const proxyUrl = `${supabaseUrl}/functions/v1/coolify-proxy?path=${encodeURIComponent('/api/health')}`;
+      // Use nginx reverse proxy
+      const proxyUrl = `/api/coolify-proxy/api/health`;
 
-      const response = await fetch(proxyUrl);
+      const response = await fetch(proxyUrl, {
+        headers: {
+          'Authorization': `Bearer ${this.config!.token}`,
+        },
+      });
 
       return response.ok;
     } catch {
