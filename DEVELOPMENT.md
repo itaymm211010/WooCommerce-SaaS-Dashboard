@@ -1390,13 +1390,13 @@ curl -X POST https://api.ssw-ser.com/functions/v1/function-name \
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `[pending]` - Added auth troubleshooting tools
+**Last Commit:** `e8ae68c` - Added auth troubleshooting tools
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
-| 2025-11-23 | `[pending]` | Added auth diagnostics and troubleshooting guide | Claude Code |
+| 2025-11-23 | `e8ae68c` | Added auth diagnostics and troubleshooting guide | Claude Code |
 | 2025-11-23 | `ee042f3` | Fixed hardcoded webhook URL (Supabase Cloud → Self-Hosted) | Claude Code |
 | 2025-11-23 | `85020d5` | Migrated all references from Lovable+Cloud to Coolify+Self-Hosted | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify Deployment section, External Services section, Edge Functions list | Claude Code |
