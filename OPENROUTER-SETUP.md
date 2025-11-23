@@ -274,11 +274,11 @@ If you were using Anthropic direct API:
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** TBD (pending commit)
+**Last Commit:** `533a2db` - Comprehensive documentation update with Coolify integration
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
-| 2025-11-23 | TBD | Added Maintenance Header | Claude Code |
+| 2025-11-23 | `533a2db` | Added Maintenance Header | Claude Code |
 | 2025-11-06 | N/A | Initial OPENROUTER-SETUP.md creation | Developer |
