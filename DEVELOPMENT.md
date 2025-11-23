@@ -69,26 +69,62 @@ npm run dev
 
 ### Environment Variables
 
-Required in `.env`:
+#### `.env` (Committed to Git)
+
+**Production values for Self-Hosted Supabase:**
 
 ```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# Supabase Self-Hosted Configuration
+VITE_SUPABASE_URL=https://api.ssw-ser.com
+VITE_SUPABASE_PROJECT_ID=default
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
 
-# Coolify Integration (optional)
+**Where to get these values:**
+- `VITE_SUPABASE_URL` - Your Supabase Self-Hosted URL
+- `VITE_SUPABASE_PROJECT_ID` - Usually "default" for Self-Hosted
+- `VITE_SUPABASE_PUBLISHABLE_KEY` - Get from Supabase Studio → Settings → API → anon/public key
+
+---
+
+#### `.env.local` (Local Only - NOT Committed)
+
+**Sensitive keys and local development variables:**
+
+```env
+# Coolify Integration
 VITE_COOLIFY_URL=http://91.99.207.249:8000
 VITE_COOLIFY_TOKEN=3|your_coolify_api_token_here
 
-# Server-side only (never commit)
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# Supabase Service Role Key (Admin privileges - NEVER expose to client!)
+SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 ```
 
-**Important**: Never commit `.env` to git. The `.env.example` contains safe placeholders only.
-
-**Coolify Variables:**
+**Where to get these values:**
 - `VITE_COOLIFY_URL` - Your Coolify instance URL
-- `VITE_COOLIFY_TOKEN` - API token from Coolify Settings → API Tokens
+- `VITE_COOLIFY_TOKEN` - Get from Coolify Dashboard → Settings → API Tokens
+- `SUPABASE_SERVICE_ROLE_KEY` - Get from Supabase Studio → Settings → API → service_role key
+
+**⚠️ IMPORTANT:**
+- `.env.local` is gitignored - secrets stay on your machine only
+- NEVER commit `SUPABASE_SERVICE_ROLE_KEY` to git
+- NEVER use `SUPABASE_SERVICE_ROLE_KEY` in client-side code
+
+---
+
+#### Coolify Service Environment Variables
+
+**For React app deployment on Coolify, ensure these variables are set in Coolify Dashboard → Application → Environment Variables:**
+
+```env
+VITE_SUPABASE_URL=https://api.ssw-ser.com
+VITE_SUPABASE_PROJECT_ID=default
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+VITE_COOLIFY_URL=http://91.99.207.249:8000
+VITE_COOLIFY_TOKEN=3|your_token
+```
+
+**Note:** These are build-time variables. After updating them in Coolify, you must redeploy the application
 
 ---
 
