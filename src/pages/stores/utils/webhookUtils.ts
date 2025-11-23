@@ -7,8 +7,8 @@ import { Webhook } from "@/types/webhook";
 import { toast } from "sonner";
 
 export const getWebhookEndpoint = (storeId: string) => {
-  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-  return `https://${projectId}.functions.supabase.co/woocommerce-order-status?store_id=${storeId}`;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  return `${supabaseUrl}/functions/v1/woocommerce-order-status?store_id=${storeId}`;
 };
 
 export async function deleteWebhook(webhookId: number, store: Store) {
@@ -100,7 +100,7 @@ export async function createWebhook(store: Store, selectedWebhookType: string, s
         endpoint: '/wp-json/wc/v3/webhooks',
         method: 'POST',
         body: {
-          name: `Lovable - ${selectedTypeLabel}`,
+          name: `WooCommerce SaaS - ${selectedTypeLabel}`,
           topic: selectedWebhookType,
           delivery_url: endpoint,
           status: 'active'
