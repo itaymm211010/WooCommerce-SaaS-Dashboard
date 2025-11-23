@@ -51,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook middleware now uses RPC for webhook secret verification
 
 ### Fixed
+- **Webhook URL Generation** - Fixed hardcoded Supabase Cloud URL in `webhookUtils.ts` (commit `ee042f3`)
+  - Old: `https://${projectId}.functions.supabase.co/woocommerce-order-status`
+  - New: `${supabaseUrl}/functions/v1/woocommerce-order-status`
+  - Now uses `VITE_SUPABASE_URL` environment variable (Self-Hosted compatible)
+  - Updated webhook naming from "Lovable" to "WooCommerce SaaS"
 - Security vulnerability: Sensitive fields no longer exposed via direct database access
 - Edge Functions now properly authenticate and authorize credential access
 

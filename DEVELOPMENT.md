@@ -1370,12 +1370,13 @@ curl -X POST https://api.ssw-ser.com/functions/v1/function-name \
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `85020d5` - Migration to Supabase Self-Hosted documentation
+**Last Commit:** `ee042f3` - Fixed hardcoded Supabase Cloud URLs
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `ee042f3` | Fixed hardcoded webhook URL (Supabase Cloud → Self-Hosted) | Claude Code |
 | 2025-11-23 | `85020d5` | Migrated all references from Lovable+Cloud to Coolify+Self-Hosted | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify Deployment section, External Services section, Edge Functions list | Claude Code |
 | 2025-11-08 | N/A | Initial DEVELOPMENT.md creation | Developer |
