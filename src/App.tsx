@@ -214,11 +214,7 @@ function App() {
             />
             <Route
               path="/coolify-test"
-              element={
-                <RequireAuth>
-                  <CoolifyTest />
-                </RequireAuth>
-              }
+              element={<CoolifyTest />}
             />
             <Route
               path="/stores"
