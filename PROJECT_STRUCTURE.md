@@ -469,13 +469,13 @@ For questions or issues:
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
+**Last Commit:** `85020d5` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
-| 2025-11-23 | `TBD` | Updated deployment section for Supabase Self-Hosted on Coolify | Claude Code |
+| 2025-11-23 | `85020d5` | Updated deployment section for Supabase Self-Hosted on Coolify | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify deployment, infrastructure files, Edge Functions documentation | Claude Code |
 | 2025-01-06 | N/A | Initial PROJECT_STRUCTURE.md creation | Developer |
 

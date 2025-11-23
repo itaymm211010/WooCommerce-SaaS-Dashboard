@@ -604,13 +604,13 @@ For issues with Edge Functions:
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
+**Last Commit:** `85020d5` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
-| 2025-11-23 | `TBD` | Updated deployment method to Supabase CLI (Self-Hosted) | Claude Code |
+| 2025-11-23 | `85020d5` | Updated deployment method to Supabase CLI (Self-Hosted) | Claude Code |
 | 2025-11-23 | `533a2db` | Initial creation with all 16 Edge Functions | Claude Code |
 
 ---

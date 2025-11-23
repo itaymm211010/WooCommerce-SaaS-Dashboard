@@ -166,12 +166,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
+**Last Commit:** `85020d5` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
-| 2025-11-23 | `TBD` | Added infrastructure migration entry (Lovable→Coolify, Cloud→Self-Hosted) | Claude Code |
+| 2025-11-23 | `85020d5` | Added infrastructure migration entry (Lovable→Coolify, Cloud→Self-Hosted) | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify integration and documentation infrastructure entries | Claude Code |
 | 2025-01-05 | N/A | Initial CHANGELOG creation | Developer |
