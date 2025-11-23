@@ -604,14 +604,15 @@ For issues with Edge Functions:
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `533a2db` - Comprehensive documentation update with Coolify integration
+**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `TBD` | Updated deployment method to Supabase CLI (Self-Hosted) | Claude Code |
 | 2025-11-23 | `533a2db` | Initial creation with all 16 Edge Functions | Claude Code |
 
 ---
 
-**Total Functions:** 16 | **Security:** ✅ All Secured | **Auto-Deploy:** ✅ Lovable Cloud
+**Total Functions:** 16 | **Security:** ✅ All Secured | **Deployment:** 🔧 Manual via Supabase CLI

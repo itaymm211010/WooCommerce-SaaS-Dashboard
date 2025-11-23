@@ -302,23 +302,41 @@ WooCommerce → woocommerce-order-status Edge Function
 
 ## 🚀 Deployment
 
-This project deploys to two platforms:
+This project is fully self-hosted on Coolify:
 
-### 1. Lovable Platform (Primary)
-- **Frontend**: Auto-deployed from GitHub
-- **Edge Functions**: Auto-deployed via Lovable → Supabase
-- **Database**: Hosted on Supabase (managed by Lovable)
+### 1. Supabase Self-Hosted (Backend)
+- **Type**: Self-Hosted Supabase on Coolify
+- **URL**: https://api.ssw-ser.com
+- **Database**: PostgreSQL 15.8.1.048
+- **Edge Functions**: Deno Runtime v1.67.4
+- **Storage**: MinIO S3-compatible
+- **Hosting**: Coolify Platform (http://91.99.207.249:8000)
+
+**Components:**
+- 13 Docker containers (PostgreSQL, Edge Functions, Auth, Storage, etc.)
+- Managed via Coolify dashboard
+- Direct Docker access for logs and debugging
+
+**Deployment:**
+```bash
+# Edge Functions deployment
+npx supabase link --project-ref default --api-url https://api.ssw-ser.com
+npx supabase functions deploy
+
+# Database migrations
+npx supabase db push
+```
 
 **Environment Variables:**
 ```env
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=xxx
-SUPABASE_SERVICE_ROLE_KEY=xxx (server-only)
+VITE_SUPABASE_URL=https://api.ssw-ser.com
+VITE_SUPABASE_PUBLISHABLE_KEY=xxx  # From Supabase Studio → Settings → API
+VITE_SUPABASE_PROJECT_ID=default
 ```
 
 ---
 
-### 2. Coolify Platform (Deployment Management)
+### 2. Coolify Platform (Frontend Deployment)
 
 **Purpose:** Self-hosted deployment management and monitoring
 
@@ -451,13 +469,14 @@ For questions or issues:
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `533a2db` - Comprehensive documentation update with Coolify integration
+**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `TBD` | Updated deployment section for Supabase Self-Hosted on Coolify | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify deployment, infrastructure files, Edge Functions documentation | Claude Code |
 | 2025-01-06 | N/A | Initial PROJECT_STRUCTURE.md creation | Developer |
 
-**Version**: 1.0.0
+**Version**: 2.0.0 (Self-Hosted)

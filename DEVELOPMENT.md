@@ -99,16 +99,55 @@ This project integrates with several external services:
 ### Supabase (Backend as a Service)
 
 **Purpose:** Database, Authentication, Edge Functions, Storage
-**URL:** https://ddwlhgpugjyruzejggoz.supabase.co
-**Access:** Lovable-managed instance
+**Type:** Self-Hosted Supabase on Coolify
+**URL:** https://api.ssw-ser.com
+**Dashboard:** https://api.ssw-ser.com (Supabase Studio)
+**Hosting:** Coolify Platform (http://91.99.207.249:8000)
 
 **Used For:**
 - PostgreSQL database with Row Level Security (RLS)
 - User authentication and authorization
-- Edge Functions (serverless Deno functions)
-- File storage for product images
+- Edge Functions (serverless Deno functions via Deno Runtime)
+- File storage for product images (MinIO S3-compatible)
+- Real-time subscriptions
+- Analytics and logging (Logflare)
 
-**Documentation:** [Supabase Docs](https://supabase.com/docs)
+**Docker Containers (13 services):**
+- `supabase-db-*` - PostgreSQL 15.8.1.048
+- `supabase-edge-functions-*` - Edge Runtime v1.67.4 (Deno)
+- `supabase-kong-*` - API Gateway (Kong 2.8.1)
+- `supabase-studio-*` - Dashboard UI
+- `supabase-auth-*` - GoTrue Auth
+- `supabase-rest-*` - PostgREST API
+- `supabase-storage-*` - Storage API
+- `realtime-dev-*` - Realtime subscriptions
+- `supabase-analytics-*` - Logflare analytics
+- `supabase-vector-*` - Vector logs
+- `supabase-minio-*` - MinIO S3 storage
+- `supabase-meta-*` - Postgres Meta API
+- `supabase-supavisor-*` - Connection pooler
+
+**Logs Access:**
+```bash
+# SSH to Coolify server
+ssh user@91.99.207.249
+
+# Edge Functions logs
+docker logs -f supabase-edge-functions-csg4gww8cwggks8k84osgcsg
+
+# Database logs
+docker logs -f supabase-db-csg4gww8cwggks8k84osgcsg
+
+# API Gateway logs
+docker logs -f supabase-kong-csg4gww8cwggks8k84osgcsg
+```
+
+**API Keys:**
+Get from Supabase Studio → Settings → API:
+- **anon/public key** - For client-side requests
+- **service_role key** - For server-side Edge Functions (keep secret!)
+
+**Documentation:** [Supabase Docs](https://supabase.com/docs) | [Self-Hosting Guide](https://supabase.com/docs/guides/self-hosting)
 
 ---
 
@@ -248,11 +287,12 @@ graph LR
 1. **Create feature branch** from `main`
 2. **Make changes** and test locally
 3. **Commit frequently** with descriptive messages
-4. **Push to GitHub**
-5. **Create Pull Request** for major changes
-6. **Wait for review** (or use AI reviewer)
-7. **Merge** when approved
-8. **Lovable auto-deploys** to production
+4. **Deploy Edge Functions** via Supabase CLI (if modified)
+5. **Push to GitHub** (triggers Coolify rebuild for frontend)
+6. **Create Pull Request** for major changes
+7. **Wait for review** (or use AI reviewer)
+8. **Merge** when approved
+9. **Coolify auto-rebuilds** frontend from GitHub
 
 ### When to Use Pull Requests
 
@@ -321,15 +361,66 @@ graph LR
 **See:** [supabase/functions/README.md](./supabase/functions/README.md) for usage examples and security guidelines.
 **AI Agents:** [supabase/functions/README-AGENTS.md](./supabase/functions/README-AGENTS.md) for AI agent system documentation.
 
-### Lovable Cloud Deployment
+### Self-Hosted Deployment with Supabase CLI
 
-**Important**: This project uses **Lovable-managed Supabase**, not standalone Supabase.
+**Important**: This project uses **Supabase Self-Hosted on Coolify**, not Supabase Cloud.
 
 **What this means:**
-- Edge Functions auto-deploy when you push to GitHub
-- No direct Supabase CLI access without access token
-- Migrations run via Lovable Cloud → SQL Editor
-- Logs available in Lovable Cloud → Edge Functions
+- Edge Functions deployed manually via Supabase CLI
+- Direct access to all Supabase containers via Docker
+- Full control over deployment and configuration
+- Logs available via Docker or Supabase Studio
+
+**Prerequisites:**
+```bash
+# Install Supabase CLI
+npm install -g supabase
+
+# Link to Self-Hosted instance
+npx supabase link --project-ref default --api-url https://api.ssw-ser.com
+
+# Verify connection
+npx supabase status
+```
+
+**Deploying Edge Functions:**
+```bash
+# Deploy single function
+npx supabase functions deploy woo-proxy
+
+# Deploy all functions
+npx supabase functions deploy
+
+# Deploy with environment variables
+npx supabase functions deploy woo-proxy \
+  --set-env OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+**Viewing Logs:**
+```bash
+# Via Supabase CLI
+npx supabase functions logs woo-proxy --follow
+
+# Via Docker (SSH to Coolify server)
+ssh user@91.99.207.249
+docker logs -f supabase-edge-functions-csg4gww8cwggks8k84osgcsg
+
+# Via Supabase Studio
+# Navigate to: https://api.ssw-ser.com → Edge Functions → Logs
+```
+
+**Setting Secrets:**
+```bash
+# Add secrets for Edge Functions
+npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-...
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+
+# List secrets
+npx supabase secrets list
+
+# Unset secret
+npx supabase secrets unset SECRET_NAME
+```
 
 ### Creating a New Edge Function
 
@@ -367,13 +458,16 @@ serve(withAuth(async (req, auth) => {
 }))
 EOF
 
-# 3. Commit and push
+# 3. Deploy to Self-Hosted Supabase
+npx supabase functions deploy your-function-name
+
+# 4. Verify deployment
+npx supabase functions logs your-function-name --tail 20
+
+# 5. Commit and push to Git
 git add supabase/functions/your-function-name/
 git commit -m "feat: Add your-function-name edge function"
 git push origin main
-
-# 4. Lovable auto-deploys to Supabase
-# 5. Verify in Lovable Cloud → Edge Functions
 ```
 
 ### Edge Function Security Checklist
@@ -433,19 +527,41 @@ Located in `supabase/functions/_shared/`:
 
 Always import from `_shared` to maintain consistency.
 
-### Testing Edge Functions Locally
+### Testing Edge Functions
 
-Since we use Lovable Cloud, local testing is limited:
+**Option 1: Local Testing (Recommended for Development)**
+
+Serve functions locally before deploying:
 
 ```bash
-# Option 1: Test via deployed function
-curl -X POST https://xxx.supabase.co/functions/v1/your-function \
+# Serve a single function locally
+npx supabase functions serve woo-proxy
+
+# Test with curl
+curl -X POST http://localhost:54321/functions/v1/woo-proxy \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"storeId": "test"}'
+```
+
+**Option 2: Test on Self-Hosted (Production)**
+
+```bash
+# Test via deployed Self-Hosted function
+curl -X POST https://api.ssw-ser.com/functions/v1/your-function \
   -H "Authorization: Bearer YOUR_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"storeId":"uuid-here"}'
 
-# Option 2: View logs in Lovable Cloud
-# Navigate to: Lovable Cloud → Edge Functions → Function Name → Logs
+# View logs via CLI
+npx supabase functions logs your-function --follow
+
+# View logs via Docker
+ssh user@91.99.207.249
+docker logs -f supabase-edge-functions-csg4gww8cwggks8k84osgcsg | grep "your-function"
+
+# View logs in Supabase Studio
+# Navigate to: https://api.ssw-ser.com → Edge Functions → your-function → Logs
 ```
 
 ---
@@ -826,19 +942,21 @@ git add supabase/migrations/
 git commit -m "migration: Add your_table for feature X"
 git push
 
-# 4. Lovable auto-runs migrations (usually)
-# ⚠️ IMPORTANT: Lovable SHOULD auto-apply migrations from GitHub
-# However, if migrations don't run automatically:
+# 4. Apply migration to Self-Hosted Supabase
 
-# Option A: Check Lovable Dashboard
-# - Go to your Lovable project dashboard
-# - Check if there are pending migrations to approve
-# - Lovable may require manual approval for destructive changes
+# Option A: Via Supabase CLI (recommended)
+npx supabase db push
 
-# Option B: Manual migration (if auto-run fails)
-# - You'll need to ask the project owner with Lovable access
-# - They can run it via Lovable Cloud → Database → SQL Editor
-# - Or contact Lovable support if migrations are stuck
+# Option B: Via Supabase Studio SQL Editor
+# - Go to https://api.ssw-ser.com
+# - Navigate to SQL Editor
+# - Copy migration file content
+# - Execute SQL
+
+# Option C: Via direct PostgreSQL connection
+ssh user@91.99.207.249
+docker exec -it supabase-db-csg4gww8cwggks8k84osgcsg psql -U postgres -d postgres
+\i /path/to/migration.sql
 ```
 
 ### RLS Policy Template
@@ -918,7 +1036,7 @@ Before deploying major changes:
 git secrets --scan
 
 # Verify RLS policies
-# Run in Lovable Cloud → Database → SQL Editor:
+# Run in Supabase Studio → SQL Editor (https://api.ssw-ser.com):
 SELECT tablename, policyname, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
@@ -949,15 +1067,23 @@ localStorage.setItem('debug', '*')
 ### Edge Function Debugging
 
 ```bash
-# View logs in Lovable Cloud
-# Navigate to: Lovable Cloud → Edge Functions → Function Name → Logs
+# View logs via Supabase CLI
+npx supabase functions logs your-function --follow
+
+# View logs via Docker
+ssh user@91.99.207.249
+docker logs -f supabase-edge-functions-csg4gww8cwggks8k84osgcsg | grep "your-function"
+
+# View logs in Supabase Studio
+# Navigate to: https://api.ssw-ser.com → Edge Functions → your-function → Logs
 
 # Add console.log statements
 console.log('[function-name] Debug info:', variable)
 console.error('[function-name] Error:', error)
 
 # Check Edge Function status
-curl https://xxx.supabase.co/functions/v1/your-function/health
+curl https://api.ssw-ser.com/functions/v1/your-function \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
 ```
 
 ### Common Issues
@@ -971,8 +1097,8 @@ curl https://xxx.supabase.co/functions/v1/your-function/health
 - **Fix**: Test credentials manually in Postman/curl
 
 **Issue: Edge Function not deploying**
-- **Cause**: Lovable Cloud sync delay
-- **Fix**: Wait 2-3 minutes, check Lovable Cloud logs
+- **Cause**: Deployment failed or not executed
+- **Fix**: Run `npx supabase functions deploy your-function` manually, check logs for errors
 
 **Issue: RLS policy blocking access**
 - **Cause**: Missing or incorrect RLS policy
@@ -1106,14 +1232,29 @@ npm run build
 
 ### Deployment Issues
 
+**Frontend Deployment (Coolify):**
 ```bash
-# Verify Lovable connection
-# Check: Lovable Cloud → Settings → GitHub Integration
+# Verify Coolify build logs
+# Check: http://91.99.207.249:8000 → Your Application → Logs
 
-# Manual redeploy
-# Push an empty commit to trigger Lovable
+# Manual redeploy via Coolify Dashboard
+# Navigate to: Application → Deployments → Redeploy Latest
+
+# Or push an empty commit to trigger rebuild
 git commit --allow-empty -m "chore: trigger redeploy"
 git push
+```
+
+**Edge Functions Deployment:**
+```bash
+# Redeploy all Edge Functions
+npx supabase functions deploy
+
+# Redeploy specific function
+npx supabase functions deploy your-function
+
+# Check deployment status
+npx supabase functions list
 ```
 
 ### Database Connection Issues
@@ -1123,8 +1264,8 @@ git push
 echo $VITE_SUPABASE_URL
 echo $VITE_SUPABASE_ANON_KEY
 
-# Test connection
-curl https://xxx.supabase.co/rest/v1/ \
+# Test connection to Self-Hosted Supabase
+curl https://api.ssw-ser.com/rest/v1/ \
   -H "apikey: YOUR_ANON_KEY"
 ```
 
@@ -1143,12 +1284,17 @@ curl https://yourstore.com/wp-json/wc/v3/products \
 
 ## 📚 Additional Resources
 
+**Project Documentation:**
 - [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - Architecture overview
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 - [CHANGELOG.md](./CHANGELOG.md) - Version history
+- [supabase/functions/README.md](./supabase/functions/README.md) - Edge Functions reference
 - [.claude/project-context.md](./.claude/project-context.md) - AI context
-- [Lovable Documentation](https://docs.lovable.dev/)
-- [Supabase Documentation](https://supabase.com/docs)
+
+**External Documentation:**
+- [Supabase Self-Hosting Guide](https://supabase.com/docs/guides/self-hosting)
+- [Supabase CLI Reference](https://supabase.com/docs/reference/cli)
+- [Coolify Documentation](https://coolify.io/docs)
 - [WooCommerce REST API](https://woocommerce.github.io/woocommerce-rest-api-docs/)
 
 ---
@@ -1168,8 +1314,13 @@ git add .                      # Stage changes
 git commit -m "type: message"  # Commit with message
 git push origin branch-name    # Push to GitHub
 
-# Testing
-curl -X POST https://xxx.supabase.co/functions/v1/function-name \
+# Edge Functions (Supabase CLI)
+npx supabase functions deploy your-function    # Deploy function
+npx supabase functions logs your-function      # View logs
+npx supabase secrets set KEY=value             # Set secret
+
+# Testing Self-Hosted Edge Functions
+curl -X POST https://api.ssw-ser.com/functions/v1/function-name \
   -H "Authorization: Bearer ANON_KEY" \
   -d '{"key":"value"}'
 ```
@@ -1183,11 +1334,12 @@ curl -X POST https://xxx.supabase.co/functions/v1/function-name \
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `533a2db` - Comprehensive documentation update with Coolify integration
+**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `TBD` | Migrated all references from Lovable+Cloud to Coolify+Self-Hosted | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify Deployment section, External Services section, Edge Functions list | Claude Code |
 | 2025-11-08 | N/A | Initial DEVELOPMENT.md creation | Developer |

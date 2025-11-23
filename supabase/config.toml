@@ -1,4 +1,6 @@
-project_id = "ddwlhgpugjyruzejggoz"
+# Self-Hosted Supabase on Coolify
+# URL: https://api.ssw-ser.com
+project_id = "default"
 
 [functions.ai-chat]
 verify_jwt = true

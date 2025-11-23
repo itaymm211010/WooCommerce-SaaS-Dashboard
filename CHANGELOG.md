@@ -32,6 +32,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PROJECT_STRUCTURE.md - Complete project documentation
 
 ### Changed
+- **🚀 Infrastructure Migration** - Migrated from Lovable + Supabase Cloud to Coolify + Supabase Self-Hosted
+  - Backend now hosted on Supabase Self-Hosted (`https://api.ssw-ser.com`)
+  - 13 Supabase Docker containers running on Coolify
+  - PostgreSQL 15.8.1.048 database
+  - Edge Functions on Deno Runtime v1.67.4
+  - MinIO S3-compatible storage
+  - Updated all documentation to reflect Self-Hosted architecture
+  - Edge Functions now deployed via Supabase CLI (`npx supabase functions deploy`)
+  - Database migrations via Supabase CLI (`npx supabase db push`)
 - All Edge Functions now use secure RPC for credential access
 - `update-woo-product` - Uses `getStoreDetails` from shared utils
 - `sync-woo-products` - Uses `getStoreDetails` from shared utils
@@ -157,11 +166,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `533a2db` - Comprehensive documentation update with Coolify integration
+**Last Commit:** `TBD` - Migration to Supabase Self-Hosted documentation
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `TBD` | Added infrastructure migration entry (Lovable→Coolify, Cloud→Self-Hosted) | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify integration and documentation infrastructure entries | Claude Code |
 | 2025-01-05 | N/A | Initial CHANGELOG creation | Developer |
