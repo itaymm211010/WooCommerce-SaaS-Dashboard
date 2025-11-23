@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Auth Troubleshooting Tools** - Diagnostic and fix scripts for Self-Hosted Supabase auth issues
+  - `diagnose-auth.sql` - Comprehensive database diagnostics (auth schema, users, RLS policies, functions)
+  - `fix-auth-policies.sql` - Quick fix for common RLS and permission issues
+  - `TROUBLESHOOTING-AUTH.md` - Complete guide for debugging GoTrue authentication errors
+  - Addresses "Database error querying schema" 500 errors on `/auth/v1/token`
 - **Coolify Integration** - Direct deployment management from dashboard
   - Created `CoolifyService.ts` for Coolify API communication
   - Created test page at `/coolify-test` for verifying integration

@@ -1316,6 +1316,26 @@ curl https://yourstore.com/wp-json/wc/v3/products \
 # Navigate to: WordPress Admin → WooCommerce → Status → REST API
 ```
 
+### Self-Hosted Supabase Auth Issues
+
+**Error:** `POST /auth/v1/token 500 (Internal Server Error)` with "Database error querying schema"
+
+**Diagnostic Tools:**
+```bash
+# Run comprehensive database diagnostics
+docker cp diagnose-auth.sql supabase-db-csg4gww8cwggks8k84osgcsg:/tmp/diagnose-auth.sql
+docker exec -i supabase-db-csg4gww8cwggks8k84osgcsg psql -U postgres -d postgres -f /tmp/diagnose-auth.sql
+
+# Check GoTrue (auth service) logs
+docker logs supabase-auth-csg4gww8cwggks8k84osgcsg --tail 100
+
+# Apply quick fixes for common issues
+docker cp fix-auth-policies.sql supabase-db-csg4gww8cwggks8k84osgcsg:/tmp/fix-auth-policies.sql
+docker exec -i supabase-db-csg4gww8cwggks8k84osgcsg psql -U postgres -d postgres -f /tmp/fix-auth-policies.sql
+```
+
+**See:** [TROUBLESHOOTING-AUTH.md](./TROUBLESHOOTING-AUTH.md) for complete troubleshooting guide.
+
 ---
 
 ## 📚 Additional Resources
@@ -1370,12 +1390,13 @@ curl -X POST https://api.ssw-ser.com/functions/v1/function-name \
 **📌 Maintenance Info**
 
 **Last Updated:** 2025-11-23
-**Last Commit:** `ee042f3` - Fixed hardcoded Supabase Cloud URLs
+**Last Commit:** `[pending]` - Added auth troubleshooting tools
 **Updated By:** Claude Code
 
 **Update History:**
 | Date | Commit | Changes | Updated By |
 |------|--------|---------|------------|
+| 2025-11-23 | `[pending]` | Added auth diagnostics and troubleshooting guide | Claude Code |
 | 2025-11-23 | `ee042f3` | Fixed hardcoded webhook URL (Supabase Cloud → Self-Hosted) | Claude Code |
 | 2025-11-23 | `85020d5` | Migrated all references from Lovable+Cloud to Coolify+Self-Hosted | Claude Code |
 | 2025-11-23 | `533a2db` | Added Coolify Deployment section, External Services section, Edge Functions list | Claude Code |
