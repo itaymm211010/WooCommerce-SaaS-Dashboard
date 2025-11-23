@@ -269,4 +269,16 @@ If you were using Anthropic direct API:
 
 **Happy AI Agent Building!** 🤖
 
-Last Updated: 2025-11-06
+---
+
+**📌 Maintenance Info**
+
+**Last Updated:** 2025-11-23
+**Last Commit:** TBD (pending commit)
+**Updated By:** Claude Code
+
+**Update History:**
+| Date | Commit | Changes | Updated By |
+|------|--------|---------|------------|
+| 2025-11-23 | TBD | Added Maintenance Header | Claude Code |
+| 2025-11-06 | N/A | Initial OPENROUTER-SETUP.md creation | Developer |

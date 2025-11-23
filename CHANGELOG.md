@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Coolify Integration** - Direct deployment management from dashboard
+  - Created `CoolifyService.ts` for Coolify API communication
+  - Created test page at `/coolify-test` for verifying integration
+  - Created `coolify-proxy` Edge Function for Mixed Content security (alternative solution)
+  - Added `VITE_COOLIFY_URL` and `VITE_COOLIFY_TOKEN` environment variables
+- **Custom Deployment Infrastructure**
+  - Created multi-stage `Dockerfile` for Coolify deployment
+  - Created `nginx.conf` with SPA routing and Coolify API reverse proxy
+  - Added nginx reverse proxy for Coolify API to solve HTTPS→HTTP Mixed Content issues
+- **Documentation Infrastructure**
+  - Created `.claude/documentation-rules.md` - Auto-update rules for Claude Code
+  - Created `supabase/functions/README.md` - Complete Edge Functions reference
 - Migration `20251105000003_secure_sensitive_fields.sql` - Security for sensitive credentials
 - Migration `20251105000001_add_sync_tracking_fields.sql` - Sync tracking with `source` and `synced_at`
 - Webhook Logs Viewer component for monitoring webhook activity
@@ -139,3 +151,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GitHub Repository](https://github.com/itaymm211010/WooCommerce-SaaS-Dashboard)
 - [Lovable Project](https://lovable.dev/projects/bf95ed21-9695-47bb-bea2-c1f45246d48b)
 - [WooCommerce API Documentation](https://woocommerce.github.io/woocommerce-rest-api-docs/)
+
+---
+
+**📌 Maintenance Info**
+
+**Last Updated:** 2025-11-23
+**Last Commit:** TBD (pending commit)
+**Updated By:** Claude Code
+
+**Update History:**
+| Date | Commit | Changes | Updated By |
+|------|--------|---------|------------|
+| 2025-11-23 | TBD | Added Coolify integration and documentation infrastructure entries | Claude Code |
+| 2025-01-05 | N/A | Initial CHANGELOG creation | Developer |

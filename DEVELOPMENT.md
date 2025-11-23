@@ -4,11 +4,33 @@
 
 ---
 
+## 📌 Maintaining This Document
+
+**Update this file when you:**
+- ✅ Add new external service integration (Coolify, WooCommerce, Stripe, etc.)
+- ✅ Create new infrastructure (Edge Functions, nginx configs, Dockerfiles)
+- ✅ Change deployment process or build configuration
+- ✅ Add new development tools or workflows
+- ✅ Discover important troubleshooting solutions
+- ✅ Add new environment variables
+
+**How to update:**
+1. Update relevant section with new information
+2. Update "Last Updated" metadata at bottom
+3. Add entry to Update History table
+4. Commit with `docs: Update DEVELOPMENT.md - [what changed]`
+
+**See:** [.claude/documentation-rules.md](./.claude/documentation-rules.md) for complete update guidelines.
+
+---
+
 ## 📋 Table of Contents
 
 - [Getting Started](#getting-started)
+- [External Services](#external-services)
 - [Development Workflow](#development-workflow)
 - [Working with Edge Functions](#working-with-edge-functions)
+- [Coolify Deployment](#coolify-deployment)
 - [Database Operations](#database-operations)
 - [Testing](#testing)
 - [Debugging](#debugging)
@@ -50,14 +72,104 @@ npm run dev
 Required in `.env`:
 
 ```env
+# Supabase Configuration
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Coolify Integration (optional)
+VITE_COOLIFY_URL=http://91.99.207.249:8000
+VITE_COOLIFY_TOKEN=3|your_coolify_api_token_here
 
 # Server-side only (never commit)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Important**: Never commit `.env` to git. The `.env.example` contains safe placeholders only.
+
+**Coolify Variables:**
+- `VITE_COOLIFY_URL` - Your Coolify instance URL
+- `VITE_COOLIFY_TOKEN` - API token from Coolify Settings → API Tokens
+
+---
+
+## 🌐 External Services
+
+This project integrates with several external services:
+
+### Supabase (Backend as a Service)
+
+**Purpose:** Database, Authentication, Edge Functions, Storage
+**URL:** https://ddwlhgpugjyruzejggoz.supabase.co
+**Access:** Lovable-managed instance
+
+**Used For:**
+- PostgreSQL database with Row Level Security (RLS)
+- User authentication and authorization
+- Edge Functions (serverless Deno functions)
+- File storage for product images
+
+**Documentation:** [Supabase Docs](https://supabase.com/docs)
+
+---
+
+### WooCommerce (E-commerce Platform)
+
+**Purpose:** External store management and product synchronization
+**API:** WooCommerce REST API v3
+
+**Integration:**
+- Products sync (pull from WooCommerce → Supabase)
+- Products push (Supabase → WooCommerce)
+- Taxonomies (categories, tags, brands)
+- Webhooks for real-time updates
+
+**Security:**
+- All API calls proxied through `woo-proxy` Edge Function
+- Credentials stored encrypted in Supabase
+- Accessed via secure RPC function `get_store_credentials`
+
+**Documentation:** [WooCommerce REST API](https://woocommerce.github.io/woocommerce-rest-api-docs/)
+
+---
+
+### Coolify (Deployment Platform)
+
+**Purpose:** Self-hosted deployment management
+**URL:** http://91.99.207.249:8000
+**API Version:** v1
+
+**Integration:**
+- Application deployment and management
+- Logs viewing
+- Health monitoring
+- Lifecycle control (start/stop/restart)
+
+**Security:**
+- nginx reverse proxy (`/api/coolify-proxy/`) to solve Mixed Content (HTTPS→HTTP)
+- Alternative: `coolify-proxy` Edge Function
+- API token stored in environment variables
+
+**Features:**
+- View deployed applications
+- Monitor deployment status
+- Read application logs
+- Manage application lifecycle
+
+**Setup:**
+1. Get API token from Coolify Settings → API Tokens
+2. Add to `.env.local`: `VITE_COOLIFY_URL` and `VITE_COOLIFY_TOKEN`
+3. Test connection at `/coolify-test`
+
+**See:** [Coolify Deployment](#coolify-deployment) for detailed setup
+
+---
+
+### OpenRouter (AI Gateway) - Optional
+
+**Purpose:** Unified API for AI models (Claude, GPT-4, Gemini)
+**Used By:** AI Agents (sync-health-agent, agent-coordinator)
+
+**See:** [OPENROUTER-SETUP.md](./OPENROUTER-SETUP.md) for setup guide
 
 ---
 
@@ -175,6 +287,39 @@ graph LR
 ---
 
 ## ⚙️ Working with Edge Functions
+
+**Complete Reference:** See [supabase/functions/README.md](./supabase/functions/README.md) for detailed documentation on all Edge Functions.
+
+### Available Edge Functions (16 total)
+
+**Core API:**
+- `woo-proxy` - Secure WooCommerce API proxy
+- `coolify-proxy` - Coolify API proxy for Mixed Content security
+
+**WooCommerce Sync:**
+- `sync-woo-products` - Pull products from WooCommerce
+- `update-woo-product` - Push product updates to WooCommerce
+- `bulk-sync-to-woo` - Bulk product synchronization
+- `sync-taxonomies` - Sync categories, tags, brands
+- `sync-global-attributes` - Sync WooCommerce attributes
+- `manage-taxonomy` - CRUD operations for taxonomies
+
+**Webhooks:**
+- `woocommerce-order-status` - Webhook receiver for order updates
+- `generate-webhook-secret` - Generate secure webhook secrets
+
+**AI & Automation:**
+- `sync-health-agent` - AI monitoring of sync health
+- `agent-coordinator` - Multi-agent orchestration
+- `ai-chat` - AI chat assistance
+- `detect-bugs` - AI-powered bug detection
+- `handle-anomaly-response` - Automated anomaly responses
+
+**User Management:**
+- `reset-user-password` - Password reset functionality
+
+**See:** [supabase/functions/README.md](./supabase/functions/README.md) for usage examples and security guidelines.
+**AI Agents:** [supabase/functions/README-AGENTS.md](./supabase/functions/README-AGENTS.md) for AI agent system documentation.
 
 ### Lovable Cloud Deployment
 
@@ -302,6 +447,337 @@ curl -X POST https://xxx.supabase.co/functions/v1/your-function \
 # Option 2: View logs in Lovable Cloud
 # Navigate to: Lovable Cloud → Edge Functions → Function Name → Logs
 ```
+
+---
+
+## 🚢 Coolify Deployment
+
+This application deploys to Coolify using a custom Dockerfile and nginx configuration.
+
+### Architecture
+
+```
+GitHub → Coolify Build → Docker Container → nginx → React App
+                                          ↓
+                                    Reverse Proxy
+                                          ↓
+                                   Coolify API (HTTP)
+```
+
+### Deployment Files
+
+#### `Dockerfile` (Multi-stage Build)
+
+```dockerfile
+# Build stage - compile React app
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Production stage - serve with nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Benefits:**
+- ✅ Multi-stage reduces final image size (< 50MB)
+- ✅ node:20-alpine for Node.js build
+- ✅ nginx:alpine for production serving
+- ✅ Only production files in final image
+
+---
+
+#### `nginx.conf` (SPA + Reverse Proxy)
+
+Located in project root, copied to container during build.
+
+**Key Features:**
+
+1. **SPA Routing** - All routes serve `index.html` for React Router
+```nginx
+location / {
+    try_files $uri $uri/ /index.html;
+}
+```
+
+2. **Coolify API Proxy** - Solves Mixed Content (HTTPS→HTTP)
+```nginx
+location /api/coolify-proxy/ {
+    proxy_pass http://91.99.207.249:8000/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # CORS headers
+    add_header Access-Control-Allow-Origin *;
+    add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS';
+    add_header Access-Control-Allow-Headers 'Authorization, Content-Type, Accept';
+}
+```
+
+3. **Static Asset Caching**
+```nginx
+location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+4. **Gzip Compression**
+```nginx
+gzip on;
+gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+```
+
+**Why nginx Proxy?**
+- Application runs on HTTPS (`https://app.ssw-ser.com`)
+- Coolify API is HTTP (`http://91.99.207.249:8000`)
+- Browsers block Mixed Content (HTTPS → HTTP)
+- nginx proxies requests: `https://app/api/coolify-proxy/*` → `http://coolify:8000/*`
+
+---
+
+### Coolify Configuration
+
+#### Build Pack Setting
+
+**IMPORTANT:** Set Build Pack to **"Dockerfile"** in Coolify UI.
+
+**Steps:**
+1. Go to Coolify → Your Application → Configuration
+2. Find "Build Pack" dropdown
+3. Select **"Dockerfile"**
+4. Save
+
+**Why:** Coolify defaults to `nixpacks` auto-detection, which may detect the project incorrectly (e.g., as Deno instead of Node.js). Using "Dockerfile" forces Coolify to use your custom Dockerfile.
+
+---
+
+#### Environment Variables in Coolify
+
+Add these in Coolify UI → Environment Variables:
+
+```env
+VITE_SUPABASE_URL=https://ddwlhgpugjyruzejggoz.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_COOLIFY_URL=http://91.99.207.249:8000
+VITE_COOLIFY_TOKEN=your_coolify_token
+```
+
+**Note:** These are build-time variables, injected during `npm run build`.
+
+---
+
+### Deployment Workflow
+
+```bash
+# 1. Make changes locally
+git add .
+git commit -m "feat: Add new feature"
+
+# 2. Push to GitHub
+git push origin your-branch
+
+# 3. Coolify auto-detects push (if webhook configured)
+# Or manually trigger: Coolify UI → Deploy → Force Rebuild Without Cache
+
+# 4. Coolify builds Docker image
+# - Runs Dockerfile
+# - Injects environment variables
+# - Creates container
+
+# 5. Deployment complete
+# - Application available at https://app.ssw-ser.com
+# - nginx serves static files
+# - Reverse proxy handles /api/coolify-proxy/*
+```
+
+---
+
+### Troubleshooting Coolify Deployments
+
+#### Issue: Docker Cache Prevents New Code Deployment
+
+**Symptoms:**
+```
+No configuration changed & image found
+Build step skipped
+#9 CACHED
+```
+
+**Solution:**
+```bash
+# Option 1: Force Rebuild in Coolify UI
+Coolify → Application → Deploy → "Force Rebuild Without Cache"
+
+# Option 2: Delete Docker images on Coolify server
+ssh into Coolify server:
+docker rmi -f <image-id>
+docker builder prune -af
+
+# Option 3: Modify files to break cache
+# Add a comment to Dockerfile or nginx.conf
+```
+
+---
+
+#### Issue: Wrong Build Pack (Deno Detection)
+
+**Symptoms:**
+```
+error: Relative import path "@/components/ui/skeleton" not prefixed with / or ./ or ../
+RUN deno cache src/pages/audit-logs/index.tsx
+```
+
+**Cause:** Coolify using `nixpacks` instead of Dockerfile
+
+**Solution:**
+1. Delete `nixpacks.toml` if it exists (Coolify prioritizes it)
+2. Change Build Pack to "Dockerfile" in Coolify UI
+3. Force Rebuild Without Cache
+
+---
+
+#### Issue: nginx.conf Not Applied
+
+**Symptoms:** `/coolify-test` shows 404, SPA routing broken
+
+**Cause:** Old nginx config cached in Docker image
+
+**Solution:**
+1. Modify nginx.conf (add comment to break cache)
+2. Ensure Build Pack is "Dockerfile"
+3. Force Rebuild Without Cache
+4. Verify nginx.conf is in container:
+```bash
+docker exec -it <container> cat /etc/nginx/conf.d/default.conf
+```
+
+---
+
+#### Issue: Environment Variables Not Working
+
+**Symptoms:** `undefined` for `VITE_COOLIFY_URL`
+
+**Cause:** Variables not set in Coolify or missing `VITE_` prefix
+
+**Solution:**
+1. Check Coolify UI → Environment Variables
+2. Ensure all variables have `VITE_` prefix
+3. Rebuild (environment variables are build-time)
+
+---
+
+#### Issue: Unhealthy State in Coolify
+
+**Symptoms:** Application shows "Unhealthy" despite working
+
+**Cause:** Health check endpoint not configured
+
+**Solution:**
+- If app works, this is informational only
+- Configure health check in Coolify UI (optional):
+  - Path: `/`
+  - Expected: 200 status
+
+---
+
+### Testing Coolify Integration
+
+After deployment, test the Coolify integration:
+
+1. **Visit Test Page**
+   ```
+   https://app.ssw-ser.com/coolify-test
+   ```
+
+2. **Click "Test Coolify Connection"**
+   - Should show success message
+   - Should display list of applications from Coolify
+
+3. **Verify nginx Proxy**
+   ```bash
+   # Test from browser console
+   fetch('/api/coolify-proxy/api/v1/applications', {
+     headers: {
+       'Authorization': 'Bearer YOUR_COOLIFY_TOKEN'
+     }
+   }).then(r => r.json()).then(console.log)
+   ```
+
+4. **Check Browser Network Tab**
+   - Should see requests to `/api/coolify-proxy/*`
+   - Should NOT see Mixed Content errors
+
+---
+
+### Alternative: Edge Function Proxy
+
+Instead of nginx reverse proxy, you can use the `coolify-proxy` Edge Function:
+
+**Pros:**
+- ✅ Centralized with other proxies (woo-proxy pattern)
+- ✅ Can add authentication/logging
+- ✅ Works even if nginx config changes
+
+**Cons:**
+- ❌ Extra hop (frontend → Edge Function → Coolify)
+- ❌ Supabase Edge Function costs
+
+**Usage:**
+```typescript
+const { data, error } = await supabase.functions.invoke('coolify-proxy', {
+  body: {
+    path: '/api/v1/applications',
+    method: 'GET'
+  }
+})
+```
+
+**See:** [supabase/functions/README.md](./supabase/functions/README.md) for details.
+
+---
+
+### Coolify API Integration Code
+
+**Service:** `src/services/CoolifyService.ts`
+
+```typescript
+class CoolifyService {
+  private config: CoolifyConfig | null = null
+
+  initialize(url: string, token: string) {
+    this.config = { url, token }
+  }
+
+  async getApplications(): Promise<CoolifyApiResponse<CoolifyApplication[]>> {
+    // Uses nginx reverse proxy
+    const proxyUrl = `/api/coolify-proxy/api/v1/applications`
+
+    const response = await fetch(proxyUrl, {
+      headers: {
+        'Authorization': `Bearer ${this.config.token}`,
+        'Accept': 'application/json'
+      }
+    })
+
+    return response.json()
+  }
+}
+
+export const coolifyService = CoolifyService.getInstance()
+```
+
+**Test Page:** `src/pages/CoolifyTest.tsx`
+**Route:** `/coolify-test`
 
 ---
 
@@ -702,4 +1178,16 @@ curl -X POST https://xxx.supabase.co/functions/v1/function-name \
 
 **Happy Coding! 🚀**
 
-*Last Updated: 2025-11-08*
+---
+
+**📌 Maintenance Info**
+
+**Last Updated:** 2025-11-23
+**Last Commit:** TBD (pending commit)
+**Updated By:** Claude Code
+
+**Update History:**
+| Date | Commit | Changes | Updated By |
+|------|--------|---------|------------|
+| 2025-11-23 | TBD | Added Coolify Deployment section, External Services section, Edge Functions list | Claude Code |
+| 2025-11-08 | N/A | Initial DEVELOPMENT.md creation | Developer |

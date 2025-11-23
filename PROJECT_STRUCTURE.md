@@ -15,7 +15,11 @@ WooCommerce-SaaS-Dashboard/
 │   │   ├── ui/                   # Shadcn/UI components
 │   │   └── dashboard/            # Dashboard-specific components
 │   │
+│   ├── services/                 # API services
+│   │   └── CoolifyService.ts     # Coolify API integration
+│   │
 │   ├── pages/                    # Route pages
+│   │   ├── CoolifyTest.tsx       # Coolify integration test page
 │   │   ├── stores/               # Store management
 │   │   │   ├── [id]/             # Dynamic store routes
 │   │   │   │   ├── products/     # Product management
@@ -95,8 +99,14 @@ WooCommerce-SaaS-Dashboard/
 │   │   ├── detect-bugs/          # Bug detection utility
 │   │   │   └── index.ts
 │   │   │
-│   │   └── ai-chat/              # AI chat functionality
-│   │       └── index.ts
+│   │   ├── ai-chat/              # AI chat functionality
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── coolify-proxy/        # Coolify API proxy (alternative)
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── README.md             # Edge Functions documentation
+│   │   └── README-AGENTS.md      # AI Agent system documentation
 │   │
 │   └── migrations/               # Database migrations
 │       ├── 20251105000000_add_product_images_unique_constraint.sql
@@ -106,7 +116,14 @@ WooCommerce-SaaS-Dashboard/
 │       └── 20251105000004_fix_webhook_logs_rls.sql
 │
 ├── public/                       # Static assets
+│
 ├── .claude/                      # Claude AI configuration
+│   ├── project-context.md        # Project context for AI
+│   └── documentation-rules.md    # Documentation update guidelines
+│
+├── Dockerfile                    # Multi-stage build for Coolify
+├── nginx.conf                    # nginx config (SPA + reverse proxy)
+│
 └── context/                      # Context files for AI
 
 ```
@@ -285,17 +302,73 @@ WooCommerce → woocommerce-order-status Edge Function
 
 ## 🚀 Deployment
 
-### Lovable Platform
+This project deploys to two platforms:
+
+### 1. Lovable Platform (Primary)
 - **Frontend**: Auto-deployed from GitHub
 - **Edge Functions**: Auto-deployed via Lovable → Supabase
 - **Database**: Hosted on Supabase (managed by Lovable)
 
-### Environment Variables
+**Environment Variables:**
 ```env
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx (server-only)
 ```
+
+---
+
+### 2. Coolify Platform (Deployment Management)
+
+**Purpose:** Self-hosted deployment management and monitoring
+
+**Architecture:**
+```
+GitHub → Coolify → Docker Build → nginx Container → React App
+                                          ↓
+                                   Reverse Proxy
+                                          ↓
+                                   Coolify API (HTTP)
+```
+
+**Deployment Files:**
+
+#### Dockerfile (Multi-stage Build)
+```dockerfile
+# Stage 1: Build React app
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### nginx.conf
+- **SPA Routing:** `try_files $uri $uri/ /index.html;`
+- **Reverse Proxy:** `/api/coolify-proxy/*` → `http://coolify:8000/*`
+- **Static Caching:** 1 year cache for `/assets/`
+- **Gzip Compression:** Enabled for text/json/js files
+
+**Why Reverse Proxy?**
+- Application runs on HTTPS (`https://app.ssw-ser.com`)
+- Coolify API is HTTP (`http://91.99.207.249:8000`)
+- Browser blocks Mixed Content (HTTPS → HTTP requests)
+- nginx proxies: `HTTPS app` → `HTTP Coolify` securely
+
+**Configuration:**
+- **Build Pack:** Dockerfile (not nixpacks)
+- **Environment Variables:** Injected at build time
+- **Health Check:** Optional (/ returns 200)
+
+**See:** [DEVELOPMENT.md - Coolify Deployment](./DEVELOPMENT.md#coolify-deployment) for detailed setup
 
 ---
 
@@ -375,5 +448,16 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2025-01-06
+**📌 Maintenance Info**
+
+**Last Updated:** 2025-11-23
+**Last Commit:** TBD (pending commit)
+**Updated By:** Claude Code
+
+**Update History:**
+| Date | Commit | Changes | Updated By |
+|------|--------|---------|------------|
+| 2025-11-23 | TBD | Added Coolify deployment, infrastructure files, Edge Functions documentation | Claude Code |
+| 2025-01-06 | N/A | Initial PROJECT_STRUCTURE.md creation | Developer |
+
 **Version**: 1.0.0
