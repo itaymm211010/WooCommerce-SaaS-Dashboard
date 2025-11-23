@@ -87,14 +87,15 @@ class CoolifyService {
     }
 
     try {
-      const url = `${this.config!.baseUrl}${endpoint}`;
+      // Use Supabase Edge Function proxy to avoid Mixed Content issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const proxyUrl = `${supabaseUrl}/functions/v1/coolify-proxy?path=${encodeURIComponent(endpoint)}`;
 
-      logger.debug(`Coolify API Request: ${options.method || 'GET'} ${endpoint}`);
+      logger.debug(`Coolify API Request via proxy: ${options.method || 'GET'} ${endpoint}`);
 
-      const response = await fetch(url, {
+      const response = await fetch(proxyUrl, {
         ...options,
         headers: {
-          'Authorization': `Bearer ${this.config!.token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           ...options.headers,
@@ -231,11 +232,11 @@ class CoolifyService {
     }
 
     try {
-      const response = await fetch(`${this.config!.baseUrl}/api/health`, {
-        headers: {
-          'Authorization': `Bearer ${this.config!.token}`,
-        },
-      });
+      // Use Supabase Edge Function proxy
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const proxyUrl = `${supabaseUrl}/functions/v1/coolify-proxy?path=${encodeURIComponent('/api/health')}`;
+
+      const response = await fetch(proxyUrl);
 
       return response.ok;
     } catch {
