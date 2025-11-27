@@ -176,19 +176,21 @@ graph LR
 
 ## ⚙️ Working with Edge Functions
 
-### Supabase Deployment
+### Supabase Deployment (Self-Hosted on Coolify)
 
-**Important**: This project uses **Supabase.com hosted instance** (previously managed via Lovable).
+**Important**: This project uses **Self-Hosted Supabase** deployed on Coolify (not Supabase.com).
 
 **Project Details:**
+- **Supabase URL**: `https://api.ssw-ser.com`
 - **Project ID**: `ddwlhgpugjyruzejggoz`
-- **URL**: `https://ddwlhgpugjyruzejggoz.supabase.co`
-- **Dashboard**: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz
+- **Hosting**: Coolify (Self-Hosted Open Source Supabase)
+- **Studio**: https://api.ssw-ser.com/project/default (if enabled)
 
 **Deployment Process:**
-- Edge Functions deployed via Supabase CLI: `npx supabase functions deploy`
-- Migrations run via Supabase Dashboard → SQL Editor
-- Logs available in Supabase Dashboard → Edge Functions
+- Edge Functions: Deploy via Coolify or direct Docker access
+- Migrations: Run via psql or Supabase Studio
+- Logs: Check Coolify logs or PostgreSQL logs
+- Database: Direct PostgreSQL access via connection string from Coolify
 
 ### Creating a New Edge Function
 
@@ -234,8 +236,9 @@ git add supabase/functions/your-function-name/
 git commit -m "feat: Add your-function-name edge function"
 git push origin main
 
-# 5. Verify in Supabase Dashboard → Edge Functions
-# https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/functions
+# 5. Verify via Coolify or test the function
+curl -X POST https://api.ssw-ser.com/functions/v1/your-function-name \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
 ```
 
 ### Edge Function Security Checklist
@@ -306,8 +309,9 @@ curl -X POST https://xxx.supabase.co/functions/v1/your-function \
   -H "Content-Type: application/json" \
   -d '{"storeId":"uuid-here"}'
 
-# Option 2: View logs in Supabase Dashboard
-# Navigate to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/logs
+# Option 2: View logs in Coolify
+# Navigate to: Coolify Dashboard → Supabase Project → Logs
+# Or check PostgreSQL logs directly
 ```
 
 ---
@@ -360,15 +364,18 @@ git push
 # 4. Run migration in Supabase
 # Migrations must be run manually via Supabase Dashboard
 
-# Option A: Using Supabase CLI (Recommended)
-npx supabase link --project-ref ddwlhgpugjyruzejggoz
-npx supabase db push
+# Option A: Using psql (Recommended for Self-Hosted)
+# Get credentials from Coolify
+psql "postgresql://postgres:YOUR_PASSWORD@YOUR_DB_HOST:5432/postgres" < supabase/migrations/YYYYMMDDHHMMSS_migration_name.sql
 
-# Option B: Manual via Dashboard
-# 1. Go to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/sql
+# Option B: Via Supabase Studio (if enabled)
+# 1. Go to: https://api.ssw-ser.com/project/default/sql
 # 2. Copy contents of the migration file
 # 3. Paste and run in SQL Editor
 # 4. Verify success
+
+# Option C: Via Docker Exec (if using Docker)
+docker exec -it <postgres-container> psql -U postgres < /path/to/migration.sql
 ```
 
 ### RLS Policy Template
@@ -448,7 +455,7 @@ Before deploying major changes:
 git secrets --scan
 
 # Verify RLS policies
-# Run in Supabase Dashboard → SQL Editor:
+# Run via psql or Supabase Studio:
 SELECT tablename, policyname, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
@@ -479,8 +486,8 @@ localStorage.setItem('debug', '*')
 ### Edge Function Debugging
 
 ```bash
-# View logs in Supabase Dashboard
-# Navigate to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/logs
+# View logs in Coolify
+# Navigate to: Coolify Dashboard → Your Supabase Project → Logs
 
 # Add console.log statements
 console.log('[function-name] Debug info:', variable)
@@ -501,8 +508,8 @@ curl https://xxx.supabase.co/functions/v1/your-function/health
 - **Fix**: Test credentials manually in Postman/curl
 
 **Issue: Edge Function not deploying**
-- **Cause**: Deployment error or wrong credentials
-- **Fix**: Check Supabase Dashboard logs, verify project is linked correctly
+- **Cause**: Deployment error or Coolify configuration issue
+- **Fix**: Check Coolify logs, verify Supabase container is running, check Edge Functions are enabled
 
 **Issue: RLS policy blocking access**
 - **Cause**: Missing or incorrect RLS policy

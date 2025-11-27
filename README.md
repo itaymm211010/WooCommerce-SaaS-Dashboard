@@ -19,15 +19,16 @@ A comprehensive SaaS dashboard for managing multiple WooCommerce stores with adv
 
 - **Frontend**: React 18 + TypeScript + Vite
 - **UI Framework**: shadcn-ui + Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **Backend**: Self-Hosted Supabase on Coolify (PostgreSQL + Edge Functions)
 - **State Management**: TanStack Query (React Query)
 - **Authentication**: Supabase Auth
 - **API Integration**: WooCommerce REST API
+- **Hosting**: Coolify @ https://api.ssw-ser.com
 
 ## 📋 Prerequisites
 
 - Node.js 18+ & npm
-- Supabase account
+- Self-Hosted Supabase (Coolify) with PostgreSQL access
 - WooCommerce store(s) with REST API enabled
 
 ## 🔧 Installation
@@ -50,10 +51,12 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-VITE_SUPABASE_PROJECT_ID="your-project-id"
-VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_PROJECT_ID="ddwlhgpugjyruzejggoz"
+VITE_SUPABASE_URL="https://api.ssw-ser.com"
 VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
 ```
+
+**Note**: This project uses **Self-Hosted Supabase** on Coolify, not Supabase.com
 
 ### 4. Set up Supabase
 

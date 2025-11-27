@@ -13,31 +13,52 @@ npm install
 
 ### Step 2: Environment Configuration
 
-Your `.env` file is already configured with:
+Your `.env` file is configured with:
 ```env
 VITE_SUPABASE_PROJECT_ID="ddwlhgpugjyruzejggoz"
-VITE_SUPABASE_URL="https://ddwlhgpugjyruzejggoz.supabase.co"
+VITE_SUPABASE_URL="https://api.ssw-ser.com"
 VITE_SUPABASE_PUBLISHABLE_KEY="[your-key]"
 ```
 
+**Note**: This project uses **Self-Hosted Supabase** deployed on Coolify at `https://api.ssw-ser.com`
+
 ### Step 3: Database Setup
 
-#### Option A: Automatic (Recommended)
+**IMPORTANT**: This project uses **Self-Hosted Supabase on Coolify** (not Supabase.com).
+
+#### Get PostgreSQL Credentials from Coolify
+
+1. Login to your Coolify dashboard
+2. Navigate to your Supabase project
+3. Find PostgreSQL credentials (host, port, password)
+
+#### Run Migrations
+
+**Option A: Using psql (Recommended)**
 
 ```bash
-# Link to Supabase project
-npx supabase link --project-ref ddwlhgpugjyruzejggoz
+# Connect to your database
+psql "postgresql://postgres:YOUR_PASSWORD@YOUR_DB_HOST:5432/postgres"
 
-# Push all migrations
-npx supabase db push
+# Run migrations
+\i supabase/migrations/20251127000000_add_first_admin_user.sql
 ```
 
-#### Option B: Manual via Dashboard
+**Option B: Via Supabase Studio**
 
-1. Go to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/sql
-2. Run the migration: `supabase/migrations/20251127000000_add_first_admin_user.sql`
+If Supabase Studio is enabled:
+1. Go to: https://api.ssw-ser.com/project/default/sql
+2. Copy migration SQL and paste
+3. Run
 
-This will automatically assign admin role to the first registered user.
+**Option C: Batch all migrations**
+
+```bash
+cat supabase/migrations/*.sql > all_migrations.sql
+psql "your-connection-string" < all_migrations.sql
+```
+
+See [DATABASE.md](./DATABASE.md) for detailed migration instructions.
 
 ---
 
@@ -54,9 +75,13 @@ The migration `20251127000000_add_first_admin_user.sql` will automatically:
 - If not, assign admin role to the first registered user
 - That's you! 🎉
 
-Just run it in Supabase SQL Editor:
+**Via psql:**
+```bash
+psql "postgresql://postgres:YOUR_PASSWORD@YOUR_DB_HOST:5432/postgres" < supabase/migrations/20251127000000_add_first_admin_user.sql
+```
 
-1. Go to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/sql
+**Or via Supabase Studio:**
+1. Go to: https://api.ssw-ser.com/project/default/sql
 2. Copy the contents of `supabase/migrations/20251127000000_add_first_admin_user.sql`
 3. Paste and run
 4. Refresh the app and log in again
