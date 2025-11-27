@@ -1,69 +1,244 @@
-# Welcome to your Lovable project
+# WooCommerce SaaS Dashboard
 
-## Project info
+A comprehensive SaaS dashboard for managing multiple WooCommerce stores with advanced features including product management, order tracking, analytics, and AI-powered tools.
 
-**URL**: https://lovable.dev/projects/bf95ed21-9695-47bb-bea2-c1f45246d48b
+## 🚀 Features
 
-## How can I edit this code?
+- **Multi-Store Management**: Manage multiple WooCommerce stores from a single dashboard
+- **Product Management**: Full product CRUD with image management and WooCommerce sync
+- **Order Tracking**: Real-time order monitoring and status updates
+- **Taxonomies Management**: Categories, tags, and brands management
+- **Webhooks Integration**: Automated webhook handling for real-time updates
+- **Analytics & Monitoring**: Comprehensive sync monitoring and audit logs
+- **AI Chat**: AI-powered assistance for store management
+- **Project Management**: Built-in task, bug, and sprint management tools
+- **User Management**: Role-based access control (Admin/User)
+- **Hebrew Language Support**: Full RTL support
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI Framework**: shadcn-ui + Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **State Management**: TanStack Query (React Query)
+- **Authentication**: Supabase Auth
+- **API Integration**: WooCommerce REST API
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bf95ed21-9695-47bb-bea2-c1f45246d48b) and start prompting.
+## 📋 Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ & npm
+- Supabase account
+- WooCommerce store(s) with REST API enabled
 
-**Use your preferred IDE**
+## 🔧 Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 1. Clone the repository
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+git clone https://github.com/itaymm211010/WooCommerce-SaaS-Dashboard.git
+cd WooCommerce-SaaS-Dashboard
+```
 
-Follow these steps:
+### 2. Install dependencies
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 3. Configure environment variables
 
-# Step 3: Install the necessary dependencies.
-npm i
+Create a `.env` file in the root directory:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```env
+VITE_SUPABASE_PROJECT_ID="your-project-id"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
+```
+
+### 4. Set up Supabase
+
+#### Option A: Using Supabase CLI (Recommended)
+
+```bash
+# Install Supabase CLI
+npm install -g supabase
+
+# Link to your project
+npx supabase link --project-ref your-project-id
+
+# Push migrations
+npx supabase db push
+```
+
+#### Option B: Manual Setup via Dashboard
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Navigate to SQL Editor
+3. Run all migration files from `supabase/migrations/` in order (by timestamp)
+
+### 5. Assign Admin Role to First User
+
+**IMPORTANT**: The first user needs to be manually assigned the admin role.
+
+After signing up with your email (e.g., `maor.itay@gmail.com`), run this SQL in Supabase SQL Editor:
+
+```sql
+-- Replace 'your-email@example.com' with your actual email
+DO $$
+DECLARE
+  user_id_var UUID;
+BEGIN
+  -- Get user ID by email
+  SELECT id INTO user_id_var
+  FROM auth.users
+  WHERE email = 'your-email@example.com'
+  LIMIT 1;
+
+  -- Assign admin role
+  IF user_id_var IS NOT NULL THEN
+    INSERT INTO user_roles (user_id, role)
+    VALUES (user_id_var, 'admin')
+    ON CONFLICT (user_id, role) DO NOTHING;
+
+    RAISE NOTICE 'Admin role assigned to: %', user_id_var;
+  ELSE
+    RAISE EXCEPTION 'User not found';
+  END IF;
+END $$;
+```
+
+Or use the automated script:
+
+```bash
+# Run the fix_admin_access.sql file in Supabase Dashboard
+# This assigns admin role to the first registered user
+```
+
+### 6. Deploy Supabase Edge Functions
+
+```bash
+# Deploy all functions
+npx supabase functions deploy
+
+# Or deploy individually
+npx supabase functions deploy sync-woo-products
+npx supabase functions deploy update-woo-product
+npx supabase functions deploy ai-chat
+# ... etc
+```
+
+### 7. Start development server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Project Structure
 
-**Use GitHub Codespaces**
+```
+WooCommerce-SaaS-Dashboard/
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── contexts/         # React contexts (Auth, etc.)
+│   ├── hooks/            # Custom React hooks
+│   ├── integrations/     # External integrations (Supabase)
+│   ├── pages/            # Page components
+│   │   ├── admin/        # Admin panel pages
+│   │   ├── auth/         # Authentication pages
+│   │   ├── stores/       # Store management pages
+│   │   ├── audit-logs/   # Audit logs and analytics
+│   │   └── project-management/ # PM tools
+│   └── lib/              # Utility functions
+├── supabase/
+│   ├── functions/        # Edge Functions
+│   └── migrations/       # Database migrations
+└── public/               # Static assets
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔐 User Roles & Permissions
 
-## What technologies are used for this project?
+### App Roles
+- **admin**: Full system access, can manage all users and settings
+- **user**: Standard user access, can manage own stores
 
-This project is built with .
+### Store Roles
+- **owner**: Full store access, can manage everything
+- **manager**: Can manage products, orders, but not store settings
+- **viewer**: Read-only access
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🚢 Deployment
 
-## How can I deploy this project?
+### Frontend Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/bf95ed21-9695-47bb-bea2-c1f45246d48b) and click on Share -> Publish.
+Deploy to your preferred hosting platform:
 
-## I want to use a custom domain - is that possible?
+**Netlify:**
+```bash
+npm run build
+# Deploy the 'dist' folder
+```
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+**Vercel:**
+```bash
+npm run build
+# Deploy the 'dist' folder
+```
+
+### Backend (Supabase)
+
+Supabase is already hosted. Just ensure:
+1. All migrations are applied
+2. All Edge Functions are deployed
+3. Environment variables are set in your hosting platform
+
+## 🐛 Troubleshooting
+
+### Issue: Can't access admin features
+
+**Solution**: Make sure you've assigned the admin role to your user. See step 5 in Installation.
+
+### Issue: Products not syncing with WooCommerce
+
+**Solution**:
+1. Check your WooCommerce API credentials in store settings
+2. Verify the store URL is accessible
+3. Check Supabase Edge Functions logs
+
+### Issue: Authentication errors
+
+**Solution**:
+1. Verify Supabase credentials in `.env`
+2. Check RLS policies in Supabase dashboard
+3. Clear browser cache and cookies
+
+## 📚 Documentation
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [WooCommerce REST API](https://woocommerce.github.io/woocommerce-rest-api-docs/)
+- [shadcn-ui Components](https://ui.shadcn.com)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is private and proprietary.
+
+## 👤 Author
+
+**Itay Maor**
+- Email: maor.itay@gmail.com
+- GitHub: [@itaymm211010](https://github.com/itaymm211010)
+
+## 🙏 Acknowledgments
+
+- Originally bootstrapped with Lovable.dev
+- UI components from shadcn-ui
+- Backend powered by Supabase
