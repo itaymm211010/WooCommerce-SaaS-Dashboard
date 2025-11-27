@@ -140,7 +140,7 @@ graph LR
 5. **Create Pull Request** for major changes
 6. **Wait for review** (or use AI reviewer)
 7. **Merge** when approved
-8. **Lovable auto-deploys** to production
+8. **Deploy manually** using your hosting platform (Vercel, Netlify, etc.)
 
 ### When to Use Pull Requests
 
@@ -176,15 +176,19 @@ graph LR
 
 ## ⚙️ Working with Edge Functions
 
-### Lovable Cloud Deployment
+### Supabase Deployment
 
-**Important**: This project uses **Lovable-managed Supabase**, not standalone Supabase.
+**Important**: This project uses **Supabase.com hosted instance** (previously managed via Lovable).
 
-**What this means:**
-- Edge Functions auto-deploy when you push to GitHub
-- No direct Supabase CLI access without access token
-- Migrations run via Lovable Cloud → SQL Editor
-- Logs available in Lovable Cloud → Edge Functions
+**Project Details:**
+- **Project ID**: `ddwlhgpugjyruzejggoz`
+- **URL**: `https://ddwlhgpugjyruzejggoz.supabase.co`
+- **Dashboard**: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz
+
+**Deployment Process:**
+- Edge Functions deployed via Supabase CLI: `npx supabase functions deploy`
+- Migrations run via Supabase Dashboard → SQL Editor
+- Logs available in Supabase Dashboard → Edge Functions
 
 ### Creating a New Edge Function
 
@@ -222,13 +226,16 @@ serve(withAuth(async (req, auth) => {
 }))
 EOF
 
-# 3. Commit and push
+# 3. Deploy to Supabase
+npx supabase functions deploy your-function-name
+
+# 4. Commit and push to GitHub
 git add supabase/functions/your-function-name/
 git commit -m "feat: Add your-function-name edge function"
 git push origin main
 
-# 4. Lovable auto-deploys to Supabase
-# 5. Verify in Lovable Cloud → Edge Functions
+# 5. Verify in Supabase Dashboard → Edge Functions
+# https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/functions
 ```
 
 ### Edge Function Security Checklist
@@ -290,7 +297,7 @@ Always import from `_shared` to maintain consistency.
 
 ### Testing Edge Functions Locally
 
-Since we use Lovable Cloud, local testing is limited:
+Testing Edge Functions:
 
 ```bash
 # Option 1: Test via deployed function
@@ -299,8 +306,8 @@ curl -X POST https://xxx.supabase.co/functions/v1/your-function \
   -H "Content-Type: application/json" \
   -d '{"storeId":"uuid-here"}'
 
-# Option 2: View logs in Lovable Cloud
-# Navigate to: Lovable Cloud → Edge Functions → Function Name → Logs
+# Option 2: View logs in Supabase Dashboard
+# Navigate to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/logs
 ```
 
 ---
@@ -350,19 +357,18 @@ git add supabase/migrations/
 git commit -m "migration: Add your_table for feature X"
 git push
 
-# 4. Lovable auto-runs migrations (usually)
-# ⚠️ IMPORTANT: Lovable SHOULD auto-apply migrations from GitHub
-# However, if migrations don't run automatically:
+# 4. Run migration in Supabase
+# Migrations must be run manually via Supabase Dashboard
 
-# Option A: Check Lovable Dashboard
-# - Go to your Lovable project dashboard
-# - Check if there are pending migrations to approve
-# - Lovable may require manual approval for destructive changes
+# Option A: Using Supabase CLI (Recommended)
+npx supabase link --project-ref ddwlhgpugjyruzejggoz
+npx supabase db push
 
-# Option B: Manual migration (if auto-run fails)
-# - You'll need to ask the project owner with Lovable access
-# - They can run it via Lovable Cloud → Database → SQL Editor
-# - Or contact Lovable support if migrations are stuck
+# Option B: Manual via Dashboard
+# 1. Go to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/sql
+# 2. Copy contents of the migration file
+# 3. Paste and run in SQL Editor
+# 4. Verify success
 ```
 
 ### RLS Policy Template
@@ -442,7 +448,7 @@ Before deploying major changes:
 git secrets --scan
 
 # Verify RLS policies
-# Run in Lovable Cloud → Database → SQL Editor:
+# Run in Supabase Dashboard → SQL Editor:
 SELECT tablename, policyname, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
@@ -473,8 +479,8 @@ localStorage.setItem('debug', '*')
 ### Edge Function Debugging
 
 ```bash
-# View logs in Lovable Cloud
-# Navigate to: Lovable Cloud → Edge Functions → Function Name → Logs
+# View logs in Supabase Dashboard
+# Navigate to: https://supabase.com/dashboard/project/ddwlhgpugjyruzejggoz/logs
 
 # Add console.log statements
 console.log('[function-name] Debug info:', variable)
@@ -495,8 +501,8 @@ curl https://xxx.supabase.co/functions/v1/your-function/health
 - **Fix**: Test credentials manually in Postman/curl
 
 **Issue: Edge Function not deploying**
-- **Cause**: Lovable Cloud sync delay
-- **Fix**: Wait 2-3 minutes, check Lovable Cloud logs
+- **Cause**: Deployment error or wrong credentials
+- **Fix**: Check Supabase Dashboard logs, verify project is linked correctly
 
 **Issue: RLS policy blocking access**
 - **Cause**: Missing or incorrect RLS policy
@@ -631,11 +637,10 @@ npm run build
 ### Deployment Issues
 
 ```bash
-# Verify Lovable connection
-# Check: Lovable Cloud → Settings → GitHub Integration
+# Rebuild and redeploy
+npm run build
 
-# Manual redeploy
-# Push an empty commit to trigger Lovable
+# Or push to trigger CI/CD (if configured)
 git commit --allow-empty -m "chore: trigger redeploy"
 git push
 ```
@@ -671,8 +676,8 @@ curl https://yourstore.com/wp-json/wc/v3/products \
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 - [CHANGELOG.md](./CHANGELOG.md) - Version history
 - [.claude/project-context.md](./.claude/project-context.md) - AI context
-- [Lovable Documentation](https://docs.lovable.dev/)
 - [Supabase Documentation](https://supabase.com/docs)
+- [Supabase CLI Reference](https://supabase.com/docs/reference/cli)
 - [WooCommerce REST API](https://woocommerce.github.io/woocommerce-rest-api-docs/)
 
 ---
