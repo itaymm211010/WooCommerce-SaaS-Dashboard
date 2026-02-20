@@ -8,28 +8,35 @@ This file contains critical context about the project that should be remembered 
 
 ## 🏗️ Infrastructure Setup
 
+### **Development Workflow (Updated 2026-02-19)**
+- **Code**: Written directly with Claude Code (claude-code CLI) — Lovable is NO LONGER used for code generation
+- **Local directory**: `C:\Users\Itay\WooCommerce-SaaS-Dashboard\WooCommerce-fresh\`
+- **Git flow**: Edit locally → `git push origin main` → Lovable auto-deploys to Supabase
+- **Future plan (Phase B)**: Migrate to own Supabase project for full independence from Lovable
+
 ### **CRITICAL: Database & Backend**
-- **Database**: This project uses **LOVABLE CLOUD SUPABASE**, NOT regular Supabase
+- **Database**: Still uses **LOVABLE CLOUD SUPABASE** (Phase A — will migrate later)
 - **What this means**:
   - Database is managed by Lovable, not a separate Supabase account
-  - Edge Functions are auto-deployed via Lovable → Supabase integration
-  - No direct Supabase CLI access - everything goes through Lovable
-  - Migrations may need to be run via Lovable's interface or SQL Editor
+  - Edge Functions are auto-deployed when pushing to GitHub (via Lovable → Supabase integration)
+  - Migrations run via Lovable Cloud → Database → SQL Editor
   - Cannot use `npx supabase functions deploy` directly without access token
 
 ### Deployment Flow
 ```
-GitHub (Source)
+Claude Code (local editing)
     ↓
-Lovable (Build & Deploy)
+GitHub push (git push origin main)
     ↓
-Supabase (Lovable-managed)
+Lovable (auto-deploy trigger)
+    ↓
+Supabase (Lovable-managed) + Frontend
 ```
 
 ### Access Credentials
-- **Frontend**: Deployed automatically by Lovable
+- **Frontend**: Deployed automatically by Lovable from GitHub
 - **Backend**: Supabase managed by Lovable
-- **GitHub**: Connected via Lovable integration
+- **GitHub**: https://github.com/itaymm211010/WooCommerce-SaaS-Dashboard
 - **No separate Supabase dashboard login** - access via Lovable Cloud interface
 
 ---
@@ -210,54 +217,55 @@ if (woo_id && synced_at) {
 #### Direct to Main (Quick Changes)
 For small fixes, documentation updates, or hotfixes:
 ```bash
-git add .
-git commit -m "Description of change"
+git add src/specific-file.tsx
+git commit -m "fix: Description of change"
 git push origin main
 # → Lovable auto-deploys immediately
 ```
 
 #### Feature Branch + PR (Recommended for Major Changes)
-For large features, security changes, migrations, or when you want code review:
+For large features, security changes, migrations, or breaking changes:
 ```bash
 # 1. Create feature branch
 git checkout -b feature/description
 
 # 2. Make changes and commit
-git add .
-git commit -m "Add new feature"
+git add src/...
+git commit -m "feat: Add new feature"
 
-# 3. Push branch
+# 3. Push branch and create PR
 git push origin feature/description
-
-# 4. Create PR (manually or via gh CLI)
 gh pr create --title "Add new feature" --body "Description"
 
-# 5. Review and test
-# Ask Claude: "Review PR #123"
-
-# 6. Merge when ready
+# 4. After review — merge to main
 gh pr merge
-# → Only then Lovable deploys to production
+# → Lovable deploys to production
 ```
 
 #### When to Use PRs
 - ✅ Security changes (RLS, credentials, authentication)
 - ✅ Database migrations (schema changes)
 - ✅ Major features or refactoring
-- ✅ When you want AI code review before deploy
+- ✅ When you want review before deploy
 - ❌ Skip for: typo fixes, documentation, minor UI tweaks
 
 #### Commit Message Format
 ```
-Type: Short description (50 chars max)
+type: Short description (50 chars max)
 
-Optional longer explanation of what changed and why.
+Optional explanation.
 
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 Common types: `feat:`, `fix:`, `refactor:`, `docs:`, `security:`, `migration:`
+
+#### Before Every Push (IMPORTANT)
+```bash
+git pull --rebase origin main   # sync first to avoid conflicts
+npm run build                   # verify no TypeScript errors
+git push origin main
+```
 
 ---
 
