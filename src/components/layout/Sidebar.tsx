@@ -15,7 +15,8 @@ import {
   Bot,
   Activity,
   Shield,
-  BarChart3
+  BarChart3,
+  Cpu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -35,6 +36,7 @@ const globalNavigation: NavigationItem[] = [
   { name: "Orders", href: "/stores", icon: ShoppingCart, needsStore: true },
   { name: "Products", href: "/stores", icon: Package, needsStore: true },
   { name: "AI Chat", href: "/ai-chat", icon: Bot },
+  { name: "סוכני AI", href: "/agents", icon: Cpu },
   { name: "Sync Monitoring", href: "/sync-monitoring", icon: Activity },
   { name: "Audit Logs", href: "/audit-logs", icon: Shield },
   { name: "Audit Analytics", href: "/audit-logs/analytics", icon: BarChart3 },
@@ -42,7 +44,6 @@ const globalNavigation: NavigationItem[] = [
   { name: "Stores", href: "/stores", icon: Store },
   { name: "Project Management", href: "/project-management", icon: ClipboardList },
   { name: "Profile", href: "/profile", icon: User },
-  { name: "ניהול תמונות", href: "/demo/image-management", icon: Image },
 ];
 
 const storeNavigation: NavigationItem[] = [
