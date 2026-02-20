@@ -100,7 +100,7 @@ export async function createWebhook(store: Store, selectedWebhookType: string, s
         endpoint: '/wp-json/wc/v3/webhooks',
         method: 'POST',
         body: {
-          name: `Lovable - ${selectedTypeLabel}`,
+          name: `WooSaaS - ${selectedTypeLabel}`,
           topic: selectedWebhookType,
           delivery_url: endpoint,
           status: 'active'
