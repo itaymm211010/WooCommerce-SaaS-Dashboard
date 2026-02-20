@@ -141,6 +141,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         store_id: storeId,
         product_id: insertedProduct.id,
         original_url: image.src,
+        woo_media_id: image.id || null,  // save WooCommerce media attachment ID
         storage_url: null,
         storage_source: 'woocommerce',
         type: index === 0 ? 'featured' : 'gallery',
@@ -244,6 +245,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
               store_id: storeId,
               product_id: insertedProduct.id,
               original_url: variation.image.src,
+              woo_media_id: variation.image.id || null,  // save WooCommerce media attachment ID
               storage_url: null,
               storage_source: 'woocommerce',
               type: 'variation',

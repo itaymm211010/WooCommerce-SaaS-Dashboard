@@ -14,6 +14,22 @@ import {
 import { logSyncStart, logSyncSuccess, logSyncError } from "../shared/sync-logger.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 
+// Save WooCommerce media IDs back to product_images after a create/update.
+// This ensures future syncs send { id } instead of { src }, preventing duplicate media uploads.
+async function saveWooMediaIds(supabase: any, productId: string, wooImages: any[]) {
+  if (!wooImages || wooImages.length === 0) return
+
+  for (const wooImg of wooImages) {
+    if (!wooImg.id || !wooImg.src) continue
+    await supabase
+      .from('product_images')
+      .update({ woo_media_id: wooImg.id, synced_at: new Date().toISOString() })
+      .eq('product_id', productId)
+      .eq('original_url', wooImg.src)
+      .is('woo_media_id', null) // only update rows that don't already have it
+  }
+}
+
 // Main request handler
 export async function handleRequest(req: Request) {
   const { product, store_id } = await req.json()
@@ -90,9 +106,12 @@ export async function handleRequest(req: Request) {
 
     try {
       const newWooProduct = await createWooCommerceProduct(store, productWithImages)
-      
+
       // Update the product in our database with the new WooCommerce ID
       await updateProductWooId(supabase, fullProduct.id, newWooProduct.id)
+
+      // Save woo_media_id for each image returned by WooCommerce (prevents re-upload on future saves)
+      await saveWooMediaIds(supabase, fullProduct.id, newWooProduct.images || [])
 
       const duration = Date.now() - startTime
       if (logId) {
@@ -103,7 +122,7 @@ export async function handleRequest(req: Request) {
         })
       }
 
-      return createResponse({ 
+      return createResponse({
         success: true,
         message: 'Product created successfully in WooCommerce',
         woo_id: newWooProduct.id
@@ -133,6 +152,9 @@ export async function handleRequest(req: Request) {
     try {
       // Update existing product
       const updatedWooProduct = await updateWooCommerceProduct(store, productWithImages)
+
+      // Save woo_media_id for each image returned by WooCommerce (prevents re-upload on future saves)
+      await saveWooMediaIds(supabase, fullProduct.id, updatedWooProduct.images || [])
 
       // Handle variations if product is variable type
       if (product.type === 'variable') {

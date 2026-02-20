@@ -396,12 +396,15 @@ export async function transformProductForWooCommerce(product: any, store: any) {
   }
 
   // Add images if available
+  // If image already has a woo_media_id (previously synced), use the ID to avoid re-uploading.
+  // If image is new (no woo_media_id), send src URL so WooCommerce creates the media attachment.
   if (product.images && product.images.length > 0) {
-    wooProduct.images = product.images.map((img: any, index: number) => ({
-      src: img.original_url || img.storage_url,
-      alt: img.alt_text || product.name,
-      position: index
-    }))
+    wooProduct.images = product.images.map((img: any, index: number) => {
+      if (img.woo_media_id) {
+        return { id: img.woo_media_id, alt: img.alt_text || product.name, position: index }
+      }
+      return { src: img.original_url || img.storage_url, alt: img.alt_text || product.name, position: index }
+    })
   }
 
   return wooProduct
