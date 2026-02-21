@@ -66,7 +66,7 @@ export async function syncVariationsFromWooCommerce(
   }
 
   // Create a set of WooCommerce variation IDs
-  const wooVariationIds = new Set(wooVariations.map(v => v.id))
+  const wooVariationIds = new Set(wooVariations.map((v: any) => v.id))
 
   // Delete variations that exist in DB but not in WooCommerce
   if (existingVariations && existingVariations.length > 0) {

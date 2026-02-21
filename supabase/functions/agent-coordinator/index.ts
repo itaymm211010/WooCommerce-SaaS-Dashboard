@@ -177,7 +177,7 @@ Respond with ONLY a JSON object (no markdown):
 
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

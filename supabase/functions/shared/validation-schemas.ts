@@ -31,7 +31,7 @@ export const wooProxyRequestSchema = z.object({
     message: "Endpoint must start with /wp-json/wc/v3/"
   }),
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], {
-    message: "Invalid HTTP method"
+    invalid_type_error: "Invalid HTTP method"
   }),
   body: z.record(z.unknown()).optional(),
   params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
@@ -44,10 +44,10 @@ export const wooProxyRequestSchema = z.object({
 export const manageTaxonomyRequestSchema = z.object({
   storeId: uuidSchema,
   type: z.enum(['category', 'tag', 'brand'], {
-    message: "Type must be 'category', 'tag', or 'brand'"
+    invalid_type_error: "Type must be 'category', 'tag', or 'brand'"
   }),
   action: z.enum(['create', 'update', 'delete'], {
-    message: "Action must be 'create', 'update', or 'delete'"
+    invalid_type_error: "Action must be 'create', 'update', or 'delete'"
   }),
   data: z.object({
     name: z.string().min(1).max(200).optional(),

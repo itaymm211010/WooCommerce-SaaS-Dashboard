@@ -157,6 +157,7 @@ export async function handleRequest(req: Request) {
       await saveWooMediaIds(supabase, fullProduct.id, updatedWooProduct.images || [])
 
       // Handle variations if product is variable type
+      let variationsSynced = 0
       if (product.type === 'variable') {
         // Fetch our local variations and sync them to WooCommerce
         const { data: variations } = await supabase
@@ -183,6 +184,7 @@ export async function handleRequest(req: Request) {
             }
           }
 
+          variationsSynced = variations.length
           console.log(`✅ All variations synced successfully`)
         }
       }
@@ -193,7 +195,7 @@ export async function handleRequest(req: Request) {
           duration_ms: duration,
           metadata: { 
             product_name: fullProduct.name,
-            variations_synced: product.type === 'variable' ? variations?.length || 0 : 0
+            variations_synced: variationsSynced
           }
         })
       }
