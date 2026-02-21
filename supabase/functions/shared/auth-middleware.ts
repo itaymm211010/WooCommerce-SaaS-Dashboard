@@ -178,8 +178,8 @@ export async function verifyStoreAccess(
 
     // Check if user has access to store
     const { data, error } = await supabase.rpc('user_has_store_access', {
-      user_id: userId,
-      store_id: storeId
+      _user_id: userId,
+      _store_id: storeId
     })
 
     if (error) {
