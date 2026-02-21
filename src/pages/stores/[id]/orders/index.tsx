@@ -80,9 +80,8 @@ export default function StoreOrdersPage() {
 
       toast.success(`Order #${orderId} status updated to ${newStatus}`);
       refetch();
-      if (selectedOrderId === orderId) {
-        refetchLogs();
-      }
+      setSelectedOrderId(orderId);
+      refetchLogs();
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error('Failed to update order status');

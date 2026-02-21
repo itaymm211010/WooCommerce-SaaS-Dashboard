@@ -23,13 +23,13 @@ interface OrdersTableProps {
 }
 
 const allowedStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
-  'pending': ['processing', 'on-hold', 'cancelled'],
-  'processing': ['completed', 'on-hold', 'cancelled'],
-  'on-hold': ['processing', 'cancelled'],
-  'completed': ['processing', 'refunded'],
-  'cancelled': ['processing'],
+  'pending': ['processing', 'on-hold', 'cancelled', 'failed'],
+  'processing': ['completed', 'on-hold', 'cancelled', 'refunded'],
+  'on-hold': ['processing', 'pending', 'cancelled'],
+  'completed': ['processing', 'refunded', 'cancelled'],
+  'cancelled': ['pending', 'processing', 'on-hold'],
   'refunded': ['processing'],
-  'failed': ['pending', 'processing']
+  'failed': ['pending', 'processing', 'cancelled']
 };
 
 const RATE_LIMIT_DELAY = 1000; // 1 second delay between status updates

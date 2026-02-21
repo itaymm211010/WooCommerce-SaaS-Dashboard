@@ -63,7 +63,7 @@ export function MobileOrderCard({
           </div>
           <div className="space-y-2">
             <Select
-              defaultValue={order.status}
+              value={order.status ?? undefined}
               onValueChange={(value: OrderStatus) => {
                 onStatusChange(
                   order.woo_id,

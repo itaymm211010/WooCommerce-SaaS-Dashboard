@@ -109,7 +109,7 @@ export function DesktopOrdersTable({
                 <div className="flex items-center gap-2">
                   <StatusBadge status={order.status} />
                   <Select
-                    defaultValue={order.status}
+                    value={order.status ?? undefined}
                     onValueChange={(value: OrderStatus) => {
                       onStatusChange(
                         order.woo_id,
