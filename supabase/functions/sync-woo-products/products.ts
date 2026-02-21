@@ -59,9 +59,14 @@ export async function fetchProductsWithVariations(products: any[], store: any) {
 // Save products and their images to the database
 export async function saveProducts(productsWithVariations: any[], storeId: string) {
   const supabase = createSupabaseClient()
-  
+
   console.log('Saving products and images to database...')
-  
+
+  // Capture a single timestamp for this entire sync run.
+  // All synced records will get this timestamp so we can identify
+  // stale records (synced_at < syncTimestamp) and clean them up afterward.
+  const syncTimestamp = new Date().toISOString()
+
   let productsUpdated = 0
   let productsCreated = 0
   
@@ -99,9 +104,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         slug: b.slug
       })) : [],
       source: 'woo' as const,
-      synced_at: new Date().toISOString()
+      synced_at: syncTimestamp
     }
-    
+
     let insertedProduct: any
     
     if (existingProduct) {
@@ -149,7 +154,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         description: '',
         display_order: index,
         source: 'woo' as const,
-        synced_at: new Date().toISOString()
+        synced_at: syncTimestamp
       }))
 
       const { data: upsertedImages, error: imageError } = await supabase
@@ -176,6 +181,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
           console.error('Error updating product featured image:', updateError)
         }
       }
+
     }
 
     // Save variations for variable products
@@ -203,9 +209,9 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
           stock_status: variation.stock_status || 'instock',
           attributes: variation.attributes || [],
           source: 'woo' as const,
-          synced_at: new Date().toISOString()
+          synced_at: syncTimestamp
         }
-        
+
         let insertedVariation: any
         
         if (existingVariation) {
@@ -253,7 +259,7 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
               description: '',
               display_order: 0,
               source: 'woo' as const,
-              synced_at: new Date().toISOString()
+              synced_at: syncTimestamp
             }, {
               onConflict: 'product_id,original_url',
               ignoreDuplicates: false
@@ -271,7 +277,22 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
         }
       }
     }
+
+    // Clean up images that were removed from WooCommerce since the last sync.
+    // This runs after all gallery and variation images are upserted so that
+    // any woo-sourced image (of any type) that was NOT touched in this sync run
+    // (i.e. synced_at < syncTimestamp) is safely removed.
+    const { error: cleanupError } = await supabase
+      .from('product_images')
+      .delete()
+      .eq('product_id', insertedProduct.id)
+      .eq('source', 'woo')
+      .lt('synced_at', syncTimestamp)
+
+    if (cleanupError) {
+      console.error('Error cleaning up stale product images:', cleanupError)
+    }
   }
-  
+
   console.log(`✅ Sync complete: ${productsCreated} products created, ${productsUpdated} products updated`)
 }

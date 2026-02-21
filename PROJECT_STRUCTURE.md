@@ -328,7 +328,7 @@ npx supabase functions deploy <function-name>
 ### Current Issues
 - [ ] Migration `20251105000003_secure_sensitive_fields.sql` needs to run
 - [ ] Function `generate-webhook-secret` not deployed yet
-- [ ] Duplicate image uploads need to use `synced_at` field
+- [x] Duplicate image uploads need to use `synced_at` field — fixed in `sync-woo-products/products.ts`: a single `syncTimestamp` is now stamped on every upserted image and a cleanup pass removes any woo-sourced image whose `synced_at < syncTimestamp` after all gallery and variation images are written
 
 ### Upcoming Features
 - [ ] Bulk product operations
