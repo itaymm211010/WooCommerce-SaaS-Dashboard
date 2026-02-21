@@ -19,6 +19,7 @@ interface OrdersTableProps {
   selectedOrderId: number | null;
   onSelectOrder: (orderId: number) => void;
   statusLogs: OrderStatusLog[];
+  isLoadingStatusLogs?: boolean;
 }
 
 const allowedStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
@@ -43,6 +44,7 @@ export function OrdersTable({
   selectedOrderId,
   onSelectOrder,
   statusLogs,
+  isLoadingStatusLogs,
 }: OrdersTableProps) {
   const validateStatusChange = (currentStatus: OrderStatus, newStatus: OrderStatus): boolean => {
     const allowedTransitions = allowedStatusTransitions[currentStatus];
@@ -92,6 +94,7 @@ export function OrdersTable({
             onStatusChange={handleStatusChange}
             onSelectOrder={onSelectOrder}
             statusLogs={statusLogs}
+            isLoadingStatusLogs={isLoadingStatusLogs}
           />
         ))}
       </div>
@@ -103,6 +106,7 @@ export function OrdersTable({
         onStatusChange={handleStatusChange}
         onSelectOrder={onSelectOrder}
         statusLogs={statusLogs}
+        isLoadingStatusLogs={isLoadingStatusLogs}
       />
     </>
   );

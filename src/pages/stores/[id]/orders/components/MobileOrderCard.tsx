@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -32,6 +33,7 @@ interface MobileOrderCardProps {
   onStatusChange: (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => void;
   onSelectOrder: (orderId: number) => void;
   statusLogs: OrderStatusLog[];
+  isLoadingStatusLogs?: boolean;
 }
 
 export function MobileOrderCard({
@@ -40,6 +42,7 @@ export function MobileOrderCard({
   onStatusChange,
   onSelectOrder,
   statusLogs,
+  isLoadingStatusLogs,
 }: MobileOrderCardProps) {
   return (
     <Card>
@@ -99,7 +102,13 @@ export function MobileOrderCard({
                     </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="h-[300px] rounded-md border p-4">
-                    <StatusHistory logs={statusLogs} />
+                    {isLoadingStatusLogs ? (
+                      <div className="flex items-center justify-center h-full py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <StatusHistory logs={statusLogs} />
+                    )}
                   </ScrollArea>
                 </DialogContent>
               </Dialog>

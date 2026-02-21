@@ -38,7 +38,7 @@ export default function StoreOrdersPage() {
 
   const { data: userHasAccess } = useStoreAccess(id, user?.id);
   const { data: orders, refetch } = useOrders(id, !!userHasAccess, sortField, sortDirection, searchQuery, orderIdSearch);
-  const { data: statusLogs, refetch: refetchLogs } = useStatusLogs(id, selectedOrderId, !!userHasAccess);
+  const { data: statusLogs, refetch: refetchLogs, isLoading: isLoadingLogs, isFetching: isFetchingLogs } = useStatusLogs(id, selectedOrderId, !!userHasAccess);
 
   const { data: store } = useQuery({
     queryKey: ['store', id],
@@ -118,8 +118,8 @@ export default function StoreOrdersPage() {
         woo_id: order.id,
         status: order.status,
         total: order.total,
-        customer_name: `${order.billing.first_name} ${order.billing.last_name}`,
-        customer_email: order.billing.email
+        customer_name: `${order.billing?.first_name ?? ''} ${order.billing?.last_name ?? ''}`.trim() || 'Guest',
+        customer_email: order.billing?.email ?? ''
       }));
 
       const { error: insertError } = await supabase
@@ -189,6 +189,7 @@ export default function StoreOrdersPage() {
             selectedOrderId={selectedOrderId}
             onSelectOrder={setSelectedOrderId}
             statusLogs={statusLogs || []}
+            isLoadingStatusLogs={isLoadingLogs || isFetchingLogs}
           />
         )}
 

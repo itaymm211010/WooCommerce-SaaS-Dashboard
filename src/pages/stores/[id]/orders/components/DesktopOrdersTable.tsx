@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -43,6 +43,7 @@ interface DesktopOrdersTableProps {
   onStatusChange: (orderId: number, newStatus: OrderStatus, oldStatus: OrderStatus) => void;
   onSelectOrder: (orderId: number) => void;
   statusLogs: OrderStatusLog[];
+  isLoadingStatusLogs?: boolean;
 }
 
 interface SortButtonProps {
@@ -72,6 +73,7 @@ export function DesktopOrdersTable({
   onStatusChange,
   onSelectOrder,
   statusLogs,
+  isLoadingStatusLogs,
 }: DesktopOrdersTableProps) {
   return (
     <div className="hidden md:block">
@@ -149,7 +151,13 @@ export function DesktopOrdersTable({
                       </DialogDescription>
                     </DialogHeader>
                     <ScrollArea className="h-[300px] rounded-md border p-4">
-                      <StatusHistory logs={statusLogs} />
+                      {isLoadingStatusLogs ? (
+                        <div className="flex items-center justify-center h-full py-8">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <StatusHistory logs={statusLogs} />
+                      )}
                     </ScrollArea>
                   </DialogContent>
                 </Dialog>
