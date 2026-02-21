@@ -352,14 +352,14 @@ Your job is to identify issues, find root causes, and provide actionable solutio
       .update({
         status: "failed",
         duration_ms: duration,
-        error_message: error.message,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
         completed_at: new Date().toISOString(),
       })
       .eq("id", executionId);
 
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         executionId,
       }),
       {

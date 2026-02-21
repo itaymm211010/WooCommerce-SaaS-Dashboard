@@ -218,9 +218,10 @@ serve(withWebhookAuth(async (req, store_id, body) => {
 
   } catch (error) {
     console.error('Error processing webhook:', error)
-    await logWebhookActivity(store_id, body.topic || 'unknown', 'failed', error.message)
+    const errMsg = error instanceof Error ? error.message : 'Unknown error'
+    await logWebhookActivity(store_id, body.topic || 'unknown', 'failed', errMsg)
 
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: errMsg }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
