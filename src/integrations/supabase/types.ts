@@ -549,6 +549,7 @@ export type Database = {
           type: string
           updated_at: string
           versions: Json | null
+          woo_media_id: number | null
         }
         Insert: {
           alt_text?: string | null
@@ -566,6 +567,7 @@ export type Database = {
           type?: string
           updated_at?: string
           versions?: Json | null
+          woo_media_id?: number | null
         }
         Update: {
           alt_text?: string | null
@@ -583,6 +585,7 @@ export type Database = {
           type?: string
           updated_at?: string
           versions?: Json | null
+          woo_media_id?: number | null
         }
         Relationships: [
           {
