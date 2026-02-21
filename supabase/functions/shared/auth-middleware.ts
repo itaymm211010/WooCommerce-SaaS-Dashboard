@@ -124,7 +124,7 @@ export function withAuth(
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
         }
       })
     }
@@ -136,7 +136,8 @@ export function withAuth(
         status: auth.status || 401,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
         }
       })
     }
@@ -151,7 +152,7 @@ export function withAuth(
     const headers = new Headers(response.headers)
     headers.set('Access-Control-Allow-Origin', '*')
     headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    headers.set('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type')
 
     return new Response(response.body, {
       status: response.status,
