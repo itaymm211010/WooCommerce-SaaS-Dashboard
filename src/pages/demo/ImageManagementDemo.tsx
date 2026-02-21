@@ -5,14 +5,14 @@ import { ImageUploader } from '@/components/ImageUpload/ImageUploader';
 import { ImageGallery } from '@/components/ImageUpload/ImageGallery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageVersion } from '@/services/storage/types';
+import { GalleryImage } from '@/components/ImageUpload/ImageGallery';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageService } from '@/services/storage/ImageService';
 
-type DemoImage = {
-  id: string;
+type DemoImage = GalleryImage & {
   versions: Record<ImageVersion, string>;
 };
 
@@ -30,21 +30,27 @@ export default function ImageManagementDemo() {
       return;
     }
 
+    const versions = imageData.versions || {};
     setImages((prev) => [...prev, {
       id: imageData.id,
-      versions: imageData.versions || {}
+      versions,
+      url: versions.medium || versions.original || versions.thumbnail || '',
+      alt_text: '',
+      isFeatured: prev.length === 0,
+      storageSource: 'supabase',
     }]);
     
     setError(null);
     toast.success('תמונה הועלתה בהצלחה');
   };
 
-  const handleImageSelect = (imageId: string) => {
+  const handleSetFeatured = (imageId: string) => {
     setSelectedImageId(imageId);
+    setImages(prev => prev.map(img => ({ ...img, isFeatured: img.id === imageId })));
     toast.success('התמונה נבחרה כתמונה ראשית');
   };
 
-  const handleDeleteImage = async (imageId: string) => {
+  const handleDeleteImage = async (imageId: string, _storageSource?: string) => {
     try {
       setIsDeleting(true);
       const imageService = new ImageService();
@@ -121,9 +127,11 @@ export default function ImageManagementDemo() {
                 )}
               </CardHeader>
               <CardContent>
-                <ImageGallery 
+                <ImageGallery
                   images={images}
-                  onImageSelect={handleImageSelect}
+                  onSetFeatured={handleSetFeatured}
+                  onDeleteImage={handleDeleteImage}
+                  isDeleting={isDeleting ? selectedImageId : null}
                 />
               </CardContent>
             </Card>
