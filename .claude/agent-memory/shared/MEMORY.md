@@ -27,3 +27,7 @@
 - generate-webhook-secret: registered in config.toml ✅
 - Webhook UI: rebuilt with 14 topics, Hebrew, per-item loading ✅
 - Image delete: implemented in ProductImagesTab ✅
+- Orders billing null crash: fixed with optional chaining ✅
+- Orders Select uncontrolled: changed defaultValue → value ✅
+- Orders allowedStatusTransitions: expanded cancelled transitions ✅
+- Orders View History: loading spinner + always refetch after status change ✅

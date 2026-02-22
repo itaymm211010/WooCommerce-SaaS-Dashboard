@@ -162,20 +162,16 @@ if (woo_id && synced_at) {
    - Added `withAuth` and `verifyStoreAccess` middleware
 
 ### Current Bugs
-1. **Duplicate Image Uploads**: Images re-upload on every save
-   - **Root Cause**: Code doesn't check `synced_at` before upload
-   - **Fix**: Check if `woo_media_id` and `synced_at` exist before uploading
+- None known as of 2026-02-22
 
-2. **`generate-webhook-secret` Not Deployed**: Function exists but not live
-   - **Workaround**: Generate secret via SQL:
-     ```sql
-     UPDATE stores SET webhook_secret = encode(gen_random_bytes(32), 'base64') WHERE id = 'store_id';
-     ```
-
-3. **Migrations Not Applied**: Some migrations pending in Lovable Cloud
-   - **Required**:
-     - `20251105000001_add_sync_tracking_fields.sql`
-     - `20251105000003_secure_sensitive_fields.sql`
+### Fixed Bugs (2026-02-20 to 2026-02-22)
+1. ✅ **Duplicate Image Uploads** — `woo_media_id` column added, `transformProductForWooCommerce` sends `{id}` not `{src}` for existing images
+2. ✅ **`generate-webhook-secret` Not Deployed** — added to `supabase/config.toml`
+3. ✅ **Webhook UI** — rebuilt with 14 topics, Hebrew labels, per-item loading, delete confirmation
+4. ✅ **Orders billing null crash** — `order.billing?.first_name ?? ''` with Guest fallback
+5. ✅ **Orders Select uncontrolled** — changed `defaultValue` → `value` so UI updates after refetch
+6. ✅ **Orders allowedStatusTransitions** — expanded `cancelled` to allow `pending`, `processing`, `on-hold`
+7. ✅ **View History empty** — added loading spinner, always refetch logs after status change
 
 ### Architecture Quirks
 - **WooCommerce Variation API**: Must create parent product first, then variations

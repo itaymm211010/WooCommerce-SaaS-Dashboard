@@ -10,6 +10,28 @@
 - **Files**: `update-woo-product/product.ts`, `update-woo-product/handlers.ts`, `sync-woo-products/products.ts`
 - **Pattern to watch**: Any code that sends images to WooCommerce — check for `woo_media_id` usage
 
+### Orders Page Bugs (Fixed 2026-02-22)
+
+#### billing null crash
+- **Root cause**: `syncOrders` in `orders/index.tsx` accessed `order.billing.first_name` directly — crashes on guest checkout (billing = null)
+- **Fix**: `order.billing?.first_name ?? ''` with fallback to `'Guest'`
+- **Pattern to watch**: Any code mapping WooCommerce order objects — always use optional chaining on `billing`, `shipping`, `line_items`
+
+#### Select uncontrolled (status not updating in UI)
+- **Root cause**: `DesktopOrdersTable` and `MobileOrderCard` used `defaultValue={order.status}` on shadcn Select — uncontrolled, doesn't re-render after refetch
+- **Fix**: Changed to `value={order.status ?? undefined}` (controlled)
+- **Pattern to watch**: Any shadcn `Select` that displays server data — must use `value`, never `defaultValue`
+
+#### allowedStatusTransitions too restrictive
+- **Root cause**: `cancelled` only allowed → `['processing']`. Blocked valid WooCommerce transition cancelled→pending
+- **Fix**: `cancelled: ['pending', 'processing', 'on-hold']`
+- **Pattern to watch**: Status transition logic must match WooCommerce's actual allowed transitions
+
+#### View History race condition + no loading state
+- **Root cause**: Dialog opened immediately (uncontrolled), query fired async, no spinner — showed "No status changes" before data arrived
+- **Fix**: Added `isLoadingStatusLogs` prop passed through OrdersTable → DesktopOrdersTable/MobileOrderCard, shows Loader2 spinner while loading
+- **Secondary fix**: After status change, always call `setSelectedOrderId(orderId)` + `refetchLogs()` so logs are pre-fetched
+
 ## High-Risk Files (extra attention needed)
 - `supabase/functions/update-woo-product/product.ts` — transforms data before WooCommerce push
 - `supabase/functions/sync-woo-products/products.ts` — upsert logic for pull sync
