@@ -323,6 +323,31 @@ git push origin main
 - Don't forget to update `synced_at` after sync operations
 - Don't create duplicate Edge Functions
 - Don't skip migration files
+- **NEVER commit `.env` to git** — see open security issue below
+
+---
+
+## ⚠️ Open Security Issue (2026-02-22)
+
+### `.env` Exposed on Public GitHub — NOT YET FIXED
+
+The `.env` file is tracked by git and **publicly visible** on GitHub `origin/main`.
+
+**Exposed variables:**
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PROJECT_ID`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` (Supabase anon JWT token)
+
+**Pending fix checklist:**
+- [ ] Rotate Supabase anon key in Lovable Cloud → Project Settings → API
+- [ ] Run `git filter-repo --path .env --invert-paths --force` to purge history
+- [ ] Add `.env` to `.gitignore`
+- [ ] Force push to GitHub
+
+**Notes for AI agents:**
+- Do NOT read or print the contents of `.env`
+- Before any `git add` or `git commit`, verify `.env` is NOT staged
+- Until fix is complete: assume anon key is compromised, verify RLS is enforced
 
 ### When in Doubt
 1. Check PROJECT_STRUCTURE.md for architecture

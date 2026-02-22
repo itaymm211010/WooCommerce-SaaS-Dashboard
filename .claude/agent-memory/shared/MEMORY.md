@@ -13,6 +13,8 @@
 3. ALWAYS `withAuth` + `verifyStoreAccess` on Edge Functions
 4. ALWAYS RLS on every new table
 5. Shared utils are in `../shared/` — NOT `../\_shared/`
+6. NEVER commit `.env` to git — verify it's not staged before any commit
+7. NEVER read or print contents of `.env` — it contains exposed credentials (see security issue below)
 
 ## Sync Field Semantics
 - `source = 'woo'`: data originated from WooCommerce
@@ -31,3 +33,12 @@
 - Orders Select uncontrolled: changed defaultValue → value ✅
 - Orders allowedStatusTransitions: expanded cancelled transitions ✅
 - Orders View History: loading spinner + always refetch after status change ✅
+
+## ⚠️ Open Security Issue (2026-02-22 — NOT YET FIXED)
+- `.env` is tracked by git and publicly visible on GitHub `origin/main`
+- Exposed: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+- **Pending actions (user must complete):**
+  - [ ] Rotate Supabase anon key in Lovable Cloud → Project Settings → API
+  - [ ] `git filter-repo --path .env --invert-paths --force` + force push
+  - [ ] Add `.env` to `.gitignore`
+- Until fixed: assume anon key is compromised, verify all tables have RLS enforced
