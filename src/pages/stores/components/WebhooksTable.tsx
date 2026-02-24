@@ -45,7 +45,7 @@ export function WebhooksTable({ webhooks, store, onWebhookUpdated }: WebhooksTab
     setDeletingId(webhook.id);
     setConfirmDeleteId(null);
     try {
-      const success = await deleteWebhook(webhook.woo_webhook_id || 0, store);
+      const success = await deleteWebhook(webhook.woo_webhook_id, store);
       if (success) onWebhookUpdated();
     } finally {
       setDeletingId(null);
