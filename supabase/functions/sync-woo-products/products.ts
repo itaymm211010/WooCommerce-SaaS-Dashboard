@@ -13,6 +13,10 @@ export async function fetchProducts(store: any) {
   await checkAndUpdateCurrency(store, baseUrl)
 
   // Use the reusable pagination utility
+  // status: 'any' fetches all statuses (publish, draft, pending, private) so that
+  // non-published products get their synced_at updated and are not incorrectly
+  // removed by the stale-record cleanup. Trash and permanently-deleted products
+  // are never returned by WooCommerce regardless of this parameter.
   const allProducts = await fetchAllPaged({
     baseUrl,
     endpoint: '/wp-json/wc/v3/products',
@@ -20,7 +24,8 @@ export async function fetchProducts(store: any) {
       consumer_key: store.api_key,
       consumer_secret: store.api_secret
     },
-    perPage: 100
+    perPage: 100,
+    additionalParams: { status: 'any' }
   })
 
   console.log(`✅ Fetched total of ${allProducts.length} products from WooCommerce`)
@@ -306,6 +311,19 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
 
   if (productCleanupError) {
     console.error('Error cleaning up deleted products:', productCleanupError)
+  }
+
+  // Clean up variations that belong to deleted products or were removed from WooCommerce.
+  // Same timestamp pattern: variations not touched in this sync run are stale and removed.
+  const { error: variationCleanupError } = await supabase
+    .from('product_variations')
+    .delete()
+    .eq('store_id', storeId)
+    .eq('source', 'woo')
+    .lt('synced_at', syncTimestamp)
+
+  if (variationCleanupError) {
+    console.error('Error cleaning up stale variations:', variationCleanupError)
   }
 
   console.log(`✅ Sync complete: ${productsCreated} products created, ${productsUpdated} products updated`)
