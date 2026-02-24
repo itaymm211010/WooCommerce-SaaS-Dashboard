@@ -29,6 +29,7 @@ export async function fetchProducts(store: any) {
   })
 
   console.log(`✅ Fetched total of ${allProducts.length} products from WooCommerce`)
+  console.log(`DEBUG fetched woo_ids: ${allProducts.map((p: any) => `${p.id}(${p.status})`).join(', ')}`)
 
   return allProducts
 }
@@ -298,6 +299,15 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
       console.error('Error cleaning up stale product images:', cleanupError)
     }
   }
+
+  // DEBUG: log which products in DB are candidates for cleanup
+  const { data: staleProducts } = await supabase
+    .from('products')
+    .select('woo_id, name, synced_at, source')
+    .eq('store_id', storeId)
+    .eq('source', 'woo')
+    .lt('synced_at', syncTimestamp)
+  console.log(`DEBUG stale products (should be deleted): ${JSON.stringify(staleProducts)}`)
 
   // Clean up products that were deleted from WooCommerce since the last sync.
   // Any woo-sourced product for this store that was NOT touched in this sync run
