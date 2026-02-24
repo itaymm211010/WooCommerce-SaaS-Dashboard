@@ -294,5 +294,19 @@ export async function saveProducts(productsWithVariations: any[], storeId: strin
     }
   }
 
+  // Clean up products that were deleted from WooCommerce since the last sync.
+  // Any woo-sourced product for this store that was NOT touched in this sync run
+  // (i.e. synced_at < syncTimestamp) no longer exists in WooCommerce and should be removed.
+  const { error: productCleanupError } = await supabase
+    .from('products')
+    .delete()
+    .eq('store_id', storeId)
+    .eq('source', 'woo')
+    .lt('synced_at', syncTimestamp)
+
+  if (productCleanupError) {
+    console.error('Error cleaning up deleted products:', productCleanupError)
+  }
+
   console.log(`✅ Sync complete: ${productsCreated} products created, ${productsUpdated} products updated`)
 }
