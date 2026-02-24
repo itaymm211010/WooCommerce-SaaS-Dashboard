@@ -11,32 +11,44 @@ export const getWebhookEndpoint = (storeId: string) => {
   return `https://${projectId}.functions.supabase.co/woocommerce-order-status?store_id=${storeId}`;
 };
 
-export async function deleteWebhook(webhookId: number, store: Store) {
+export async function deleteWebhook(webhookId: number | null, store: Store) {
   try {
-    console.log('Deleting webhook from WooCommerce:', webhookId);
+    console.log('Deleting webhook:', webhookId);
 
-    // Delete webhook via secure proxy
-    const { data, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
-      body: {
-        storeId: store.id,
-        endpoint: `/wp-json/wc/v3/webhooks/${webhookId}`,
-        method: 'PUT',
+    // Only call WooCommerce if we have a valid woo_webhook_id
+    if (webhookId) {
+      const { data, error: fetchError } = await supabase.functions.invoke('woo-proxy', {
         body: {
-          status: 'deleted'
+          storeId: store.id,
+          endpoint: `/wp-json/wc/v3/webhooks/${webhookId}`,
+          method: 'DELETE',
+          params: { force: true }
+        }
+      });
+
+      if (fetchError || !data) {
+        console.warn('WooCommerce DELETE failed, trying PUT fallback:', fetchError?.message);
+        // Fallback: try PUT with status: 'deleted'
+        const { error: putError } = await supabase.functions.invoke('woo-proxy', {
+          body: {
+            storeId: store.id,
+            endpoint: `/wp-json/wc/v3/webhooks/${webhookId}`,
+            method: 'PUT',
+            body: { status: 'deleted' }
+          }
+        });
+        if (putError) {
+          console.error('WooCommerce webhook delete error (both methods failed):', putError.message);
+          throw new Error('Failed to delete webhook from WooCommerce');
         }
       }
-    });
-
-    if (fetchError || !data) {
-      console.error('WooCommerce webhook delete error:', fetchError?.message || 'Unknown error');
-      throw new Error('Failed to delete webhook from WooCommerce');
     }
 
-    const { error } = await supabase
-      .from('webhooks')
-      .delete()
-      .eq('woo_webhook_id', webhookId)
-      .eq('store_id', store.id);
+    const deleteQuery = supabase.from('webhooks').delete().eq('store_id', store.id);
+    if (webhookId) {
+      deleteQuery.eq('woo_webhook_id', webhookId);
+    }
+    const { error } = await deleteQuery;
 
     if (error) {
       console.error('Supabase delete error:', error);

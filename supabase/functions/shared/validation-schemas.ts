@@ -32,7 +32,7 @@ export const wooProxyRequestSchema = z.object({
   }),
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], {
     invalid_type_error: "Invalid HTTP method"
-  }),
+  }).default('GET'),
   body: z.record(z.unknown()).optional(),
   params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
